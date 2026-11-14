@@ -3,6 +3,7 @@ const ctx = canvas.getContext('2d');
 const bg = new Image();
 const sheet = new Image();
 const runSheet = new Image();
+const swordRunSheet = new Image();
 const idleSheet = new Image();
 const swordSheet = new Image();
 const comboSheet = new Image();
@@ -13,6 +14,7 @@ const climbSheet = new Image();
 bg.src = 'assets/nivel_tropical_plataformas_v1.webp';
 sheet.src = 'assets/explorador_caminar_master_v1.webp';
 runSheet.src = 'assets/explorador_correr_master_v1.webp';
+swordRunSheet.src = 'assets/explorador_correr_espada_master_v2.webp';
 idleSheet.src = 'assets/explorador_idle_master_v1.webp';
 swordSheet.src = 'assets/explorador_espada_master_v2.webp';
 comboSheet.src = 'assets/explorador_ataque_master_v2.webp';
@@ -178,6 +180,7 @@ function render(){
   else if(player.hangTime>0){ animKey='hang'; activeSheet=hangSheet; frame=Math.min(7,Math.floor(player.hangTime*9)); }
   else if(player.attackTime>0){ animKey='attack'; activeSheet=comboSheet; frame=Math.min(7,Math.floor(player.attackTime/.64*8)); }
   else if(player.swordTime>0){ animKey='sword'; activeSheet=swordSheet; const step=Math.min(7,Math.floor(player.swordTime/.64*8)); frame=player.swordOut?step:7-step; }
+  else if(player.swordOut && moving){ animKey='swordRun'; activeSheet=swordRunSheet; frame=player.frame; }
   else if(player.swordOut){ animKey='sword'; activeSheet=swordSheet; frame=7; }
   else if(jumping){ animKey='jump'; activeSheet=jumpSheet; frame=player.vy<-300?1:player.vy<-80?2:player.vy<120?3:player.vy<320?5:6; }
   else if(player.landTime>0){ animKey='jump'; activeSheet=jumpSheet; frame=7; }
@@ -187,17 +190,20 @@ function render(){
 
   if(activeSheet.complete && activeSheet.width){
     const meta=FRAMES[animKey];
-    const f=meta.list[frame % meta.list.length];
-    const sc=meta.scale;
+    const f=meta?.list[frame % meta.list.length];
+    const sc=meta?.scale || 124/460;
     const fh=activeSheet.height;
     ctx.save();
     ctx.translate(px+player.w*s/2, py+player.h*s);
     ctx.scale(player.face*s*sc, s*sc);
-    ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
+    if(animKey==='swordRun'){
+      const fw=activeSheet.width/8;
+      ctx.drawImage(activeSheet, frame*fw, 0, fw, fh, -fw/2, -580, fw, fh);
+    }else ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
     ctx.restore();
   }
   const stateTxt = player.climbTime>0?'SUBIENDO':player.attackTime>0?'ATACANDO':player.swordTime>0?(player.swordOut?'DESENVAINANDO':'ENVAINANDO'):jumping?'SALTANDO':crouching?'AGACHADO':player.running?'CORRIENDO':moving?'CAMINANDO':'QUIETO';
   ctx.fillStyle='#ffffffcc'; ctx.font='bold 15px system-ui'; ctx.fillText('Movimiento: '+stateTxt,18,gameHeight()-18);
 }
 function loop(now){ const dt=Math.min((now-last)/1000,.033); last=now; update(dt); render(); requestAnimationFrame(loop); }
-Promise.all([new Promise(r=>bg.onload=r),new Promise(r=>sheet.onload=r),new Promise(r=>runSheet.onload=r),new Promise(r=>idleSheet.onload=r),new Promise(r=>swordSheet.onload=r),new Promise(r=>comboSheet.onload=r),new Promise(r=>crouchSheet.onload=r),new Promise(r=>jumpSheet.onload=r),new Promise(r=>hangSheet.onload=r),new Promise(r=>climbSheet.onload=r)]).then(()=>requestAnimationFrame(loop));
+Promise.all([new Promise(r=>bg.onload=r),new Promise(r=>sheet.onload=r),new Promise(r=>runSheet.onload=r),new Promise(r=>swordRunSheet.onload=r),new Promise(r=>idleSheet.onload=r),new Promise(r=>swordSheet.onload=r),new Promise(r=>comboSheet.onload=r),new Promise(r=>crouchSheet.onload=r),new Promise(r=>jumpSheet.onload=r),new Promise(r=>hangSheet.onload=r),new Promise(r=>climbSheet.onload=r)]).then(()=>requestAnimationFrame(loop));
