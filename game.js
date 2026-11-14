@@ -232,7 +232,7 @@ const FRAMES = {
   sword:  { scale: 124/550, list: [{x:6,w:247,cx:130,fy:640},{x:272,w:251,cx:131,fy:640},{x:541,w:251,cx:131,fy:640},{x:808,w:251,cx:131,fy:640},{x:1077,w:251,cx:127,fy:640},{x:1343,w:259,cx:128,fy:640},{x:1607,w:267,cx:131,fy:640},{x:1875,w:293,cx:130,fy:640}] },
   attack: { scale: 124/260 },
   hang:   { scale: 124/520 },
-  climb:  { scale: 124/470 }
+  climb:  { scale: 124/380 }
 };
 function render(){
   document.querySelector('.climb').hidden=player.hangTime<=0;
