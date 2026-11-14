@@ -23,28 +23,28 @@ jumpSheet.src = 'assets/explorador_salto_master_v1.webp';
 hangSheet.src = 'assets/explorador_colgado_borde_8_frames.webp';
 climbSheet.src = 'assets/explorador_subir_borde_master_v1.png';
 
-const keys = new Set();
+const keyboardKeys = new Set();
+const touchKeys = new Set();
 let runTapJump=false;
 addEventListener('keydown', e => {
-  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' ','w','a','s','d','Shift','Control'].includes(e.key)) e.preventDefault();
-  keys.add(e.code === ' ' ? 'Space' : e.key);
-  if(e.code) keys.add(e.code);
+  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','ControlLeft','ControlRight','KeyZ','KeyX','KeyE','KeyC'].includes(e.code)) e.preventDefault();
+  if(e.code) keyboardKeys.add(e.code);
 });
 addEventListener('keyup', e => {
-  keys.delete(e.code === ' ' ? 'Space' : e.key);
-  if(e.code) keys.delete(e.code);
+  if(e.code) keyboardKeys.delete(e.code);
 });
+addEventListener('blur',()=>keyboardKeys.clear());
 document.querySelectorAll('[data-key]').forEach(btn => {
   const key = btn.dataset.key;
   if(btn.classList.contains('run')){
     let timer=null, holding=false, pointer=null;
-    btn.addEventListener('pointerdown',e=>{e.preventDefault();btn.setPointerCapture(e.pointerId);pointer=e.pointerId;holding=false;timer=setTimeout(()=>{holding=true;keys.add('ControlLeft');btn.classList.add('held');},230);});
-    const finish=e=>{if(pointer!==e.pointerId)return;e.preventDefault();clearTimeout(timer);keys.delete('ControlLeft');btn.classList.remove('held');if(e.type==='pointerup'&&!holding)runTapJump=true;pointer=null;};
+    btn.addEventListener('pointerdown',e=>{e.preventDefault();btn.setPointerCapture(e.pointerId);pointer=e.pointerId;holding=false;timer=setTimeout(()=>{holding=true;touchKeys.add('ControlLeft');btn.classList.add('held');},230);});
+    const finish=e=>{if(pointer!==e.pointerId)return;e.preventDefault();clearTimeout(timer);touchKeys.delete('ControlLeft');btn.classList.remove('held');if(e.type==='pointerup'&&!holding)runTapJump=true;pointer=null;};
     btn.addEventListener('pointerup',finish);btn.addEventListener('pointercancel',finish);btn.addEventListener('lostpointercapture',finish);
     return;
   }
-  const down = e => { e.preventDefault(); keys.add(key); };
-  const up = e => { e.preventDefault(); keys.delete(key); };
+  const down = e => { e.preventDefault(); touchKeys.add(key); };
+  const up = e => { e.preventDefault(); touchKeys.delete(key); };
   btn.addEventListener('pointerdown', e => { btn.setPointerCapture(e.pointerId); down(e); }); btn.addEventListener('pointerup', up); btn.addEventListener('pointercancel', up); btn.addEventListener('lostpointercapture', up);
 });
 
@@ -67,7 +67,7 @@ addEventListener('resize', resize); visualViewport?.addEventListener('resize',re
 const fullscreenButton=document.querySelector('#fullscreen');
 fullscreenButton.addEventListener('click',async()=>{ try { if(document.fullscreenElement) await document.exitFullscreen(); else await document.querySelector('#game-wrap').requestFullscreen(); } catch { fullscreenButton.title='Usa Añadir a pantalla de inicio para ocultar la barra del navegador'; } });
 document.addEventListener('fullscreenchange',()=>{fullscreenButton.textContent=document.fullscreenElement?'⤢':'⛶';fullscreenButton.setAttribute('aria-label',document.fullscreenElement?'Salir de pantalla completa':'Activar pantalla completa');resize();});
-function pressed(...names){ return names.some(n=>keys.has(n)); }
+function pressed(...names){ return names.some(n=>keyboardKeys.has(n)||touchKeys.has(n)); }
 // Fill the whole screen on phones and wide monitors; crop only the far edges.
 function gameHeight(){return canvas.clientHeight||innerHeight;}
 function scale(){ return Math.max(innerWidth/world.w, gameHeight()/world.h); }
