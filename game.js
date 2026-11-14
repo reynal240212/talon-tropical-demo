@@ -14,7 +14,7 @@ const sleepSheet = new Image();
 const hangSheet = new Image();
 const climbSheet = new Image();
 const platformTexture = new Image();
-bg.src = 'assets/nivel_tropical_plataformas_v1.webp';
+bg.src = 'assets/nivel_tropical_extendido_v2.png?v=1';
 sheet.src = 'assets/explorador_caminar_master_v1.webp';
 runSheet.src = 'assets/explorador_correr_master_v1.webp?v=f28c70d';
 swordRunSheet.src = 'assets/explorador_correr_espada_master_v2.webp';
@@ -57,10 +57,11 @@ document.querySelectorAll('[data-key]').forEach(btn => {
   btn.addEventListener('pointerdown', e => { btn.setPointerCapture(e.pointerId); down(e); }); btn.addEventListener('pointerup', up); btn.addEventListener('pointercancel', up); btn.addEventListener('lostpointercapture', up);
 });
 
-const world = { w: 1668, h: 941 };
+const world = { w: 2500, h: 941 };
 const platforms = [
-  {x:0,y:744,w:1668,h:197}, {x:205,y:524,w:265,h:70}, {x:330,y:300,w:225,h:65},
-  {x:625,y:425,w:395,h:76}, {x:1058,y:535,w:266,h:70}, {x:1095,y:290,w:275,h:70}, {x:1485,y:545,w:183,h:217}
+  {x:0,y:744,w:2500,h:197}, {x:205,y:524,w:265,h:70}, {x:330,y:300,w:225,h:65},
+  {x:625,y:425,w:395,h:76}, {x:1058,y:535,w:266,h:70}, {x:1095,y:290,w:275,h:70}, {x:1485,y:545,w:183,h:217},
+  {x:1710,y:515,w:260,h:70}, {x:1950,y:350,w:285,h:70}, {x:2200,y:515,w:250,h:70}, {x:2320,y:300,w:180,h:70}
 ];
 // Altura de cada peldaño de la escalera de piedra dibujada a la derecha.
 function stairHeight(x){
