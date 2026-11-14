@@ -19,7 +19,7 @@ runSheet.src = 'assets/explorador_correr_master_v1.webp?v=f28c70d';
 swordRunSheet.src = 'assets/explorador_correr_espada_master_v2.webp';
 idleSheet.src = 'assets/explorador_idle_master_v1.webp';
 swordSheet.src = 'assets/explorador_espada_master_v2.webp';
-comboSheet.src = 'assets/explorador_ataque_master_v3.png?v=1';
+comboSheet.src = 'assets/explorador_ataque_master_v4.png?v=1';
 crouchSheet.src = 'assets/explorador_agacharse_master_v1.png';
 jumpSheet.src = 'assets/explorador_salto_master_v1.webp';
 doubleJumpSheet.src = 'assets/explorador_doble_salto_master_v1.png?v=2';
@@ -241,7 +241,7 @@ function render(){
   if(player.sleepTime>0){ animKey='sleep'; activeSheet=sleepSheet; frame=player.sleepTime<1.2?Math.min(5,Math.floor(player.sleepTime/1.2*6)):2+Math.floor((player.sleepTime-1.2)*3)%4; }
   else if(player.climbTime>0){ animKey='climb'; activeSheet=climbSheet; frame=Math.min(11,Math.floor(player.climbTime*11)); }
   else if(player.hangTime>0){ animKey='hang'; activeSheet=hangSheet; frame=Math.min(7,Math.floor(player.hangTime*9)); }
-  else if(player.attackTime>0){ animKey='attack'; activeSheet=comboSheet; frame=Math.min(7,Math.floor(player.attackTime/.64*8)); }
+  else if(player.attackTime>0){ animKey='attack'; activeSheet=comboSheet; frame=Math.min(11,Math.floor(player.attackTime/.64*12)); }
   else if(player.swordTime>0){ animKey='sword'; activeSheet=swordSheet; const step=Math.min(7,Math.floor(player.swordTime/.64*8)); frame=player.swordOut?step:7-step; }
   else if(player.doubleJumpTime>0 && jumping){ animKey='doubleJump'; activeSheet=doubleJumpSheet; frame=Math.min(7,Math.floor(player.doubleJumpTime/.72*8)); }
   else if(jumping){ animKey='jump'; activeSheet=jumpSheet; frame=player.vy<-300?1:player.vy<-80?2:player.vy<120?3:player.vy<320?5:6; }
@@ -261,8 +261,8 @@ function render(){
     ctx.translate(px+player.w*s/2, py+player.h*s);
     ctx.scale(player.face*s*sc, s*sc);
     if(animKey==='swordRun' || animKey==='doubleJump' || animKey==='sleep' || animKey==='attack'){
-      const count=animKey==='sleep'?6:8, fw=activeSheet.width/count;
-      const inset=animKey==='sleep'?4:animKey==='attack'?10:0;
+      const count=animKey==='sleep'?6:animKey==='attack'?12:8, fw=activeSheet.width/count;
+      const inset=animKey==='sleep'?4:animKey==='attack'?5:0;
       ctx.drawImage(activeSheet, frame*fw+inset, 0, fw-inset*2, fh, -fw/2+inset, animKey==='sleep'?-520:animKey==='attack'?-520:-624, fw-inset*2, fh);
     }else ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
     ctx.restore();
