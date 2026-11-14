@@ -11,8 +11,8 @@
     <canvas id="game" aria-label="Prototipo jugable de Talon Tropical"></canvas>
     <div class="hint">A/D o ←/→ caminar · Ctrl + dirección correr · Espacio/W/↑ saltar</div>
     <div class="touch-controls" aria-label="Controles táctiles">
-      <div class="dpad"><button data-key="ArrowLeft">◀</button><button data-key="ArrowRight">▶</button></div>
-      <div class="actions"><button class="hang" data-key="KeyQ">Q<br><small>Colgar</small></button><button class="crouch" data-key="ArrowDown">↓<br><small>Agachar</small></button><button class="attack" data-key="KeyX">X<br><small>Atacar</small></button><button class="sword" data-key="KeyE">E<br><small>Espada</small></button><button class="run" data-key="ControlLeft">C<br><small>Correr</small></button><button class="jump" data-key="Space">A<br><small>Saltar</small></button></div>
+      <div class="left-controls"><div class="dpad"><button data-key="ArrowLeft" aria-label="Izquierda">◀</button><button data-key="ArrowRight" aria-label="Derecha">▶</button></div><button class="run" data-key="ControlLeft" aria-label="Correr">➤<small>Correr</small></button></div>
+      <div class="actions"><div class="secondary"><button class="crouch" data-key="ArrowDown" aria-label="Agacharse">⌄<small>Agachar</small></button><button class="sword" data-key="KeyE" aria-label="Sacar espada">⚔<small>Espada</small></button></div><div class="primary"><button class="attack" data-key="KeyX" aria-label="Atacar">✦<small>Atacar</small></button><button class="jump" data-key="Space" aria-label="Saltar o subir">↑<small>Saltar</small></button></div><button class="climb" data-key="ArrowUp" aria-label="Subir al borde" hidden>↑<small>Subir</small></button></div>
     </div>
   </main>
   <script src="game.js"></script>
