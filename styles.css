@@ -32,4 +32,16 @@
   .jump{width:clamp(82px,19vh,108px)!important;height:clamp(82px,19vh,108px)!important;}
   .touch-controls small{font-size:clamp(8px,2.2vh,12px);line-height:12px;}
 }
+@media (pointer:coarse) and (orientation:landscape) and (max-height:500px){
+  .touch-controls{left:8px;right:8px;bottom:8px;}
+  .dpad{gap:8px;padding:4px;}
+  .dpad button{width:clamp(48px,12vh,64px);height:clamp(48px,12vh,64px);font-size:24px;}
+  .left-controls{gap:7px;}
+  .left-controls .run,.secondary button{width:clamp(42px,9vh,56px);height:clamp(42px,9vh,56px);font-size:18px;}
+  .actions{gap:7px;}
+  .primary,.secondary{gap:8px;}
+  .primary button{width:clamp(54px,13vh,70px);height:clamp(54px,13vh,70px);font-size:24px;}
+  .jump{width:clamp(60px,15vh,78px)!important;height:clamp(60px,15vh,78px)!important;}
+  .touch-controls small{font-size:7px;line-height:8px;}
+}
 @media (hover:hover) and (pointer:fine){.touch-controls{display:none}.hint{display:block}}
