@@ -67,6 +67,19 @@ addEventListener('resize', resize); visualViewport?.addEventListener('resize',re
 const fullscreenButton=document.querySelector('#fullscreen');
 fullscreenButton.addEventListener('click',async()=>{ try { if(document.fullscreenElement) await document.exitFullscreen(); else await document.querySelector('#game-wrap').requestFullscreen(); } catch { fullscreenButton.title='Usa Añadir a pantalla de inicio para ocultar la barra del navegador'; } });
 document.addEventListener('fullscreenchange',()=>{fullscreenButton.textContent=document.fullscreenElement?'⤢':'⛶';fullscreenButton.setAttribute('aria-label',document.fullscreenElement?'Salir de pantalla completa':'Activar pantalla completa');resize();});
+const music=document.querySelector('#music');
+music.volume=0.35;
+async function startMusic(){
+  if(!music.paused)return;
+  try{await music.play();}catch{}
+}
+addEventListener('pointerdown',startMusic,{passive:true});
+addEventListener('keydown',startMusic);
+addEventListener('keydown',e=>{
+  if(e.code==='KeyM'){
+    if(music.paused) music.play().catch(()=>{}); else music.pause();
+  }
+});
 function pressed(...names){ return names.some(n=>keyboardKeys.has(n)||touchKeys.has(n)); }
 // Fill the whole screen on phones and wide monitors; crop only the far edges.
 function gameHeight(){return canvas.clientHeight||innerHeight;}
