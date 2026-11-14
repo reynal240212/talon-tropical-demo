@@ -69,12 +69,28 @@ fullscreenButton.addEventListener('click',async()=>{ try { if(document.fullscree
 document.addEventListener('fullscreenchange',()=>{fullscreenButton.textContent=document.fullscreenElement?'⤢':'⛶';fullscreenButton.setAttribute('aria-label',document.fullscreenElement?'Salir de pantalla completa':'Activar pantalla completa');resize();});
 const music=document.querySelector('#music');
 music.volume=0.35;
+let audioContext=null;
+let stepDistance=0;
+function ensureAudio(){
+  if(!audioContext)audioContext=new(window.AudioContext||window.webkitAudioContext)();
+  if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
+}
+function playStep(surface='grass'){
+  if(!audioContext||audioContext.state!=='running')return;
+  const now=audioContext.currentTime, osc=audioContext.createOscillator(), gain=audioContext.createGain(), filter=audioContext.createBiquadFilter();
+  osc.type=surface==='stone'?'triangle':'sine';
+  osc.frequency.setValueAtTime(surface==='stone'?145:95,now);
+  osc.frequency.exponentialRampToValueAtTime(surface==='stone'?72:58,now+.075);
+  filter.type='lowpass'; filter.frequency.value=surface==='stone'?900:620;
+  gain.gain.setValueAtTime(.0001,now); gain.gain.exponentialRampToValueAtTime(surface==='stone'?.045:.028,now+.008); gain.gain.exponentialRampToValueAtTime(.0001,now+.09);
+  osc.connect(filter); filter.connect(gain); gain.connect(audioContext.destination); osc.start(now); osc.stop(now+.1);
+}
 async function startMusic(){
   if(!music.paused)return;
   try{await music.play();}catch{}
 }
-addEventListener('pointerdown',startMusic,{passive:true});
-addEventListener('keydown',startMusic);
+addEventListener('pointerdown',()=>{ensureAudio();startMusic()},{passive:true});
+addEventListener('keydown',()=>{ensureAudio();startMusic()});
 addEventListener('keydown',e=>{
   if(e.code==='KeyM'){
     if(music.paused) music.play().catch(()=>{}); else music.pause();
@@ -122,7 +138,7 @@ function drawAtmosphere(now){
   ctx.restore();
 }
 function update(dt){
-  if(player.climbTime>0){ player.climbTime+=dt; player.vx=0; player.vy=0; if(player.climbTime>1.05){ player.y=player.hangPlatform.y-player.h; player.onGround=true; player.climbTime=0; player.hangPlatform=null; } return; }
+  if(player.climbTime>0){ const previous=player.climbTime; player.climbTime+=dt; player.vx=0; player.vy=0; if(Math.floor(previous*4)!==Math.floor(player.climbTime*4))playStep('stone'); if(player.climbTime>1.05){ player.y=player.hangPlatform.y-player.h; player.onGround=true; player.climbTime=0; player.hangPlatform=null; } return; }
   if(player.hangTime>0){
     const p=player.hangPlatform;
     if(pressed('ArrowUp','KeyW')||runTapJump){ runTapJump=false; player.hangTime=0; player.climbTime=.001; }
@@ -161,7 +177,7 @@ function update(dt){
     player.y=stairY-player.h; player.vy=0; player.onGround=true;
   }
   const wasAir = !wasGrounded && player.vy > 100;
-  for(const p of platforms){ if(player.vy>=0 && oldY+player.h<=p.y && player.y+player.h>=p.y && player.x+player.w>p.x && player.x<p.x+p.w && (!player.onGround||p.y<player.y+player.h)){ player.y=p.y-player.h; player.vy=0; player.onGround=true; } }
+  for(const p of platforms){ if(player.vy>=0 && oldY+player.h<=p.y && player.y+player.h>=p.y && player.x+player.w>p.x && player.x<p.x+p.w){ player.y=p.y-player.h; player.vy=0; player.onGround=true; } }
   if(wasAir && player.onGround) player.landTime=0.12;
   if(player.landTime>0) player.landTime-=dt;
   if(player.y>world.h+100){player.x=110;player.y=600;player.vy=0;}
@@ -169,6 +185,10 @@ function update(dt){
   else if(player.onGround){ player.anim+=dt*5; player.frame=Math.floor(player.anim)%6; }
   else { player.anim=0; player.frame=0; }
   player.running=running && Math.abs(player.vx)>0;
+  if(Math.abs(player.vx)>0 && player.onGround){
+    stepDistance+=Math.abs(player.vx)*dt;
+    if(stepDistance>=78){ stepDistance=0; playStep(stairHeight(player.x+player.w/2)!==null?'stone':'grass'); }
+  }else if(!player.onGround)stepDistance=0;
 }
 const FRAMES = {
   idle:   { scale: 124/624, list: [{x:38,w:275,cx:142,fy:680},{x:399,w:277,cx:143,fy:680},{x:761,w:281,cx:145,fy:680},{x:1120,w:275,cx:142,fy:680},{x:1482,w:273,cx:142,fy:680},{x:1846,w:275,cx:140,fy:680}] },
