@@ -13,7 +13,7 @@ const hangSheet = new Image();
 const climbSheet = new Image();
 bg.src = 'assets/nivel_tropical_plataformas_v1.webp';
 sheet.src = 'assets/explorador_caminar_master_v1.webp';
-runSheet.src = 'assets/explorador_correr_master_v1.webp';
+runSheet.src = 'assets/explorador_correr_master_v1.webp?v=f28c70d';
 swordRunSheet.src = 'assets/explorador_correr_espada_master_v2.webp';
 idleSheet.src = 'assets/explorador_idle_master_v1.webp';
 swordSheet.src = 'assets/explorador_espada_master_v2.webp';
