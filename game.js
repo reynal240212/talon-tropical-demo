@@ -22,6 +22,7 @@ comboSheet.src = 'assets/explorador_ataque_master_v2.webp';
 crouchSheet.src = 'assets/explorador_agacharse_master_v1.png';
 jumpSheet.src = 'assets/explorador_salto_master_v1.webp';
 doubleJumpSheet.src = 'assets/explorador_doble_salto_master_v1.png?v=2';
+doubleJumpSheet.onerror = () => { doubleJumpSheet.src = 'assets/explorador_salto_master_v1.webp'; };
 hangSheet.src = 'assets/explorador_colgado_borde_8_frames.webp';
 climbSheet.src = 'assets/explorador_subir_borde_master_v1.png';
 
