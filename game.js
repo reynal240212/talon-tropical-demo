@@ -9,6 +9,7 @@ const swordSheet = new Image();
 const comboSheet = new Image();
 const crouchSheet = new Image();
 const jumpSheet = new Image();
+const doubleJumpSheet = new Image();
 const hangSheet = new Image();
 const climbSheet = new Image();
 bg.src = 'assets/nivel_tropical_plataformas_v1.webp';
@@ -20,6 +21,7 @@ swordSheet.src = 'assets/explorador_espada_master_v2.webp';
 comboSheet.src = 'assets/explorador_ataque_master_v2.webp';
 crouchSheet.src = 'assets/explorador_agacharse_master_v1.png';
 jumpSheet.src = 'assets/explorador_salto_master_v1.webp';
+doubleJumpSheet.src = 'assets/explorador_doble_salto_master_v1.png?v=2';
 hangSheet.src = 'assets/explorador_colgado_borde_8_frames.webp';
 climbSheet.src = 'assets/explorador_subir_borde_master_v1.png';
 
@@ -60,7 +62,7 @@ function stairHeight(x){
   const heights=[714,684,654,624,594,564];
   return heights[Math.min(5,Math.floor((x-1300)/31))];
 }
-const player = {x:110,y:620,w:62,h:124,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0};
+const player = {x:110,y:620,w:62,h:124,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,jumpCount:0,jumpLatch:false,doubleJumpTime:0,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0};
 let last = performance.now();
 function resize(){ const dpr=Math.min(devicePixelRatio||1,2); const height=Math.round(visualViewport?.height||innerHeight); document.documentElement.style.setProperty('--game-height',height+'px'); canvas.width=innerWidth*dpr; canvas.height=height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
 addEventListener('resize', resize); visualViewport?.addEventListener('resize',resize); addEventListener('orientationchange',()=>setTimeout(resize,200)); resize();
@@ -160,7 +162,12 @@ function update(dt){
   const crouching=pressed('ArrowDown','KeyS','s','S') && player.onGround && player.hangTime<=0 && player.attackTime<=0 && player.swordTime<=0;
   if(crouching) player.crouchTime+=dt; else player.crouchTime=0;
   player.vx=(player.swordTime>0||player.attackTime>0||player.hangTime>0||crouching)?0:(right?(running?360:230):0)-(left?(running?360:230):0); if(player.vx) player.face=player.vx>0?1:-1;
-  if((pressed('Space','ArrowUp','w','KeyW','KeyC','c','C')||runTapJump) && player.onGround){ player.vy=-520; player.onGround=false; }
+  const jumpPressed=pressed('Space','ArrowUp','w','KeyW','KeyC','c','C')||runTapJump;
+  if(jumpPressed && !player.jumpLatch){
+    if(player.onGround){ player.vy=-520; player.onGround=false; player.jumpCount=1; }
+    else if(player.jumpCount===1){ player.vy=-470; player.jumpCount=2; player.doubleJumpTime=.001; }
+  }
+  player.jumpLatch=jumpPressed;
   runTapJump=false;
   const oldY=player.y, wasGrounded=player.onGround; player.x=Math.max(0,Math.min(world.w-player.w,player.x+player.vx*dt)); player.vy+=1250*dt; player.y+=player.vy*dt; player.onGround=false;
   if(player.vy>0 && !player.onGround){
@@ -178,12 +185,13 @@ function update(dt){
   }
   const wasAir = !wasGrounded && player.vy > 100;
   for(const p of platforms){ if(player.vy>=0 && oldY+player.h<=p.y && player.y+player.h>=p.y && player.x+player.w>p.x && player.x<p.x+p.w){ player.y=p.y-player.h; player.vy=0; player.onGround=true; } }
-  if(wasAir && player.onGround) player.landTime=0.12;
+  if(wasAir && player.onGround){ player.landTime=0.12; player.jumpCount=0; player.doubleJumpTime=0; }
   if(player.landTime>0) player.landTime-=dt;
   if(player.y>world.h+100){player.x=110;player.y=600;player.vy=0;}
   if(Math.abs(player.vx)>0 && player.onGround){ player.anim+=dt*(running?14:9); player.frame=Math.floor(player.anim)%8; }
   else if(player.onGround){ player.anim+=dt*5; player.frame=Math.floor(player.anim)%6; }
   else { player.anim=0; player.frame=0; }
+  if(player.doubleJumpTime>0)player.doubleJumpTime+=dt;
   player.running=running && Math.abs(player.vx)>0;
   if(Math.abs(player.vx)>0 && player.onGround){
     stepDistance+=Math.abs(player.vx)*dt;
@@ -197,6 +205,7 @@ const FRAMES = {
   // Los anchos terminan antes del siguiente fotograma para evitar que se filtre su dibujo.
   run:    { scale: 124/564, list: [{x:6,w:285,cx:139,fy:642},{x:295,w:232,cx:121,fy:642},{x:531,w:288,cx:154,fy:642},{x:823,w:283,cx:135,fy:642},{x:1110,w:264,cx:112,fy:642},{x:1378,w:234,cx:119,fy:642},{x:1616,w:286,cx:150,fy:642},{x:1906,w:258,cx:128,fy:642}] },
   jump:   { scale: 124/540, list: [{x:30,w:259,cx:130,fy:662},{x:312,w:225,cx:110,fy:662},{x:535,w:275,cx:145,fy:662},{x:826,w:269,cx:127,fy:662},{x:1097,w:259,cx:130,fy:662},{x:1382,w:233,cx:115,fy:662},{x:1646,w:241,cx:124,fy:662},{x:1910,w:231,cx:120,fy:662}] },
+  doubleJump: { scale: 124/624 },
   sword:  { scale: 124/550, list: [{x:6,w:247,cx:130,fy:640},{x:272,w:251,cx:131,fy:640},{x:541,w:251,cx:131,fy:640},{x:808,w:251,cx:131,fy:640},{x:1077,w:251,cx:127,fy:640},{x:1343,w:259,cx:128,fy:640},{x:1607,w:267,cx:131,fy:640},{x:1875,w:293,cx:130,fy:640}] },
   attack: { scale: 124/466, list: [{x:14,w:241,cx:107,fy:608},{x:275,w:235,cx:111,fy:608},{x:549,w:199,cx:104,fy:606},{x:784,w:275,cx:133,fy:606},{x:1056,w:277,cx:132,fy:606},{x:1330,w:337,cx:154,fy:606},{x:1664,w:211,cx:91,fy:606},{x:1913,w:243,cx:107,fy:608}] },
   hang:   { scale: 0.22,    list: [{x:22,w:273,cx:117,fy:578},{x:302,w:263,cx:108,fy:542},{x:573,w:255,cx:111,fy:568},{x:835,w:253,cx:119,fy:582},{x:1098,w:255,cx:117,fy:616},{x:1362,w:279,cx:133,fy:582},{x:1654,w:239,cx:98,fy:488},{x:1911,w:241,cx:117,fy:420}] },
@@ -214,6 +223,7 @@ function render(){
   else if(player.hangTime>0){ animKey='hang'; activeSheet=hangSheet; frame=Math.min(7,Math.floor(player.hangTime*9)); }
   else if(player.attackTime>0){ animKey='attack'; activeSheet=comboSheet; frame=Math.min(7,Math.floor(player.attackTime/.64*8)); }
   else if(player.swordTime>0){ animKey='sword'; activeSheet=swordSheet; const step=Math.min(7,Math.floor(player.swordTime/.64*8)); frame=player.swordOut?step:7-step; }
+  else if(player.doubleJumpTime>0 && jumping){ animKey='doubleJump'; activeSheet=doubleJumpSheet; frame=Math.min(7,Math.floor(player.doubleJumpTime/.72*8)); }
   else if(jumping){ animKey='jump'; activeSheet=jumpSheet; frame=player.vy<-300?1:player.vy<-80?2:player.vy<120?3:player.vy<320?5:6; }
   else if(player.landTime>0){ animKey='jump'; activeSheet=jumpSheet; frame=7; }
   else if(crouching){ animKey='crouch'; activeSheet=crouchSheet; frame=Math.min(4,Math.floor(player.crouchTime*16)); }
@@ -230,9 +240,9 @@ function render(){
     ctx.save();
     ctx.translate(px+player.w*s/2, py+player.h*s);
     ctx.scale(player.face*s*sc, s*sc);
-    if(animKey==='swordRun'){
+    if(animKey==='swordRun' || animKey==='doubleJump'){
       const fw=activeSheet.width/8;
-      ctx.drawImage(activeSheet, frame*fw, 0, fw, fh, -fw/2, -580, fw, fh);
+      ctx.drawImage(activeSheet, frame*fw, 0, fw, fh, -fw/2, -624, fw, fh);
     }else ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
     ctx.restore();
   }
@@ -240,4 +250,4 @@ function render(){
   ctx.fillStyle='#ffffffcc'; ctx.font='bold 15px system-ui'; ctx.fillText('Movimiento: '+stateTxt,18,gameHeight()-18);
 }
 function loop(now){ const dt=Math.min((now-last)/1000,.033); last=now; update(dt); render(); requestAnimationFrame(loop); }
-Promise.all([new Promise(r=>bg.onload=r),new Promise(r=>sheet.onload=r),new Promise(r=>runSheet.onload=r),new Promise(r=>swordRunSheet.onload=r),new Promise(r=>idleSheet.onload=r),new Promise(r=>swordSheet.onload=r),new Promise(r=>comboSheet.onload=r),new Promise(r=>crouchSheet.onload=r),new Promise(r=>jumpSheet.onload=r),new Promise(r=>hangSheet.onload=r),new Promise(r=>climbSheet.onload=r)]).then(()=>requestAnimationFrame(loop));
+Promise.all([new Promise(r=>bg.onload=r),new Promise(r=>sheet.onload=r),new Promise(r=>runSheet.onload=r),new Promise(r=>swordRunSheet.onload=r),new Promise(r=>idleSheet.onload=r),new Promise(r=>swordSheet.onload=r),new Promise(r=>comboSheet.onload=r),new Promise(r=>crouchSheet.onload=r),new Promise(r=>jumpSheet.onload=r),new Promise(r=>doubleJumpSheet.onload=r),new Promise(r=>hangSheet.onload=r),new Promise(r=>climbSheet.onload=r)]).then(()=>requestAnimationFrame(loop));
