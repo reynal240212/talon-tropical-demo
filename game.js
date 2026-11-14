@@ -34,10 +34,15 @@ const keyboardKeys = new Set();
 const touchKeys = new Set();
 let runTapJump=false;
 let collisionDebug=false;
+let collisionEditor=false;
+let dragPlatform=null;
+let dragOffsetX=0, dragOffsetY=0;
+const savedPlatforms=localStorage.getItem('talon-platform-collisions');
 addEventListener('keydown', e => {
   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','ControlLeft','ControlRight','KeyZ','KeyX','KeyE','KeyC'].includes(e.code)) e.preventDefault();
   if(e.code) keyboardKeys.add(e.code);
-  if(e.code==='KeyH') collisionDebug=!collisionDebug;
+  if(e.code==='KeyH'){ collisionEditor=!collisionEditor; collisionDebug=collisionEditor; }
+  if(e.code==='KeyR' && collisionEditor){ localStorage.removeItem('talon-platform-collisions'); location.reload(); }
 });
 addEventListener('keyup', e => {
   if(e.code) keyboardKeys.delete(e.code);
@@ -61,10 +66,38 @@ const VIEW_BASE = { w: 1668, h: 941 };
 const MASTER_CHARACTER = { w: 62, h: 124 };
 const world = { w: 2500, h: VIEW_BASE.h };
 const platforms = [
-  {x:0,y:650,w:2500,h:291}, {x:205,y:470,w:265,h:70}, {x:330,y:255,w:225,h:65},
-  {x:625,y:370,w:395,h:76}, {x:1058,y:470,w:266,h:70}, {x:1095,y:255,w:275,h:70}, {x:1485,y:500,w:183,h:217},
-  {x:1710,y:470,w:260,h:70}, {x:1950,y:300,w:285,h:70}, {x:2200,y:470,w:250,h:70}, {x:2320,y:255,w:180,h:70}
+  {x:0,y:650,w:2500,h:291}, {x:205,y:470,w:265,h:70}, {x:330,y:300,w:225,h:65},
+  {x:625,y:425,w:395,h:76}, {x:1058,y:470,w:266,h:70}, {x:1095,y:290,w:275,h:70}, {x:1485,y:500,w:183,h:217},
+  {x:1710,y:470,w:260,h:70}, {x:1950,y:350,w:285,h:70}, {x:2200,y:470,w:250,h:70}, {x:2320,y:300,w:180,h:70}
 ];
+if(savedPlatforms){
+  try{
+    const saved=JSON.parse(savedPlatforms);
+    if(Array.isArray(saved) && saved.length===platforms.length) saved.forEach((p,i)=>Object.assign(platforms[i],p));
+  }catch{}
+}
+function editorPoint(e){
+  const rect=canvas.getBoundingClientRect(), s=scale(), cam=cameraX();
+  return {x:(e.clientX-rect.left)/s+cam,y:(e.clientY-rect.top)/s};
+}
+canvas.addEventListener('pointerdown',e=>{
+  if(!collisionEditor)return;
+  const q=editorPoint(e);
+  dragPlatform=[...platforms].reverse().find(p=>q.x>=p.x&&q.x<=p.x+p.w&&q.y>=p.y&&q.y<=p.y+p.h);
+  if(dragPlatform){ dragOffsetX=q.x-dragPlatform.x; dragOffsetY=q.y-dragPlatform.y; canvas.setPointerCapture(e.pointerId); e.preventDefault(); }
+});
+canvas.addEventListener('pointermove',e=>{
+  if(!collisionEditor||!dragPlatform)return;
+  const q=editorPoint(e);
+  dragPlatform.x=Math.max(0,Math.min(world.w-dragPlatform.w,q.x-dragOffsetX));
+  dragPlatform.y=Math.max(0,Math.min(world.h-dragPlatform.h,q.y-dragOffsetY));
+  e.preventDefault();
+});
+canvas.addEventListener('pointerup',e=>{
+  if(!dragPlatform)return;
+  localStorage.setItem('talon-platform-collisions',JSON.stringify(platforms));
+  dragPlatform=null; e.preventDefault();
+});
 // Altura de cada peldaño de la escalera de piedra dibujada a la derecha.
 function stairHeight(x){
   if(x<1300||x>1560)return null;
@@ -165,7 +198,12 @@ function drawCollisionDebug(){
     const pts=platformContour(p); ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
     for(const pt of pts.slice(1))ctx.lineTo(pt[0],pt[1]);
     ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.9)'; ctx.font='bold 12px system-ui'; ctx.fillText('arrastra',p.x+6,p.y+16);
   }
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle='rgba(8,20,24,.82)'; ctx.fillRect(16,16,360,42);
+  ctx.fillStyle='#fff'; ctx.font='bold 15px system-ui';
+  ctx.fillText('EDITOR: arrastra colisiones · H salir · R restaurar',28,42);
   ctx.restore();
 }
 function platformContour(p){
