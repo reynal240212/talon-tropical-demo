@@ -211,6 +211,12 @@ function update(dt){
     player.y=stairY-player.h; player.vy=0; player.onGround=true;
   }
   const wasAir = !wasGrounded && player.vy > 100;
+  for(const p of platforms){
+    const overlapsX=player.x+player.w>p.x && player.x<p.x+p.w;
+    if(player.vy<0 && overlapsX && oldY>=p.y+p.h && player.y<=p.y+p.h){
+      player.y=p.y+p.h; player.vy=0;
+    }
+  }
   for(const p of platforms){ if(player.vy>=0 && oldY+player.h<=p.y && player.y+player.h>=p.y && player.x+player.w>p.x && player.x<p.x+p.w){ player.y=p.y-player.h; player.vy=0; player.onGround=true; } }
   if(wasAir && player.onGround){ player.landTime=0.12; player.jumpCount=0; player.doubleJumpTime=0; }
   if(player.landTime>0) player.landTime-=dt;
