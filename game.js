@@ -38,11 +38,15 @@ const platforms = [
 ];
 const player = {x:110,y:638,w:62,h:124,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,swordTime:0,swordOut:false,swordLatch:false,attackTime:0,attackStyle:0,hangTime:0,climbTime:0,hangPlatform:null};
 let last = performance.now();
-function resize(){ const dpr=Math.min(devicePixelRatio||1,2); canvas.width=innerWidth*dpr; canvas.height=innerHeight*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
-addEventListener('resize', resize); resize();
+function resize(){ const dpr=Math.min(devicePixelRatio||1,2); const height=Math.round(visualViewport?.height||innerHeight); document.documentElement.style.setProperty('--game-height',height+'px'); canvas.width=innerWidth*dpr; canvas.height=height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+addEventListener('resize', resize); visualViewport?.addEventListener('resize',resize); addEventListener('orientationchange',()=>setTimeout(resize,200)); resize();
+const fullscreenButton=document.querySelector('#fullscreen');
+fullscreenButton.addEventListener('click',async()=>{ try { if(document.fullscreenElement) await document.exitFullscreen(); else await document.querySelector('#game-wrap').requestFullscreen(); } catch { fullscreenButton.title='Usa Añadir a pantalla de inicio para ocultar la barra del navegador'; } });
+document.addEventListener('fullscreenchange',()=>{fullscreenButton.textContent=document.fullscreenElement?'⤢':'⛶';fullscreenButton.setAttribute('aria-label',document.fullscreenElement?'Salir de pantalla completa':'Activar pantalla completa');resize();});
 function pressed(...names){ return names.some(n=>keys.has(n)); }
 // Fill the whole screen on phones and wide monitors; crop only the far edges.
-function scale(){ return Math.max(innerWidth/world.w, innerHeight/world.h); }
+function gameHeight(){return canvas.clientHeight||innerHeight;}
+function scale(){ return Math.max(innerWidth/world.w, gameHeight()/world.h); }
 function cameraX(){ const s=scale(); const viewW=innerWidth/s; return Math.max(0,Math.min(world.w-viewW,player.x-viewW*.38)); }
 function drawWorld(image){ const s=scale(), cam=cameraX(); ctx.drawImage(image,-cam*s,0,world.w*s,world.h*s); }
 function drawAtmosphere(now){
@@ -119,7 +123,7 @@ function update(dt){
 }
 function render(){
   document.querySelector('.climb').hidden=player.hangTime<=0;
-  ctx.clearRect(0,0,innerWidth,innerHeight); drawWorld(bg); drawAtmosphere(performance.now());
+  ctx.clearRect(0,0,innerWidth,gameHeight()); drawWorld(bg); drawAtmosphere(performance.now());
   const s=scale(), cam=cameraX(), px=(player.x-cam)*s, py=player.y*s;
   const moving=Math.abs(player.vx)>0 && player.onGround;
   const crouching=pressed('ArrowDown','KeyS');
@@ -127,7 +131,7 @@ function render(){
   const activeSheet=player.climbTime>0?climbSheet:player.hangTime>0?hangSheet:player.attackTime>0?comboSheet:player.swordTime>0?swordSheet:jumping?jumpSheet:crouching?crouchSheet:player.running?runSheet:moving?sheet:idleSheet;
   if(activeSheet.complete){ const count=player.climbTime>0?12:(player.hangTime>0?8:(player.attackTime>0?12:(player.swordTime>0?8:(jumping?8:(crouching?6:(player.running||moving?8:6)))))); const fw=activeSheet.width/count; const jumpFrame=player.vy<-260?2:player.vy<0?4:player.vy>260?6:5; const frame=player.climbTime>0?Math.min(11,Math.floor(player.climbTime*11)):player.hangTime>0?Math.min(7,Math.floor(player.hangTime*9)):player.attackTime>0?player.attackStyle*4+Math.min(3,Math.floor(player.attackTime*9)):player.swordTime>0?Math.min(7,Math.floor(player.swordTime*11)):jumping?jumpFrame:crouching?Math.floor(performance.now()/140)%6:player.frame; const sx=player.running?.43:.36; const sy=player.running?.19:.17; ctx.save(); ctx.translate(px+player.w*s/2,py+player.h*s); ctx.scale(player.face*s*sx,s*sy); ctx.drawImage(activeSheet,frame*fw,0,fw,activeSheet.height,-fw/2,-activeSheet.height,fw,activeSheet.height); ctx.restore(); }
   if(player.swordOut && player.swordTime<=0 && player.attackTime<=0 && !moving && !jumping && !crouching && player.hangTime<=0 && player.climbTime<=0){ ctx.save(); ctx.translate(px+player.w*s/2,py+player.h*s); ctx.scale(player.face*s*.36,s*.17); const fw=swordSheet.width/8; ctx.clearRect(-fw/2*s*.36,-swordSheet.height*s*.17,fw*s*.36,swordSheet.height*s*.17); ctx.drawImage(swordSheet,7*fw,0,fw,swordSheet.height,-fw/2,-swordSheet.height,fw,swordSheet.height); ctx.restore(); }
-  ctx.fillStyle='#ffffffcc'; ctx.font='bold 15px system-ui'; ctx.fillText('Movimiento: '+(player.running?'CORRIENDO':Math.abs(player.vx)>0?'CAMINANDO':'QUIETO'),18,innerHeight-18);
+  ctx.fillStyle='#ffffffcc'; ctx.font='bold 15px system-ui'; ctx.fillText('Movimiento: '+(player.running?'CORRIENDO':Math.abs(player.vx)>0?'CAMINANDO':'QUIETO'),18,gameHeight()-18);
 }
 function loop(now){ const dt=Math.min((now-last)/1000,.033); last=now; update(dt); render(); requestAnimationFrame(loop); }
 Promise.all([new Promise(r=>bg.onload=r),new Promise(r=>sheet.onload=r),new Promise(r=>runSheet.onload=r),new Promise(r=>idleSheet.onload=r),new Promise(r=>swordSheet.onload=r),new Promise(r=>comboSheet.onload=r),new Promise(r=>crouchSheet.onload=r),new Promise(r=>jumpSheet.onload=r),new Promise(r=>hangSheet.onload=r),new Promise(r=>climbSheet.onload=r)]).then(()=>requestAnimationFrame(loop));
