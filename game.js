@@ -158,8 +158,25 @@ function drawCollisionDebug(){
   const s=scale(), cam=cameraX();
   ctx.save(); ctx.scale(s,s); ctx.translate(-cam,0);
   ctx.fillStyle='rgba(255,220,80,.12)'; ctx.strokeStyle='rgba(255,242,145,.8)'; ctx.lineWidth=2/s;
-  for(const p of platforms){ctx.fillRect(p.x,p.y,p.w,Math.min(8,p.h));ctx.strokeRect(p.x,p.y,p.w,p.h);}
+  for(const p of platforms){
+    const pts=platformContour(p); ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
+    for(const pt of pts.slice(1))ctx.lineTo(pt[0],pt[1]);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
   ctx.restore();
+}
+function platformContour(p){
+  const cut=Math.min(18,p.w*.08), shoulder=Math.min(12,p.h*.18);
+  return [[p.x,p.y],[p.x+p.w,p.y],[p.x+p.w,p.y+p.h-shoulder],[p.x+p.w-cut,p.y+p.h],[p.x+cut,p.y+p.h],[p.x,p.y+p.h-shoulder]];
+}
+function pointInPlatform(p,x,y){
+  const pts=platformContour(p); let inside=false;
+  for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+    const xi=pts[i][0], yi=pts[i][1], xj=pts[j][0], yj=pts[j][1];
+    const hit=((yi>y)!==(yj>y)) && x<(xj-xi)*(y-yi)/(yj-yi)+xi;
+    if(hit)inside=!inside;
+  }
+  return inside;
 }
 function drawPlatformVolume(){
   const s=scale(), cam=cameraX();
@@ -243,7 +260,7 @@ function update(dt){
   }
   if(player.hangTime<=0){
     for(const p of platforms){
-      const overlapsY=player.y<p.y+p.h && player.y+player.h>p.y;
+      const overlapsY=pointInPlatform(p,player.x+player.w/2,player.y+player.h*.25)||pointInPlatform(p,player.x+player.w/2,player.y+player.h*.75);
       if(!overlapsY)continue;
       if(player.vx>0 && oldX+player.w<=p.x && player.x+player.w>p.x){ player.x=p.x-player.w; player.vx=0; }
       if(player.vx<0 && oldX>=p.x+p.w && player.x<p.x+p.w){ player.x=p.x+p.w; player.vx=0; }
@@ -280,7 +297,7 @@ const FRAMES = {
   sword:  { scale: 124/550, list: [{x:6,w:247,cx:130,fy:640},{x:272,w:251,cx:131,fy:640},{x:541,w:251,cx:131,fy:640},{x:808,w:251,cx:131,fy:640},{x:1077,w:251,cx:127,fy:640},{x:1343,w:259,cx:128,fy:640},{x:1607,w:267,cx:131,fy:640},{x:1875,w:293,cx:130,fy:640}] },
   attack: { scale: 124/260 },
   hang:   { scale: 124/520 },
-  climb:  { scale: 124/380 }
+  climb:  { scale: 124/300 }
 };
 function render(){
   document.querySelector('.climb').hidden=player.hangTime<=0;
