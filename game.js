@@ -23,8 +23,15 @@ climbSheet.src = 'assets/explorador_subir_borde_master_v1.png';
 
 const keys = new Set();
 let runTapJump=false;
-addEventListener('keydown', e => { if(['ArrowLeft','ArrowRight','ArrowUp',' ','w','a','d'].includes(e.key)) e.preventDefault(); keys.add(e.code === ' ' ? 'Space' : e.key); });
-addEventListener('keyup', e => keys.delete(e.code === ' ' ? 'Space' : e.key));
+addEventListener('keydown', e => {
+  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' ','w','a','s','d','Shift','Control'].includes(e.key)) e.preventDefault();
+  keys.add(e.code === ' ' ? 'Space' : e.key);
+  if(e.code) keys.add(e.code);
+});
+addEventListener('keyup', e => {
+  keys.delete(e.code === ' ' ? 'Space' : e.key);
+  if(e.code) keys.delete(e.code);
+});
 document.querySelectorAll('[data-key]').forEach(btn => {
   const key = btn.dataset.key;
   if(btn.classList.contains('run')){
@@ -41,15 +48,15 @@ document.querySelectorAll('[data-key]').forEach(btn => {
 
 const world = { w: 1668, h: 941 };
 const platforms = [
-  {x:0,y:744,w:1668,h:197}, {x:205,y:505,w:270,h:70}, {x:335,y:286,w:255,h:65},
-  {x:625,y:406,w:400,h:76}, {x:1060,y:505,w:270,h:70}, {x:1100,y:286,w:270,h:70}, {x:1500,y:525,w:168,h:235}
+  {x:0,y:744,w:1668,h:197}, {x:205,y:534,w:265,h:70}, {x:330,y:312,w:225,h:65},
+  {x:625,y:440,w:395,h:76}, {x:1058,y:544,w:266,h:70}, {x:1095,y:300,w:275,h:70}, {x:1485,y:562,w:183,h:200}
 ];
 // Altura de cada peldaño de la escalera de piedra dibujada a la derecha.
 function stairHeight(x){
   if(x<1300||x>1560)return null;
-  if(x>=1500)return 525;
-  const heights=[715,685,655,625,595,565];
-  return heights[Math.min(5,Math.floor((x-1300)/34))];
+  if(x>=1485)return 562;
+  const heights=[714,684,654,624,594,564];
+  return heights[Math.min(5,Math.floor((x-1300)/31))];
 }
 const player = {x:110,y:620,w:62,h:124,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0};
 let last = performance.now();
@@ -107,10 +114,10 @@ function update(dt){
     else if(pressed('ArrowDown','KeyS') || pressed('KeyQ')){ player.hangTime=0; player.vy=80; }
     else { player.hangTime=Math.min(player.hangTime+dt,.85); player.vx=0; player.vy=0; player.y=p.y-65; return; }
   }
-  const attackPressed=pressed('KeyX','x','X');
+  const attackPressed=pressed('KeyX','x','X','KeyZ','z','Z','KeyJ','j','J');
   if(attackPressed && !player.attackLatch && player.swordOut && player.attackTime<=0 && player.swordTime<=0) player.attackTime=.001;
   player.attackLatch=attackPressed;
-  const swordPressed=pressed('KeyE','e','E');
+  const swordPressed=pressed('KeyE','e','E','KeyK','k','K');
   if(swordPressed && !player.swordLatch && player.swordTime<=0 && player.attackTime<=0){ player.swordOut=!player.swordOut; player.swordTime=.001; }
   player.swordLatch=swordPressed;
   if(player.swordTime>0) player.swordTime+=dt;
@@ -118,11 +125,11 @@ function update(dt){
   if(player.attackTime>=.64) player.attackTime=0;
   if(player.swordTime>=.64) player.swordTime=0;
   const left=pressed('ArrowLeft','a','KeyA'), right=pressed('ArrowRight','d','KeyD');
-  const running=pressed('ControlLeft','ControlRight');
-  const crouching=pressed('ArrowDown','KeyS') && player.onGround && player.hangTime<=0 && player.attackTime<=0 && player.swordTime<=0;
+  const running=pressed('ShiftLeft','ShiftRight','Shift','ControlLeft','ControlRight','Control');
+  const crouching=pressed('ArrowDown','KeyS','s','S') && player.onGround && player.hangTime<=0 && player.attackTime<=0 && player.swordTime<=0;
   if(crouching) player.crouchTime+=dt; else player.crouchTime=0;
   player.vx=(player.swordTime>0||player.attackTime>0||player.hangTime>0||crouching)?0:(right?(running?360:230):0)-(left?(running?360:230):0); if(player.vx) player.face=player.vx>0?1:-1;
-  if((pressed('Space','ArrowUp','w','KeyW')||runTapJump) && player.onGround){ player.vy=-520; player.onGround=false; }
+  if((pressed('Space','ArrowUp','w','KeyW','KeyC','c','C')||runTapJump) && player.onGround){ player.vy=-520; player.onGround=false; }
   runTapJump=false;
   const oldY=player.y, wasGrounded=player.onGround; player.x=Math.max(0,Math.min(world.w-player.w,player.x+player.vx*dt)); player.vy+=1250*dt; player.y+=player.vy*dt; player.onGround=false;
   if(player.vy>0 && !player.onGround){
