@@ -14,8 +14,8 @@ bg.src = 'assets/nivel_tropical_plataformas_v1.webp';
 sheet.src = 'assets/explorador_caminar_master_v1.webp';
 runSheet.src = 'assets/explorador_correr_master_v1.webp';
 idleSheet.src = 'assets/explorador_idle_master_v1.webp';
-swordSheet.src = 'assets/explorador_sacar_espada_8_frames.webp';
-comboSheet.src = 'assets/explorador_combo_espada_12_frames.webp';
+swordSheet.src = 'assets/explorador_espada_master_v2.webp';
+comboSheet.src = 'assets/explorador_ataque_master_v2.webp';
 crouchSheet.src = 'assets/explorador_agacharse_6_frames.webp';
 jumpSheet.src = 'assets/explorador_salto_master_v1.webp';
 hangSheet.src = 'assets/explorador_colgado_borde_8_frames.webp';
@@ -44,7 +44,7 @@ const platforms = [
   {x:0,y:760,w:1668,h:181}, {x:205,y:520,w:270,h:70}, {x:335,y:300,w:255,h:65},
   {x:625,y:420,w:400,h:76}, {x:1060,y:520,w:270,h:70}, {x:1100,y:300,w:270,h:70}, {x:1390,y:570,w:278,h:190}
 ];
-const player = {x:110,y:638,w:62,h:124,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,swordTime:0,swordOut:false,swordLatch:false,attackTime:0,attackStyle:0,hangTime:0,climbTime:0,hangPlatform:null};
+const player = {x:110,y:638,w:62,h:124,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,hangTime:0,climbTime:0,hangPlatform:null};
 let last = performance.now();
 function resize(){ const dpr=Math.min(devicePixelRatio||1,2); const height=Math.round(visualViewport?.height||innerHeight); document.documentElement.style.setProperty('--game-height',height+'px'); canvas.width=innerWidth*dpr; canvas.height=height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
 addEventListener('resize', resize); visualViewport?.addEventListener('resize',resize); addEventListener('orientationchange',()=>setTimeout(resize,200)); resize();
@@ -100,14 +100,16 @@ function update(dt){
     else if(pressed('ArrowDown','KeyS') || pressed('KeyQ')){ player.hangTime=0; player.vy=80; }
     else { player.hangTime=Math.min(player.hangTime+dt,.85); player.vx=0; player.vy=0; player.y=p.y-65; return; }
   }
-  if(pressed('KeyX') && player.swordOut && player.attackTime<=0 && player.swordTime<=0){ player.attackTime=0.001; player.attackStyle=(player.attackStyle+1)%3; }
+  const attackPressed=pressed('KeyX','x','X');
+  if(attackPressed && !player.attackLatch && player.swordOut && player.attackTime<=0 && player.swordTime<=0) player.attackTime=.001;
+  player.attackLatch=attackPressed;
   const swordPressed=pressed('KeyE','e','E');
   if(swordPressed && !player.swordLatch && player.swordTime<=0 && player.attackTime<=0){ player.swordOut=!player.swordOut; player.swordTime=.001; }
   player.swordLatch=swordPressed;
   if(player.swordTime>0) player.swordTime+=dt;
   if(player.attackTime>0) player.attackTime+=dt;
-  if(player.attackTime>0.45) player.attackTime=0;
-  if(player.swordTime>0.75) player.swordTime=0;
+  if(player.attackTime>=.64) player.attackTime=0;
+  if(player.swordTime>=.64) player.swordTime=0;
   const left=pressed('ArrowLeft','a','KeyA'), right=pressed('ArrowRight','d','KeyD');
   const running=pressed('ControlLeft','ControlRight');
   player.vx=(player.swordTime>0||player.attackTime>0||player.hangTime>0)?0:(right?(running?360:230):0)-(left?(running?360:230):0); if(player.vx) player.face=player.vx>0?1:-1;
@@ -137,9 +139,18 @@ function render(){
   const moving=Math.abs(player.vx)>0 && player.onGround;
   const crouching=pressed('ArrowDown','KeyS');
   const jumping=!player.onGround;
-  const activeSheet=player.climbTime>0?climbSheet:player.hangTime>0?hangSheet:player.attackTime>0?comboSheet:player.swordTime>0?swordSheet:jumping?jumpSheet:crouching?crouchSheet:player.running?runSheet:moving?sheet:idleSheet;
-  if(activeSheet.complete){ const count=player.climbTime>0?12:(player.hangTime>0?8:(player.attackTime>0?12:(player.swordTime>0?8:(jumping?8:(crouching?6:(player.running||moving?8:6)))))); const fw=activeSheet.width/count; const jumpFrame=player.vy<-260?2:player.vy<0?4:player.vy>260?6:5; const frame=player.climbTime>0?Math.min(11,Math.floor(player.climbTime*11)):player.hangTime>0?Math.min(7,Math.floor(player.hangTime*9)):player.attackTime>0?player.attackStyle*4+Math.min(3,Math.floor(player.attackTime*9)):player.swordTime>0?Math.min(7,Math.floor(player.swordTime*11)):jumping?jumpFrame:crouching?Math.floor(performance.now()/140)%6:player.frame; const sx=player.running?.43:.36; const sy=player.running?.19:.17; ctx.save(); ctx.translate(px+player.w*s/2,py+player.h*s); ctx.scale(player.face*s*sx,s*sy); ctx.drawImage(activeSheet,frame*fw,0,fw,activeSheet.height,-fw/2,-activeSheet.height,fw,activeSheet.height); ctx.restore(); }
-  if(player.swordOut && player.swordTime<=0 && player.attackTime<=0 && !moving && !jumping && !crouching && player.hangTime<=0 && player.climbTime<=0){ ctx.save(); ctx.translate(px+player.w*s/2,py+player.h*s); ctx.scale(player.face*s*.36,s*.17); const fw=swordSheet.width/8; ctx.clearRect(-fw/2*s*.36,-swordSheet.height*s*.17,fw*s*.36,swordSheet.height*s*.17); ctx.drawImage(swordSheet,7*fw,0,fw,swordSheet.height,-fw/2,-swordSheet.height,fw,swordSheet.height); ctx.restore(); }
+  let activeSheet, count, frame;
+  if(player.climbTime>0){activeSheet=climbSheet;count=12;frame=Math.min(11,Math.floor(player.climbTime*11));}
+  else if(player.hangTime>0){activeSheet=hangSheet;count=8;frame=Math.min(7,Math.floor(player.hangTime*9));}
+  else if(player.attackTime>0){activeSheet=comboSheet;count=8;frame=Math.min(7,Math.floor(player.attackTime/.64*8));}
+  else if(player.swordTime>0){activeSheet=swordSheet;count=8;const step=Math.min(7,Math.floor(player.swordTime/.64*8));frame=player.swordOut?step:7-step;}
+  else if(player.swordOut){activeSheet=swordSheet;count=8;frame=7;}
+  else if(jumping){activeSheet=jumpSheet;count=8;frame=player.vy<-260?2:player.vy<0?4:player.vy>260?6:5;}
+  else if(crouching){activeSheet=crouchSheet;count=6;frame=3;}
+  else if(player.running){activeSheet=runSheet;count=8;frame=player.frame;}
+  else if(moving){activeSheet=sheet;count=8;frame=player.frame;}
+  else {activeSheet=idleSheet;count=6;frame=player.frame;}
+  if(activeSheet.complete && activeSheet.width){const fw=activeSheet.width/count;ctx.save();ctx.translate(px+player.w*s/2,py+player.h*s);ctx.scale(player.face*s*.36,s*.17);ctx.drawImage(activeSheet,frame*fw,0,fw,activeSheet.height,-fw/2,-activeSheet.height,fw,activeSheet.height);ctx.restore();}
   ctx.fillStyle='#ffffffcc'; ctx.font='bold 15px system-ui'; ctx.fillText('Movimiento: '+(player.running?'CORRIENDO':Math.abs(player.vx)>0?'CAMINANDO':'QUIETO'),18,gameHeight()-18);
 }
 function loop(now){ const dt=Math.min((now-last)/1000,.033); last=now; update(dt); render(); requestAnimationFrame(loop); }
