@@ -31,9 +31,11 @@ climbSheet.src = 'assets/explorador_subir_personaje_v2.png?v=1';
 const keyboardKeys = new Set();
 const touchKeys = new Set();
 let runTapJump=false;
+let collisionDebug=false;
 addEventListener('keydown', e => {
   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','ControlLeft','ControlRight','KeyZ','KeyX','KeyE','KeyC'].includes(e.code)) e.preventDefault();
   if(e.code) keyboardKeys.add(e.code);
+  if(e.code==='KeyH') collisionDebug=!collisionDebug;
 });
 addEventListener('keyup', e => {
   if(e.code) keyboardKeys.delete(e.code);
@@ -149,6 +151,14 @@ function drawAtmosphere(now){
   }
   ctx.restore();
 }
+function drawCollisionDebug(){
+  if(!collisionDebug)return;
+  const s=scale(), cam=cameraX();
+  ctx.save(); ctx.scale(s,s); ctx.translate(-cam,0);
+  ctx.fillStyle='rgba(255,220,80,.12)'; ctx.strokeStyle='rgba(255,242,145,.8)'; ctx.lineWidth=2/s;
+  for(const p of platforms){ctx.fillRect(p.x,p.y,p.w,Math.min(8,p.h));ctx.strokeRect(p.x,p.y,p.w,p.h);}
+  ctx.restore();
+}
 function update(dt){
   const wakeInput=pressed('ArrowLeft','ArrowRight','KeyA','KeyD','Space','ArrowUp','ArrowDown','KeyW','KeyS','KeyC','KeyE','KeyX','KeyZ','ControlLeft','ControlRight');
   if(player.sleepTime>0){
@@ -236,7 +246,7 @@ const FRAMES = {
 };
 function render(){
   document.querySelector('.climb').hidden=player.hangTime<=0;
-  ctx.clearRect(0,0,innerWidth,gameHeight()); drawWorld(bg); drawAtmosphere(performance.now());
+  ctx.clearRect(0,0,innerWidth,gameHeight()); drawWorld(bg); drawAtmosphere(performance.now()); drawCollisionDebug();
   const s=scale(), cam=cameraX(), px=(player.x-cam)*s, py=player.y*s;
   const moving=Math.abs(player.vx)>0 && player.onGround;
   const crouching=pressed('ArrowDown','KeyS');
