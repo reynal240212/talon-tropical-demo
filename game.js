@@ -224,7 +224,7 @@ const FRAMES = {
   // Los anchos terminan antes del siguiente fotograma para evitar que se filtre su dibujo.
   run:    { scale: 124/564, list: [{x:6,w:285,cx:139,fy:642},{x:295,w:232,cx:121,fy:642},{x:531,w:288,cx:154,fy:642},{x:823,w:283,cx:135,fy:642},{x:1110,w:264,cx:112,fy:642},{x:1378,w:234,cx:119,fy:642},{x:1616,w:286,cx:150,fy:642},{x:1906,w:258,cx:128,fy:642}] },
   jump:   { scale: 124/540, list: [{x:30,w:259,cx:130,fy:662},{x:312,w:225,cx:110,fy:662},{x:535,w:275,cx:145,fy:662},{x:826,w:269,cx:127,fy:662},{x:1097,w:259,cx:130,fy:662},{x:1382,w:233,cx:115,fy:662},{x:1646,w:241,cx:124,fy:662},{x:1910,w:231,cx:120,fy:662}] },
-  doubleJump: { scale: 124/624 },
+  doubleJump: { scale: 124/470 },
   sleep: { scale: 124/360 },
   sword:  { scale: 124/550, list: [{x:6,w:247,cx:130,fy:640},{x:272,w:251,cx:131,fy:640},{x:541,w:251,cx:131,fy:640},{x:808,w:251,cx:131,fy:640},{x:1077,w:251,cx:127,fy:640},{x:1343,w:259,cx:128,fy:640},{x:1607,w:267,cx:131,fy:640},{x:1875,w:293,cx:130,fy:640}] },
   attack: { scale: 124/260 },
