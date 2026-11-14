@@ -25,8 +25,8 @@ jumpSheet.src = 'assets/explorador_salto_master_v1.webp';
 doubleJumpSheet.src = 'assets/explorador_doble_salto_master_v1.png?v=2';
 doubleJumpSheet.onerror = () => { doubleJumpSheet.src = 'assets/explorador_salto_master_v1.webp'; };
 sleepSheet.src = 'assets/explorador_dormir_master_v1.png?v=1';
-hangSheet.src = 'assets/explorador_colgado_borde_8_frames.webp';
-climbSheet.src = 'assets/explorador_subir_borde_master_v1.png';
+hangSheet.src = 'assets/explorador_colgado_personaje_v2.png?v=1';
+climbSheet.src = 'assets/explorador_subir_personaje_v2.png?v=1';
 
 const keyboardKeys = new Set();
 const touchKeys = new Set();
@@ -226,10 +226,12 @@ const FRAMES = {
   jump:   { scale: 124/540, list: [{x:30,w:259,cx:130,fy:662},{x:312,w:225,cx:110,fy:662},{x:535,w:275,cx:145,fy:662},{x:826,w:269,cx:127,fy:662},{x:1097,w:259,cx:130,fy:662},{x:1382,w:233,cx:115,fy:662},{x:1646,w:241,cx:124,fy:662},{x:1910,w:231,cx:120,fy:662}] },
   doubleJump: { scale: 124/470 },
   sleep: { scale: 124/360 },
+  hangOnly: { scale: 124/420 },
+  climbOnly: { scale: 124/470 },
   sword:  { scale: 124/550, list: [{x:6,w:247,cx:130,fy:640},{x:272,w:251,cx:131,fy:640},{x:541,w:251,cx:131,fy:640},{x:808,w:251,cx:131,fy:640},{x:1077,w:251,cx:127,fy:640},{x:1343,w:259,cx:128,fy:640},{x:1607,w:267,cx:131,fy:640},{x:1875,w:293,cx:130,fy:640}] },
   attack: { scale: 124/260 },
-  hang:   { scale: 0.22,    list: [{x:22,w:273,cx:117,fy:578},{x:302,w:263,cx:108,fy:542},{x:573,w:255,cx:111,fy:568},{x:835,w:253,cx:119,fy:582},{x:1098,w:255,cx:117,fy:616},{x:1362,w:279,cx:133,fy:582},{x:1654,w:239,cx:98,fy:488},{x:1911,w:241,cx:117,fy:420}] },
-  climb:  { scale: 0.22,    list: [{x:4,w:185,cx:106,fy:654},{x:191,w:169,cx:100,fy:654},{x:366,w:169,cx:100,fy:654},{x:550,w:159,cx:93,fy:654},{x:730,w:153,cx:91,fy:654},{x:906,w:159,cx:97,fy:654},{x:1082,w:171,cx:103,fy:654},{x:1263,w:177,cx:103,fy:654},{x:1448,w:179,cx:105,fy:654},{x:1640,w:151,cx:90,fy:654},{x:1825,w:147,cx:86,fy:654},{x:2000,w:155,cx:86,fy:654}] }
+  hang:   { scale: 124/420 },
+  climb:  { scale: 124/470 }
 };
 function render(){
   document.querySelector('.climb').hidden=player.hangTime<=0;
@@ -261,10 +263,11 @@ function render(){
     ctx.save();
     ctx.translate(px+player.w*s/2, py+player.h*s);
     ctx.scale(player.face*s*sc, s*sc);
-    if(animKey==='swordRun' || animKey==='doubleJump' || animKey==='sleep' || animKey==='attack'){
-      const count=animKey==='sleep'?6:animKey==='attack'?12:8, fw=activeSheet.width/count;
-      const inset=animKey==='sleep'?4:animKey==='attack'?5:0;
-      ctx.drawImage(activeSheet, frame*fw+inset, 0, fw-inset*2, fh, -fw/2+inset, animKey==='sleep'?-520:animKey==='attack'?-520:-624, fw-inset*2, fh);
+    if(animKey==='swordRun' || animKey==='doubleJump' || animKey==='sleep' || animKey==='attack' || animKey==='hang' || animKey==='climb'){
+      const count=animKey==='sleep'?6:animKey==='attack'?12:animKey==='climb'?12:8, fw=activeSheet.width/count;
+      const inset=animKey==='sleep'?4:animKey==='attack'?5:animKey==='hang'||animKey==='climb'?4:0;
+      const drawY=animKey==='sleep'?-520:animKey==='attack'?-520:animKey==='hang'?-430:animKey==='climb'?-520:-624;
+      ctx.drawImage(activeSheet, frame*fw+inset, 0, fw-inset*2, fh, -fw/2+inset, drawY, fw-inset*2, fh);
     }else ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
     ctx.restore();
   }
