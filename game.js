@@ -286,7 +286,6 @@ function render(){
   document.querySelector('.climb').hidden=player.hangTime<=0;
   ctx.clearRect(0,0,innerWidth,gameHeight()); drawWorld(bg); drawAtmosphere(performance.now()); drawPlatformVolume(); drawPlatformTexture(); drawCollisionDebug();
   const s=scale(), cam=cameraX(), px=(player.x-cam)*s, py=player.y*s;
-  window.__tropicalCamera={scale:s,cameraX:cam,viewportWidth:innerWidth,viewportHeight:gameHeight()};
   const moving=Math.abs(player.vx)>0 && player.onGround;
   const crouching=pressed('ArrowDown','KeyS');
   const jumping=!player.onGround;
