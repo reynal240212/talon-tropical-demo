@@ -42,8 +42,15 @@ document.querySelectorAll('[data-key]').forEach(btn => {
 const world = { w: 1668, h: 941 };
 const platforms = [
   {x:0,y:760,w:1668,h:181}, {x:205,y:520,w:270,h:70}, {x:335,y:300,w:255,h:65},
-  {x:625,y:420,w:400,h:76}, {x:1060,y:520,w:270,h:70}, {x:1100,y:300,w:270,h:70}, {x:1390,y:570,w:278,h:190}
+  {x:625,y:420,w:400,h:76}, {x:1060,y:520,w:270,h:70}, {x:1100,y:300,w:270,h:70}, {x:1500,y:540,w:168,h:220}
 ];
+// Altura de cada peldaño de la escalera de piedra dibujada a la derecha.
+function stairHeight(x){
+  if(x<1300||x>1560)return null;
+  if(x>=1500)return 540;
+  const heights=[730,700,670,640,610,580];
+  return heights[Math.min(5,Math.floor((x-1300)/34))];
+}
 const player = {x:110,y:638,w:62,h:124,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,hangTime:0,climbTime:0,hangPlatform:null};
 let last = performance.now();
 function resize(){ const dpr=Math.min(devicePixelRatio||1,2); const height=Math.round(visualViewport?.height||innerHeight); document.documentElement.style.setProperty('--game-height',height+'px'); canvas.width=innerWidth*dpr; canvas.height=height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
@@ -115,7 +122,7 @@ function update(dt){
   player.vx=(player.swordTime>0||player.attackTime>0||player.hangTime>0)?0:(right?(running?360:230):0)-(left?(running?360:230):0); if(player.vx) player.face=player.vx>0?1:-1;
   if((pressed('Space','ArrowUp','w','KeyW')||runTapJump) && player.onGround){ player.vy=-520; player.onGround=false; }
   runTapJump=false;
-  const oldY=player.y; player.x=Math.max(0,Math.min(world.w-player.w,player.x+player.vx*dt)); player.vy+=1250*dt; player.y+=player.vy*dt; player.onGround=false;
+  const oldY=player.y, wasGrounded=player.onGround; player.x=Math.max(0,Math.min(world.w-player.w,player.x+player.vx*dt)); player.vy+=1250*dt; player.y+=player.vy*dt; player.onGround=false;
   if(player.vy>0 && !player.onGround){
     for(const p of platforms){
       const nearLeft=Math.abs((player.x+player.w)-p.x)<18 && player.x+player.w>=p.x-18 && player.x<p.x;
@@ -125,7 +132,11 @@ function update(dt){
       }
     }
   }
-  for(const p of platforms){ if(player.vy>=0 && oldY+player.h<=p.y && player.y+player.h>=p.y && player.x+player.w>p.x && player.x<p.x+p.w){ player.y=p.y-player.h; player.vy=0; player.onGround=true; } }
+  const stairY=stairHeight(player.x+player.w/2);
+  if(stairY!==null && player.vy>=0 && (wasGrounded?Math.abs(oldY+player.h-stairY)<=50:oldY+player.h<=stairY) && player.y+player.h>=stairY-50){
+    player.y=stairY-player.h; player.vy=0; player.onGround=true;
+  }
+  for(const p of platforms){ if(player.vy>=0 && oldY+player.h<=p.y && player.y+player.h>=p.y && player.x+player.w>p.x && player.x<p.x+p.w && (!player.onGround||p.y<player.y+player.h)){ player.y=p.y-player.h; player.vy=0; player.onGround=true; } }
   if(player.y>world.h+100){player.x=110;player.y=600;player.vy=0;}
   if(Math.abs(player.vx)>0 && player.onGround){ player.anim+=dt*(running?14:9); player.frame=Math.floor(player.anim)%8; }
   else if(player.onGround){ player.anim+=dt*3; player.frame=Math.floor(player.anim)%6; }
