@@ -61,18 +61,18 @@ const VIEW_BASE = { w: 1668, h: 941 };
 const MASTER_CHARACTER = { w: 62, h: 124 };
 const world = { w: 2500, h: VIEW_BASE.h };
 const platforms = [
-  {x:0,y:744,w:2500,h:197}, {x:205,y:524,w:265,h:70}, {x:330,y:300,w:225,h:65},
-  {x:625,y:425,w:395,h:76}, {x:1058,y:535,w:266,h:70}, {x:1095,y:290,w:275,h:70}, {x:1485,y:545,w:183,h:217},
-  {x:1710,y:515,w:260,h:70}, {x:1950,y:350,w:285,h:70}, {x:2200,y:515,w:250,h:70}, {x:2320,y:300,w:180,h:70}
+  {x:0,y:650,w:2500,h:291}, {x:205,y:470,w:265,h:70}, {x:330,y:255,w:225,h:65},
+  {x:625,y:370,w:395,h:76}, {x:1058,y:470,w:266,h:70}, {x:1095,y:255,w:275,h:70}, {x:1485,y:500,w:183,h:217},
+  {x:1710,y:470,w:260,h:70}, {x:1950,y:300,w:285,h:70}, {x:2200,y:470,w:250,h:70}, {x:2320,y:255,w:180,h:70}
 ];
 // Altura de cada peldaño de la escalera de piedra dibujada a la derecha.
 function stairHeight(x){
   if(x<1300||x>1560)return null;
-  if(x>=1485)return 545;
-  const heights=[714,684,654,624,594,564];
+  if(x>=1485)return 500;
+  const heights=[620,590,560,530,500,480];
   return heights[Math.min(5,Math.floor((x-1300)/31))];
 }
-const player = {x:110,y:620,w:MASTER_CHARACTER.w,h:MASTER_CHARACTER.h,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,idleTime:0,sleepTime:0,snoreTime:0,jumpCount:0,jumpLatch:false,doubleJumpTime:0,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0};
+const player = {x:110,y:500,w:MASTER_CHARACTER.w,h:MASTER_CHARACTER.h,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,idleTime:0,sleepTime:0,snoreTime:0,jumpCount:0,jumpLatch:false,doubleJumpTime:0,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0};
 let last = performance.now();
 function resize(){ const dpr=Math.min(devicePixelRatio||1,2); const height=Math.round(visualViewport?.height||innerHeight); document.documentElement.style.setProperty('--game-height',height+'px'); canvas.width=innerWidth*dpr; canvas.height=height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
 addEventListener('resize', resize); visualViewport?.addEventListener('resize',resize); addEventListener('orientationchange',()=>setTimeout(resize,200)); resize();
@@ -196,13 +196,6 @@ function drawPlatformVolume(){
   }
   ctx.restore();
 }
-function drawPlatformTexture(){
-  if(!platformTexture.complete || !platformTexture.width)return;
-  const p=platforms[3], s=scale(), cam=cameraX();
-  ctx.save(); ctx.globalAlpha=.98;
-  ctx.drawImage(platformTexture,(p.x-cam)*s,p.y*s,p.w*s,105*s);
-  ctx.restore();
-}
 function update(dt){
   const wakeInput=pressed('ArrowLeft','ArrowRight','KeyA','KeyD','Space','ArrowUp','ArrowDown','KeyW','KeyS','KeyC','KeyE','KeyX','KeyZ','ControlLeft','ControlRight');
   if(player.sleepTime>0){
@@ -272,7 +265,7 @@ function update(dt){
   for(const p of platforms){ if(player.vy>=0 && oldY+player.h<=p.y && player.y+player.h>=p.y && player.x+player.w>p.x && player.x<p.x+p.w){ player.y=p.y-player.h; player.vy=0; player.onGround=true; } }
   if(wasAir && player.onGround){ player.landTime=0.12; player.jumpCount=0; player.doubleJumpTime=0; }
   if(player.landTime>0) player.landTime-=dt;
-  if(player.y>world.h+100){player.x=110;player.y=600;player.vy=0;}
+  if(player.y>world.h+100){player.x=110;player.y=500;player.vy=0;}
   if(Math.abs(player.vx)>0 && player.onGround){ player.anim+=dt*(running?14:9); player.frame=Math.floor(player.anim)%8; }
   else if(player.onGround){ player.anim+=dt*5; player.frame=Math.floor(player.anim)%6; }
   else { player.anim=0; player.frame=0; }
@@ -304,7 +297,7 @@ const FRAMES = {
 };
 function render(){
   document.querySelector('.climb').hidden=player.hangTime<=0;
-  ctx.clearRect(0,0,innerWidth,gameHeight()); drawWorld(bg); drawAtmosphere(performance.now()); drawPlatformVolume(); drawPlatformTexture(); drawCollisionDebug();
+  ctx.clearRect(0,0,innerWidth,gameHeight()); drawWorld(bg); drawAtmosphere(performance.now()); drawPlatformVolume(); drawCollisionDebug();
   const s=scale(), cam=cameraX(), px=(player.x-cam)*s, py=player.y*s;
   const moving=Math.abs(player.vx)>0 && player.onGround;
   const crouching=pressed('ArrowDown','KeyS');
