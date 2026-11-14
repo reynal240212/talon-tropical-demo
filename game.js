@@ -176,7 +176,8 @@ function update(dt){
   const running=pressed('ShiftLeft','ShiftRight','Shift','ControlLeft','ControlRight','Control');
   const crouching=pressed('ArrowDown','KeyS','s','S') && player.onGround && player.hangTime<=0 && player.attackTime<=0 && player.swordTime<=0;
   if(crouching) player.crouchTime+=dt; else player.crouchTime=0;
-  player.vx=(player.swordTime>0||player.attackTime>0||player.hangTime>0||crouching)?0:(right?(running?360:230):0)-(left?(running?360:230):0); if(player.vx) player.face=player.vx>0?1:-1;
+  const attackSpeed=player.attackTime>0?150:running?360:230;
+  player.vx=(player.swordTime>0||player.hangTime>0||crouching)?0:(right?attackSpeed:0)-(left?attackSpeed:0); if(player.vx) player.face=player.vx>0?1:-1;
   const jumpPressed=pressed('Space','ArrowUp','w','KeyW','KeyC','c','C')||runTapJump;
   if(jumpPressed && !player.jumpLatch){
     if(player.onGround){ player.vy=-520; player.onGround=false; player.jumpCount=1; }
