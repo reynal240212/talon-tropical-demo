@@ -57,7 +57,9 @@ document.querySelectorAll('[data-key]').forEach(btn => {
   btn.addEventListener('pointerdown', e => { btn.setPointerCapture(e.pointerId); down(e); }); btn.addEventListener('pointerup', up); btn.addEventListener('pointercancel', up); btn.addEventListener('lostpointercapture', up);
 });
 
-const world = { w: 2500, h: 941 };
+const VIEW_BASE = { w: 1668, h: 941 };
+const MASTER_CHARACTER = { w: 62, h: 124 };
+const world = { w: 2500, h: VIEW_BASE.h };
 const platforms = [
   {x:0,y:744,w:2500,h:197}, {x:205,y:524,w:265,h:70}, {x:330,y:300,w:225,h:65},
   {x:625,y:425,w:395,h:76}, {x:1058,y:535,w:266,h:70}, {x:1095,y:290,w:275,h:70}, {x:1485,y:545,w:183,h:217},
@@ -70,7 +72,7 @@ function stairHeight(x){
   const heights=[714,684,654,624,594,564];
   return heights[Math.min(5,Math.floor((x-1300)/31))];
 }
-const player = {x:110,y:620,w:62,h:124,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,idleTime:0,sleepTime:0,snoreTime:0,jumpCount:0,jumpLatch:false,doubleJumpTime:0,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0};
+const player = {x:110,y:620,w:MASTER_CHARACTER.w,h:MASTER_CHARACTER.h,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,idleTime:0,sleepTime:0,snoreTime:0,jumpCount:0,jumpLatch:false,doubleJumpTime:0,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0};
 let last = performance.now();
 function resize(){ const dpr=Math.min(devicePixelRatio||1,2); const height=Math.round(visualViewport?.height||innerHeight); document.documentElement.style.setProperty('--game-height',height+'px'); canvas.width=innerWidth*dpr; canvas.height=height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
 addEventListener('resize', resize); visualViewport?.addEventListener('resize',resize); addEventListener('orientationchange',()=>setTimeout(resize,200)); resize();
@@ -116,7 +118,7 @@ addEventListener('keydown',e=>{
 function pressed(...names){ return names.some(n=>keyboardKeys.has(n)||touchKeys.has(n)); }
 // Fill the whole screen on phones and wide monitors; crop only the far edges.
 function gameHeight(){return canvas.clientHeight||innerHeight;}
-function scale(){ return Math.max(innerWidth/world.w, gameHeight()/world.h); }
+function scale(){ return Math.max(innerWidth/VIEW_BASE.w, gameHeight()/VIEW_BASE.h); }
 function cameraX(){ const s=scale(); const viewW=innerWidth/s; return Math.max(0,Math.min(world.w-viewW,player.x-viewW*.38)); }
 function drawWorld(image){ const s=scale(), cam=cameraX(); ctx.drawImage(image,-cam*s,0,world.w*s,world.h*s); }
 function drawAtmosphere(now){
