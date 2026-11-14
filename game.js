@@ -44,7 +44,7 @@ addEventListener('keydown', e => {
   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','ControlLeft','ControlRight','KeyZ','KeyX','KeyE','KeyC'].includes(e.code)) e.preventDefault();
   if(e.code) keyboardKeys.add(e.code);
   if(e.code==='KeyH'){ collisionEditor=!collisionEditor; collisionDebug=collisionEditor; }
-  if(e.code==='KeyR' && collisionEditor){ localStorage.removeItem('talon-platform-collisions'); location.reload(); }
+  if(e.code==='KeyR' && collisionEditor){ localStorage.removeItem('talon-platform-collisions'); localStorage.removeItem('talon-stair-collisions'); location.reload(); }
 });
 addEventListener('keyup', e => {
   if(e.code) keyboardKeys.delete(e.code);
@@ -72,6 +72,9 @@ const platforms = [
   {x:625,y:425,w:395,h:76}, {x:1058,y:470,w:266,h:70}, {x:1095,y:290,w:275,h:70}, {x:1485,y:500,w:183,h:217},
   {x:1710,y:470,w:260,h:70}, {x:1950,y:350,w:285,h:70}, {x:2200,y:470,w:250,h:70}, {x:2320,y:300,w:180,h:70}
 ];
+const stairSteps=[{x:1300,y:620,w:31,h:321},{x:1331,y:590,w:31,h:351},{x:1362,y:560,w:31,h:381},{x:1393,y:530,w:31,h:411},{x:1424,y:500,w:31,h:441},{x:1455,y:480,w:30,h:461}];
+const savedStairs=localStorage.getItem('talon-stair-collisions');
+if(savedStairs){try{const saved=JSON.parse(savedStairs);if(Array.isArray(saved)&&saved.length===stairSteps.length)saved.forEach((p,i)=>Object.assign(stairSteps[i],p));}catch{}}
 if(savedPlatforms){
   try{
     const saved=JSON.parse(savedPlatforms);
@@ -101,6 +104,7 @@ canvas.addEventListener('pointerdown',e=>{
     }
     return false;
   });
+  if(!dragPlatform){ dragPlatform=[...stairSteps].reverse().find(p=>q.x>=p.x&&q.x<=p.x+p.w&&q.y>=p.y&&q.y<=p.y+p.h); if(dragPlatform) resizeMode='move'; }
   selectedPlatform=dragPlatform;
   if(dragPlatform){ dragOffsetX=q.x-dragPlatform.x; dragOffsetY=q.y-dragPlatform.y; canvas.setPointerCapture(e.pointerId); e.preventDefault(); }
 });
@@ -121,14 +125,14 @@ canvas.addEventListener('pointermove',e=>{
 canvas.addEventListener('pointerup',e=>{
   if(!dragPlatform)return;
   localStorage.setItem('talon-platform-collisions',JSON.stringify(platforms));
+  if(stairSteps.includes(dragPlatform)) localStorage.setItem('talon-stair-collisions',JSON.stringify(stairSteps));
   dragPlatform=null; resizeMode=null; e.preventDefault();
 });
 // Altura de cada peldaño de la escalera de piedra dibujada a la derecha.
 function stairHeight(x){
   if(x<1300||x>1560)return null;
   if(x>=1485)return 500;
-  const heights=[620,590,560,530,500,480];
-  return heights[Math.min(5,Math.floor((x-1300)/31))];
+  return stairSteps.find(p=>x>=p.x&&x<p.x+p.w)?.y??null;
 }
 const player = {x:110,y:500,w:MASTER_CHARACTER.w,h:MASTER_CHARACTER.h,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,idleTime:0,sleepTime:0,snoreTime:0,jumpCount:0,jumpLatch:false,doubleJumpTime:0,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0};
 let last = performance.now();
@@ -230,6 +234,7 @@ function drawCollisionDebug(){
   // Colisión especial de la escalera: se muestra como una guía por peldaño.
   ctx.strokeStyle='rgba(255,150,70,.95)'; ctx.fillStyle='rgba(255,150,70,.9)'; ctx.lineWidth=3/s;
   for(let x=1300;x<1485;x+=31){ const y=stairHeight(x+15); if(y===null)continue; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(Math.min(x+31,1485),y); ctx.stroke(); ctx.fillRect(x+3,y-18,7,7); }
+  for(const p of stairSteps){ ctx.strokeRect(p.x,p.y,p.w,p.h); ctx.beginPath(); ctx.arc(p.x+p.w,p.y+p.h,7/s,0,Math.PI*2); ctx.fill(); }
   ctx.fillStyle='rgba(255,230,180,.95)'; ctx.font='bold 13px system-ui'; ctx.fillText('ESCALERA',1305,462);
   ctx.setTransform(1,0,0,1,0,0);
   ctx.fillStyle='rgba(8,20,24,.82)'; ctx.fillRect(16,16,360,42);
