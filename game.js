@@ -262,7 +262,8 @@ function render(){
     ctx.scale(player.face*s*sc, s*sc);
     if(animKey==='swordRun' || animKey==='doubleJump' || animKey==='sleep'){
       const count=animKey==='sleep'?6:8, fw=activeSheet.width/count;
-      ctx.drawImage(activeSheet, frame*fw, 0, fw, fh, -fw/2, animKey==='sleep'?-520:-624, fw, fh);
+      const inset=animKey==='sleep'?4:0;
+      ctx.drawImage(activeSheet, frame*fw+inset, 0, fw-inset*2, fh, -fw/2+inset, animKey==='sleep'?-520:-624, fw-inset*2, fh);
     }else ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
     ctx.restore();
   }
