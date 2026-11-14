@@ -55,13 +55,13 @@ document.querySelectorAll('[data-key]').forEach(btn => {
 
 const world = { w: 1668, h: 941 };
 const platforms = [
-  {x:0,y:744,w:1668,h:197}, {x:205,y:534,w:265,h:70}, {x:330,y:312,w:225,h:65},
-  {x:625,y:440,w:395,h:76}, {x:1058,y:544,w:266,h:70}, {x:1095,y:300,w:275,h:70}, {x:1485,y:562,w:183,h:200}
+  {x:0,y:744,w:1668,h:197}, {x:205,y:524,w:265,h:70}, {x:330,y:300,w:225,h:65},
+  {x:625,y:425,w:395,h:76}, {x:1058,y:535,w:266,h:70}, {x:1095,y:290,w:275,h:70}, {x:1485,y:545,w:183,h:217}
 ];
 // Altura de cada peldaño de la escalera de piedra dibujada a la derecha.
 function stairHeight(x){
   if(x<1300||x>1560)return null;
-  if(x>=1485)return 562;
+  if(x>=1485)return 545;
   const heights=[714,684,654,624,594,564];
   return heights[Math.min(5,Math.floor((x-1300)/31))];
 }
