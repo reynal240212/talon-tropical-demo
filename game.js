@@ -22,10 +22,18 @@ hangSheet.src = 'assets/explorador_colgado_borde_8_frames.webp';
 climbSheet.src = 'assets/explorador_subir_borde_master_v1.png';
 
 const keys = new Set();
+let runTapJump=false;
 addEventListener('keydown', e => { if(['ArrowLeft','ArrowRight','ArrowUp',' ','w','a','d'].includes(e.key)) e.preventDefault(); keys.add(e.code === ' ' ? 'Space' : e.key); });
 addEventListener('keyup', e => keys.delete(e.code === ' ' ? 'Space' : e.key));
 document.querySelectorAll('[data-key]').forEach(btn => {
   const key = btn.dataset.key;
+  if(btn.classList.contains('run')){
+    let timer=null, holding=false, pointer=null;
+    btn.addEventListener('pointerdown',e=>{e.preventDefault();btn.setPointerCapture(e.pointerId);pointer=e.pointerId;holding=false;timer=setTimeout(()=>{holding=true;keys.add('ControlLeft');btn.classList.add('held');},230);});
+    const finish=e=>{if(pointer!==e.pointerId)return;e.preventDefault();clearTimeout(timer);keys.delete('ControlLeft');btn.classList.remove('held');if(e.type==='pointerup'&&!holding)runTapJump=true;pointer=null;};
+    btn.addEventListener('pointerup',finish);btn.addEventListener('pointercancel',finish);btn.addEventListener('lostpointercapture',finish);
+    return;
+  }
   const down = e => { e.preventDefault(); keys.add(key); };
   const up = e => { e.preventDefault(); keys.delete(key); };
   btn.addEventListener('pointerdown', e => { btn.setPointerCapture(e.pointerId); down(e); }); btn.addEventListener('pointerup', up); btn.addEventListener('pointercancel', up); btn.addEventListener('lostpointercapture', up);
@@ -88,7 +96,7 @@ function update(dt){
   if(player.climbTime>0){ player.climbTime+=dt; player.vx=0; player.vy=0; if(player.climbTime>1.05){ player.y=player.hangPlatform.y-player.h; player.onGround=true; player.climbTime=0; player.hangPlatform=null; } return; }
   if(player.hangTime>0){
     const p=player.hangPlatform;
-    if(pressed('ArrowUp','KeyW')){ player.hangTime=0; player.climbTime=.001; }
+    if(pressed('ArrowUp','KeyW')||runTapJump){ runTapJump=false; player.hangTime=0; player.climbTime=.001; }
     else if(pressed('ArrowDown','KeyS') || pressed('KeyQ')){ player.hangTime=0; player.vy=80; }
     else { player.hangTime=Math.min(player.hangTime+dt,.85); player.vx=0; player.vy=0; player.y=p.y-65; return; }
   }
@@ -103,7 +111,8 @@ function update(dt){
   const left=pressed('ArrowLeft','a','KeyA'), right=pressed('ArrowRight','d','KeyD');
   const running=pressed('ControlLeft','ControlRight');
   player.vx=(player.swordTime>0||player.attackTime>0||player.hangTime>0)?0:(right?(running?360:230):0)-(left?(running?360:230):0); if(player.vx) player.face=player.vx>0?1:-1;
-  if(pressed('Space','ArrowUp','w','KeyW') && player.onGround){ player.vy=-520; player.onGround=false; }
+  if((pressed('Space','ArrowUp','w','KeyW')||runTapJump) && player.onGround){ player.vy=-520; player.onGround=false; }
+  runTapJump=false;
   const oldY=player.y; player.x=Math.max(0,Math.min(world.w-player.w,player.x+player.vx*dt)); player.vy+=1250*dt; player.y+=player.vy*dt; player.onGround=false;
   if(player.vy>0 && !player.onGround){
     for(const p of platforms){
