@@ -159,6 +159,21 @@ function drawCollisionDebug(){
   for(const p of platforms){ctx.fillRect(p.x,p.y,p.w,Math.min(8,p.h));ctx.strokeRect(p.x,p.y,p.w,p.h);}
   ctx.restore();
 }
+function drawPlatformVolume(){
+  const s=scale(), cam=cameraX();
+  ctx.save(); ctx.scale(s,s); ctx.translate(-cam,0);
+  for(const p of platforms){
+    if(p.y>=700)continue;
+    const depth=Math.min(10,p.h*.16);
+    ctx.fillStyle='rgba(10,35,32,.16)';
+    ctx.beginPath(); ctx.moveTo(p.x+5,p.y+depth); ctx.lineTo(p.x+p.w+5,p.y+depth); ctx.lineTo(p.x+p.w+8,p.y+p.h+6); ctx.lineTo(p.x+8,p.y+p.h+6); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='rgba(224,255,126,.38)'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(p.x+2,p.y+1); ctx.lineTo(p.x+p.w-2,p.y+1); ctx.stroke();
+    ctx.strokeStyle='rgba(16,49,43,.32)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(p.x+4,p.y+p.h-2); ctx.lineTo(p.x+p.w-4,p.y+p.h-2); ctx.stroke();
+  }
+  ctx.restore();
+}
 function update(dt){
   const wakeInput=pressed('ArrowLeft','ArrowRight','KeyA','KeyD','Space','ArrowUp','ArrowDown','KeyW','KeyS','KeyC','KeyE','KeyX','KeyZ','ControlLeft','ControlRight');
   if(player.sleepTime>0){
@@ -260,7 +275,7 @@ const FRAMES = {
 };
 function render(){
   document.querySelector('.climb').hidden=player.hangTime<=0;
-  ctx.clearRect(0,0,innerWidth,gameHeight()); drawWorld(bg); drawAtmosphere(performance.now()); drawCollisionDebug();
+  ctx.clearRect(0,0,innerWidth,gameHeight()); drawWorld(bg); drawAtmosphere(performance.now()); drawPlatformVolume(); drawCollisionDebug();
   const s=scale(), cam=cameraX(), px=(player.x-cam)*s, py=player.y*s;
   const moving=Math.abs(player.vx)>0 && player.onGround;
   const crouching=pressed('ArrowDown','KeyS');
