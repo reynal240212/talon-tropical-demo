@@ -235,7 +235,7 @@ function render(){
 
   if(activeSheet.complete && activeSheet.width){
     const meta=FRAMES[animKey];
-    const f=meta?.list[frame % meta.list.length];
+    const f=meta?.list ? meta.list[frame % meta.list.length] : null;
     const sc=meta?.scale || 124/460;
     const fh=activeSheet.height;
     ctx.save();
