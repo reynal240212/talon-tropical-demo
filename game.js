@@ -10,6 +10,7 @@ const comboSheet = new Image();
 const crouchSheet = new Image();
 const jumpSheet = new Image();
 const doubleJumpSheet = new Image();
+const sleepSheet = new Image();
 const hangSheet = new Image();
 const climbSheet = new Image();
 bg.src = 'assets/nivel_tropical_plataformas_v1.webp';
@@ -23,6 +24,7 @@ crouchSheet.src = 'assets/explorador_agacharse_master_v1.png';
 jumpSheet.src = 'assets/explorador_salto_master_v1.webp';
 doubleJumpSheet.src = 'assets/explorador_doble_salto_master_v1.png?v=2';
 doubleJumpSheet.onerror = () => { doubleJumpSheet.src = 'assets/explorador_salto_master_v1.webp'; };
+sleepSheet.src = 'assets/explorador_dormir_master_v1.png?v=1';
 hangSheet.src = 'assets/explorador_colgado_borde_8_frames.webp';
 climbSheet.src = 'assets/explorador_subir_borde_master_v1.png';
 
@@ -63,7 +65,7 @@ function stairHeight(x){
   const heights=[714,684,654,624,594,564];
   return heights[Math.min(5,Math.floor((x-1300)/31))];
 }
-const player = {x:110,y:620,w:62,h:124,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,idleTime:0,jumpCount:0,jumpLatch:false,doubleJumpTime:0,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0};
+const player = {x:110,y:620,w:62,h:124,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,idleTime:0,sleepTime:0,snoreTime:0,jumpCount:0,jumpLatch:false,doubleJumpTime:0,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0};
 let last = performance.now();
 function resize(){ const dpr=Math.min(devicePixelRatio||1,2); const height=Math.round(visualViewport?.height||innerHeight); document.documentElement.style.setProperty('--game-height',height+'px'); canvas.width=innerWidth*dpr; canvas.height=height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
 addEventListener('resize', resize); visualViewport?.addEventListener('resize',resize); addEventListener('orientationchange',()=>setTimeout(resize,200)); resize();
@@ -87,6 +89,13 @@ function playStep(surface='grass'){
   filter.type='lowpass'; filter.frequency.value=surface==='stone'?900:620;
   gain.gain.setValueAtTime(.0001,now); gain.gain.exponentialRampToValueAtTime(surface==='stone'?.045:.028,now+.008); gain.gain.exponentialRampToValueAtTime(.0001,now+.09);
   osc.connect(filter); filter.connect(gain); gain.connect(audioContext.destination); osc.start(now); osc.stop(now+.1);
+}
+function playSnore(){
+  if(!audioContext||audioContext.state!=='running')return;
+  const now=audioContext.currentTime, osc=audioContext.createOscillator(), gain=audioContext.createGain();
+  osc.type='sine'; osc.frequency.setValueAtTime(105,now); osc.frequency.exponentialRampToValueAtTime(62,now+.55);
+  gain.gain.setValueAtTime(.0001,now); gain.gain.exponentialRampToValueAtTime(.045,now+.12); gain.gain.exponentialRampToValueAtTime(.0001,now+.68);
+  osc.connect(gain); gain.connect(audioContext.destination); osc.start(now); osc.stop(now+.7);
 }
 async function startMusic(){
   if(!music.paused)return;
@@ -141,6 +150,11 @@ function drawAtmosphere(now){
   ctx.restore();
 }
 function update(dt){
+  const wakeInput=pressed('ArrowLeft','ArrowRight','KeyA','KeyD','Space','ArrowUp','ArrowDown','KeyW','KeyS','KeyC','KeyE','KeyX','KeyZ','ControlLeft','ControlRight');
+  if(player.sleepTime>0){
+    if(wakeInput){ player.sleepTime=0; player.idleTime=0; player.snoreTime=0; }
+    else { player.sleepTime+=dt; player.snoreTime+=dt; if(player.snoreTime>=2.4){player.snoreTime=0;playSnore();} return; }
+  }
   if(player.climbTime>0){ const previous=player.climbTime; player.climbTime+=dt; player.vx=0; player.vy=0; if(Math.floor(previous*4)!==Math.floor(player.climbTime*4))playStep('stone'); if(player.climbTime>1.05){ player.y=player.hangPlatform.y-player.h; player.onGround=true; player.climbTime=0; player.hangPlatform=null; } return; }
   if(player.hangTime>0){
     const p=player.hangPlatform;
@@ -200,6 +214,7 @@ function update(dt){
   }else if(!player.onGround)stepDistance=0;
   if(player.onGround && !player.vx && !jumpPressed && !attackPressed && !swordPressed && !crouching && player.hangTime<=0) player.idleTime=Math.min(15,player.idleTime+dt);
   else player.idleTime=0;
+  if(player.idleTime>=15 && player.sleepTime<=0) player.sleepTime=.001;
 }
 const FRAMES = {
   idle:   { scale: 124/624, list: [{x:38,w:275,cx:142,fy:680},{x:399,w:277,cx:143,fy:680},{x:761,w:281,cx:145,fy:680},{x:1120,w:275,cx:142,fy:680},{x:1482,w:273,cx:142,fy:680},{x:1846,w:275,cx:140,fy:680}] },
@@ -209,6 +224,7 @@ const FRAMES = {
   run:    { scale: 124/564, list: [{x:6,w:285,cx:139,fy:642},{x:295,w:232,cx:121,fy:642},{x:531,w:288,cx:154,fy:642},{x:823,w:283,cx:135,fy:642},{x:1110,w:264,cx:112,fy:642},{x:1378,w:234,cx:119,fy:642},{x:1616,w:286,cx:150,fy:642},{x:1906,w:258,cx:128,fy:642}] },
   jump:   { scale: 124/540, list: [{x:30,w:259,cx:130,fy:662},{x:312,w:225,cx:110,fy:662},{x:535,w:275,cx:145,fy:662},{x:826,w:269,cx:127,fy:662},{x:1097,w:259,cx:130,fy:662},{x:1382,w:233,cx:115,fy:662},{x:1646,w:241,cx:124,fy:662},{x:1910,w:231,cx:120,fy:662}] },
   doubleJump: { scale: 124/624 },
+  sleep: { scale: 124/624 },
   sword:  { scale: 124/550, list: [{x:6,w:247,cx:130,fy:640},{x:272,w:251,cx:131,fy:640},{x:541,w:251,cx:131,fy:640},{x:808,w:251,cx:131,fy:640},{x:1077,w:251,cx:127,fy:640},{x:1343,w:259,cx:128,fy:640},{x:1607,w:267,cx:131,fy:640},{x:1875,w:293,cx:130,fy:640}] },
   attack: { scale: 124/466, list: [{x:14,w:241,cx:107,fy:608},{x:275,w:235,cx:111,fy:608},{x:549,w:199,cx:104,fy:606},{x:784,w:275,cx:133,fy:606},{x:1056,w:277,cx:132,fy:606},{x:1330,w:337,cx:154,fy:606},{x:1664,w:211,cx:91,fy:606},{x:1913,w:243,cx:107,fy:608}] },
   hang:   { scale: 0.22,    list: [{x:22,w:273,cx:117,fy:578},{x:302,w:263,cx:108,fy:542},{x:573,w:255,cx:111,fy:568},{x:835,w:253,cx:119,fy:582},{x:1098,w:255,cx:117,fy:616},{x:1362,w:279,cx:133,fy:582},{x:1654,w:239,cx:98,fy:488},{x:1911,w:241,cx:117,fy:420}] },
@@ -222,7 +238,8 @@ function render(){
   const crouching=pressed('ArrowDown','KeyS');
   const jumping=!player.onGround;
   let animKey='idle', activeSheet=idleSheet, frame=player.frame;
-  if(player.climbTime>0){ animKey='climb'; activeSheet=climbSheet; frame=Math.min(11,Math.floor(player.climbTime*11)); }
+  if(player.sleepTime>0){ animKey='sleep'; activeSheet=sleepSheet; frame=player.sleepTime<1.2?Math.min(5,Math.floor(player.sleepTime/1.2*6)):2+Math.floor((player.sleepTime-1.2)*3)%4; }
+  else if(player.climbTime>0){ animKey='climb'; activeSheet=climbSheet; frame=Math.min(11,Math.floor(player.climbTime*11)); }
   else if(player.hangTime>0){ animKey='hang'; activeSheet=hangSheet; frame=Math.min(7,Math.floor(player.hangTime*9)); }
   else if(player.attackTime>0){ animKey='attack'; activeSheet=comboSheet; frame=Math.min(7,Math.floor(player.attackTime/.64*8)); }
   else if(player.swordTime>0){ animKey='sword'; activeSheet=swordSheet; const step=Math.min(7,Math.floor(player.swordTime/.64*8)); frame=player.swordOut?step:7-step; }
@@ -243,15 +260,16 @@ function render(){
     ctx.save();
     ctx.translate(px+player.w*s/2, py+player.h*s);
     ctx.scale(player.face*s*sc, s*sc);
-    if(animKey==='swordRun' || animKey==='doubleJump'){
-      const fw=activeSheet.width/8;
-      ctx.drawImage(activeSheet, frame*fw, 0, fw, fh, -fw/2, -624, fw, fh);
+    if(animKey==='swordRun' || animKey==='doubleJump' || animKey==='sleep'){
+      const count=animKey==='sleep'?6:8, fw=activeSheet.width/count;
+      ctx.drawImage(activeSheet, frame*fw, 0, fw, fh, -fw/2, animKey==='sleep'?-520:-624, fw, fh);
     }else ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
     ctx.restore();
   }
   const stateTxt = player.climbTime>0?'SUBIENDO':player.attackTime>0?'ATACANDO':player.swordTime>0?(player.swordOut?'DESENVAINANDO':'ENVAINANDO'):jumping?'SALTANDO':crouching?'AGACHADO':player.running?'CORRIENDO':moving?'CAMINANDO':'QUIETO';
   ctx.fillStyle='#ffffffcc'; ctx.font='bold 15px system-ui'; ctx.fillText('Movimiento: '+stateTxt,18,gameHeight()-18);
   if(player.idleTime>0){ const remaining=Math.max(0,15-player.idleTime); ctx.fillStyle='#fff4c9e8'; ctx.font='bold 16px system-ui'; ctx.fillText(remaining>0?'Sueño en: '+remaining.toFixed(1)+' s':'Preparando sueño…',18,gameHeight()-42); }
+  if(player.sleepTime>0){ ctx.save(); ctx.globalAlpha=.72+.2*Math.sin(player.sleepTime*3); ctx.fillStyle='#fff4c9'; ctx.font='bold 22px system-ui'; ctx.fillText('Z',px+player.w*s*.65,py-24*s-Math.sin(player.sleepTime*2)*5); ctx.font='bold 16px system-ui'; ctx.fillText('z',px+player.w*s*.82,py-48*s-Math.sin(player.sleepTime*2+1)*5); ctx.font='bold 13px system-ui'; ctx.fillText('z',px+player.w*s*.96,py-66*s-Math.sin(player.sleepTime*2+2)*5); ctx.restore(); }
 }
 function loop(now){ const dt=Math.min((now-last)/1000,.033); last=now; update(dt); render(); requestAnimationFrame(loop); }
-Promise.all([new Promise(r=>bg.onload=r),new Promise(r=>sheet.onload=r),new Promise(r=>runSheet.onload=r),new Promise(r=>swordRunSheet.onload=r),new Promise(r=>idleSheet.onload=r),new Promise(r=>swordSheet.onload=r),new Promise(r=>comboSheet.onload=r),new Promise(r=>crouchSheet.onload=r),new Promise(r=>jumpSheet.onload=r),new Promise(r=>doubleJumpSheet.onload=r),new Promise(r=>hangSheet.onload=r),new Promise(r=>climbSheet.onload=r)]).then(()=>requestAnimationFrame(loop));
+Promise.all([new Promise(r=>bg.onload=r),new Promise(r=>sheet.onload=r),new Promise(r=>runSheet.onload=r),new Promise(r=>swordRunSheet.onload=r),new Promise(r=>idleSheet.onload=r),new Promise(r=>swordSheet.onload=r),new Promise(r=>comboSheet.onload=r),new Promise(r=>crouchSheet.onload=r),new Promise(r=>jumpSheet.onload=r),new Promise(r=>doubleJumpSheet.onload=r),new Promise(r=>sleepSheet.onload=r),new Promise(r=>hangSheet.onload=r),new Promise(r=>climbSheet.onload=r)]).then(()=>requestAnimationFrame(loop));
