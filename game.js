@@ -25,7 +25,7 @@ jumpSheet.src = 'assets/explorador_salto_master_v1.webp';
 doubleJumpSheet.src = 'assets/explorador_doble_salto_master_v1.png?v=2';
 doubleJumpSheet.onerror = () => { doubleJumpSheet.src = 'assets/explorador_salto_master_v1.webp'; };
 sleepSheet.src = 'assets/explorador_dormir_master_v1.png?v=1';
-hangSheet.src = 'assets/explorador_colgado_personaje_v2.png?v=1';
+hangSheet.src = 'assets/explorador_colgado_personaje_v3.png?v=1';
 climbSheet.src = 'assets/explorador_subir_personaje_v2.png?v=1';
 
 const keyboardKeys = new Set();
@@ -231,7 +231,7 @@ const FRAMES = {
   climbOnly: { scale: 124/470 },
   sword:  { scale: 124/550, list: [{x:6,w:247,cx:130,fy:640},{x:272,w:251,cx:131,fy:640},{x:541,w:251,cx:131,fy:640},{x:808,w:251,cx:131,fy:640},{x:1077,w:251,cx:127,fy:640},{x:1343,w:259,cx:128,fy:640},{x:1607,w:267,cx:131,fy:640},{x:1875,w:293,cx:130,fy:640}] },
   attack: { scale: 124/260 },
-  hang:   { scale: 124/420 },
+  hang:   { scale: 124/520 },
   climb:  { scale: 124/470 }
 };
 function render(){
@@ -267,7 +267,7 @@ function render(){
     if(animKey==='swordRun' || animKey==='doubleJump' || animKey==='sleep' || animKey==='attack' || animKey==='hang' || animKey==='climb'){
       const count=animKey==='sleep'?6:animKey==='attack'?12:animKey==='climb'?12:8, fw=activeSheet.width/count;
       const inset=animKey==='sleep'?4:animKey==='attack'?5:animKey==='hang'||animKey==='climb'?4:0;
-      const drawY=animKey==='sleep'?-520:animKey==='attack'?-520:animKey==='hang'?-430:animKey==='climb'?-520:-624;
+      const drawY=animKey==='sleep'?-520:animKey==='attack'?-520:animKey==='hang'?-320:animKey==='climb'?-520:-624;
       ctx.drawImage(activeSheet, frame*fw+inset, 0, fw-inset*2, fh, -fw/2+inset, drawY, fw-inset*2, fh);
     }else ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
     ctx.restore();
