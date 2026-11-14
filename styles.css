@@ -20,4 +20,16 @@
 .rotate-tip{display:none}
 @media (pointer:coarse) and (orientation:portrait){.rotate-tip{position:fixed;z-index:5;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:20px;background:#103b39ed;color:#fff8df;font-size:52px;text-align:center}.rotate-tip span{max-width:280px;font-size:21px;font-weight:700;line-height:1.3}.touch-controls{visibility:hidden}}
 @media (pointer:coarse) and (orientation:landscape){.touch-controls{left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));align-items:end}.hint{display:none}.dpad{padding:5px;gap:10px}.dpad button{width:clamp(48px,12vh,72px);height:clamp(48px,12vh,72px)}.left-controls{gap:8px}.left-controls .run,.secondary button{width:clamp(40px,10vh,54px);height:clamp(40px,10vh,54px)}.primary button{width:clamp(54px,16vh,78px);height:clamp(54px,16vh,78px)}.jump{width:clamp(58px,17vh,84px)!important;height:clamp(58px,17vh,84px)!important}.actions{gap:8px}.primary,.secondary{gap:12px}.touch-controls small{font-size:clamp(7px,2vh,10px)}}
+@media (pointer:coarse) and (orientation:landscape){
+  .touch-controls{left:max(18px,env(safe-area-inset-left));right:max(18px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));}
+  .dpad{gap:16px;padding:8px;background:#102f2bcc;}
+  .dpad button{width:clamp(68px,14vh,92px);height:clamp(68px,14vh,92px);font-size:clamp(28px,5vh,38px);}
+  .left-controls{gap:14px;}
+  .left-controls .run,.secondary button{width:clamp(58px,11vh,72px);height:clamp(58px,11vh,72px);font-size:clamp(22px,4vh,30px);}
+  .actions{gap:14px;}
+  .primary,.secondary{gap:16px;}
+  .primary button{width:clamp(74px,17vh,98px);height:clamp(74px,17vh,98px);font-size:clamp(28px,5vh,40px);}
+  .jump{width:clamp(82px,19vh,108px)!important;height:clamp(82px,19vh,108px)!important;}
+  .touch-controls small{font-size:clamp(8px,2.2vh,12px);line-height:12px;}
+}
 @media (hover:hover) and (pointer:fine){.touch-controls{display:none}.hint{display:block}}
