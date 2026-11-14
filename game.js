@@ -86,11 +86,17 @@ canvas.addEventListener('pointerdown',e=>{
   if(!collisionEditor)return;
   const q=editorPoint(e);
   dragPlatform=[...platforms].reverse().find(p=>{
-    const nearRight=Math.abs(q.x-(p.x+p.w))<14, nearBottom=Math.abs(q.y-(p.y+p.h))<14;
+    const nearLeft=Math.abs(q.x-p.x)<16, nearRight=Math.abs(q.x-(p.x+p.w))<16;
+    const nearTop=Math.abs(q.y-p.y)<16, nearBottom=Math.abs(q.y-(p.y+p.h))<16;
     if(q.x>=p.x&&q.x<=p.x+p.w&&q.y>=p.y&&q.y<=p.y+p.h){
+      if(nearLeft&&nearTop){resizeMode='nw';return true;}
+      if(nearRight&&nearTop){resizeMode='ne';return true;}
+      if(nearLeft&&nearBottom){resizeMode='sw';return true;}
       if(nearRight&&nearBottom){resizeMode='se';return true;}
+      if(nearTop){resizeMode='n';return true;}
       if(nearRight){resizeMode='e';return true;}
       if(nearBottom){resizeMode='s';return true;}
+      if(nearLeft){resizeMode='w';return true;}
       resizeMode='move';return true;
     }
     return false;
@@ -101,8 +107,11 @@ canvas.addEventListener('pointerdown',e=>{
 canvas.addEventListener('pointermove',e=>{
   if(!collisionEditor||!dragPlatform)return;
   const q=editorPoint(e);
-  if(resizeMode==='e'||resizeMode==='se') dragPlatform.w=Math.max(40,Math.min(world.w-dragPlatform.x,q.x-dragPlatform.x));
-  if(resizeMode==='s'||resizeMode==='se') dragPlatform.h=Math.max(25,Math.min(world.h-dragPlatform.y,q.y-dragPlatform.y));
+  const right=dragPlatform.x+dragPlatform.w, bottom=dragPlatform.y+dragPlatform.h;
+  if(resizeMode.includes('w')){ const nx=Math.max(0,Math.min(right-40,q.x)); dragPlatform.x=nx; dragPlatform.w=right-nx; }
+  if(resizeMode.includes('e')) dragPlatform.w=Math.max(40,Math.min(world.w-dragPlatform.x,q.x-dragPlatform.x));
+  if(resizeMode.includes('n')){ const ny=Math.max(0,Math.min(bottom-25,q.y)); dragPlatform.y=ny; dragPlatform.h=bottom-ny; }
+  if(resizeMode.includes('s')) dragPlatform.h=Math.max(25,Math.min(world.h-dragPlatform.y,q.y-dragPlatform.y));
   if(resizeMode==='move'){
     dragPlatform.x=Math.max(0,Math.min(world.w-dragPlatform.w,q.x-dragOffsetX));
     dragPlatform.y=Math.max(0,Math.min(world.h-dragPlatform.h,q.y-dragOffsetY));
@@ -216,8 +225,12 @@ function drawCollisionDebug(){
     ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.fillStyle='rgba(255,255,255,.9)'; ctx.font='bold 12px system-ui'; ctx.fillText('arrastra',p.x+6,p.y+16);
     ctx.fillStyle='#fff'; ctx.strokeStyle='#162b2c'; ctx.lineWidth=1/s;
-    for(const [hx,hy] of [[p.x+p.w,p.y],[p.x,p.y+p.h],[p.x+p.w,p.y+p.h]]){ ctx.beginPath(); ctx.arc(hx,hy,7/s,0,Math.PI*2); ctx.fill(); ctx.stroke(); }
+    for(const [hx,hy] of [[p.x,p.y],[p.x+p.w/2,p.y],[p.x+p.w,p.y],[p.x,p.y+p.h/2],[p.x+p.w,p.y+p.h/2],[p.x,p.y+p.h],[p.x+p.w/2,p.y+p.h],[p.x+p.w,p.y+p.h]]){ ctx.beginPath(); ctx.arc(hx,hy,7/s,0,Math.PI*2); ctx.fill(); ctx.stroke(); }
   }
+  // Colisión especial de la escalera: se muestra como una guía por peldaño.
+  ctx.strokeStyle='rgba(255,150,70,.95)'; ctx.fillStyle='rgba(255,150,70,.9)'; ctx.lineWidth=3/s;
+  for(let x=1300;x<1485;x+=31){ const y=stairHeight(x+15); if(y===null)continue; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(Math.min(x+31,1485),y); ctx.stroke(); ctx.fillRect(x+3,y-18,7,7); }
+  ctx.fillStyle='rgba(255,230,180,.95)'; ctx.font='bold 13px system-ui'; ctx.fillText('ESCALERA',1305,462);
   ctx.setTransform(1,0,0,1,0,0);
   ctx.fillStyle='rgba(8,20,24,.82)'; ctx.fillRect(16,16,360,42);
   ctx.fillStyle='#fff'; ctx.font='bold 15px system-ui';
