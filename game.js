@@ -37,6 +37,8 @@ let collisionDebug=false;
 let collisionEditor=false;
 let dragPlatform=null;
 let dragOffsetX=0, dragOffsetY=0;
+let resizeMode=null;
+let selectedPlatform=null;
 const savedPlatforms=localStorage.getItem('talon-platform-collisions');
 addEventListener('keydown', e => {
   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','ControlLeft','ControlRight','KeyZ','KeyX','KeyE','KeyC'].includes(e.code)) e.preventDefault();
@@ -83,20 +85,34 @@ function editorPoint(e){
 canvas.addEventListener('pointerdown',e=>{
   if(!collisionEditor)return;
   const q=editorPoint(e);
-  dragPlatform=[...platforms].reverse().find(p=>q.x>=p.x&&q.x<=p.x+p.w&&q.y>=p.y&&q.y<=p.y+p.h);
+  dragPlatform=[...platforms].reverse().find(p=>{
+    const nearRight=Math.abs(q.x-(p.x+p.w))<14, nearBottom=Math.abs(q.y-(p.y+p.h))<14;
+    if(q.x>=p.x&&q.x<=p.x+p.w&&q.y>=p.y&&q.y<=p.y+p.h){
+      if(nearRight&&nearBottom){resizeMode='se';return true;}
+      if(nearRight){resizeMode='e';return true;}
+      if(nearBottom){resizeMode='s';return true;}
+      resizeMode='move';return true;
+    }
+    return false;
+  });
+  selectedPlatform=dragPlatform;
   if(dragPlatform){ dragOffsetX=q.x-dragPlatform.x; dragOffsetY=q.y-dragPlatform.y; canvas.setPointerCapture(e.pointerId); e.preventDefault(); }
 });
 canvas.addEventListener('pointermove',e=>{
   if(!collisionEditor||!dragPlatform)return;
   const q=editorPoint(e);
-  dragPlatform.x=Math.max(0,Math.min(world.w-dragPlatform.w,q.x-dragOffsetX));
-  dragPlatform.y=Math.max(0,Math.min(world.h-dragPlatform.h,q.y-dragOffsetY));
+  if(resizeMode==='e'||resizeMode==='se') dragPlatform.w=Math.max(40,Math.min(world.w-dragPlatform.x,q.x-dragPlatform.x));
+  if(resizeMode==='s'||resizeMode==='se') dragPlatform.h=Math.max(25,Math.min(world.h-dragPlatform.y,q.y-dragPlatform.y));
+  if(resizeMode==='move'){
+    dragPlatform.x=Math.max(0,Math.min(world.w-dragPlatform.w,q.x-dragOffsetX));
+    dragPlatform.y=Math.max(0,Math.min(world.h-dragPlatform.h,q.y-dragOffsetY));
+  }
   e.preventDefault();
 });
 canvas.addEventListener('pointerup',e=>{
   if(!dragPlatform)return;
   localStorage.setItem('talon-platform-collisions',JSON.stringify(platforms));
-  dragPlatform=null; e.preventDefault();
+  dragPlatform=null; resizeMode=null; e.preventDefault();
 });
 // Altura de cada peldaño de la escalera de piedra dibujada a la derecha.
 function stairHeight(x){
@@ -199,6 +215,8 @@ function drawCollisionDebug(){
     for(const pt of pts.slice(1))ctx.lineTo(pt[0],pt[1]);
     ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.fillStyle='rgba(255,255,255,.9)'; ctx.font='bold 12px system-ui'; ctx.fillText('arrastra',p.x+6,p.y+16);
+    ctx.fillStyle='#fff'; ctx.strokeStyle='#162b2c'; ctx.lineWidth=1/s;
+    for(const [hx,hy] of [[p.x+p.w,p.y],[p.x,p.y+p.h],[p.x+p.w,p.y+p.h]]){ ctx.beginPath(); ctx.arc(hx,hy,7/s,0,Math.PI*2); ctx.fill(); ctx.stroke(); }
   }
   ctx.setTransform(1,0,0,1,0,0);
   ctx.fillStyle='rgba(8,20,24,.82)'; ctx.fillRect(16,16,360,42);
