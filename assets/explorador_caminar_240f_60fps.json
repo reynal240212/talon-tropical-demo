@@ -1,0 +1,10 @@
+{
+  "name": "explorador_caminar",
+  "unique_frames": 8,
+  "total_frames": 240,
+  "fps": 60,
+  "duration_seconds": 4,
+  "frame_width": 271,
+  "frame_height": 724,
+  "cycle_repetitions": 30
+}

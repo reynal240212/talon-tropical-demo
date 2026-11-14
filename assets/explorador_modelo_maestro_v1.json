@@ -1,0 +1,19 @@
+{
+  "character": "explorador_tropical",
+  "version": 1,
+  "canonical_height_px": 124,
+  "feet_baseline": 124,
+  "anchor": "center-bottom",
+  "views": ["front", "side_right", "back"],
+  "head_ratio": 0.25,
+  "design_lock": ["green_headband", "brown_hair", "green_tunic", "brown_belt_gold_buckle", "brown_pants", "tall_brown_boots", "brown_backpack"],
+  "animation_contract": {
+    "frame_width_px": 271,
+    "frame_height_px": 724,
+    "render_scale_x": 0.36,
+    "render_scale_y": 0.17,
+    "same_feet_baseline": true,
+    "same_camera": true,
+    "same_lighting": true
+  }
+}

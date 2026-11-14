@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Talon Tropical — Prueba de movimiento</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="game-wrap">
+    <canvas id="game" aria-label="Prototipo jugable de Talon Tropical"></canvas>
+    <div class="hint">A/D o ←/→ caminar · Ctrl + dirección correr · Espacio/W/↑ saltar</div>
+    <div class="touch-controls" aria-label="Controles táctiles">
+      <div class="dpad"><button data-key="ArrowLeft">◀</button><button data-key="ArrowRight">▶</button></div>
+      <div class="actions"><button class="hang" data-key="KeyQ">Q<br><small>Colgar</small></button><button class="crouch" data-key="ArrowDown">↓<br><small>Agachar</small></button><button class="attack" data-key="KeyX">X<br><small>Atacar</small></button><button class="sword" data-key="KeyE">E<br><small>Espada</small></button><button class="run" data-key="ControlLeft">C<br><small>Correr</small></button><button class="jump" data-key="Space">A<br><small>Saltar</small></button></div>
+    </div>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>

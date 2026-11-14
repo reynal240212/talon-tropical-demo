@@ -1,0 +1,16 @@
+{
+  "character_reference": "explorador_modelo_maestro_v1.png",
+  "status": "canonical-rebuild",
+  "contract": {"frame_width": 271, "frame_height": 724, "baseline": "feet-bottom", "camera": "side-right", "scale": "same-as-master"},
+  "animations": {
+    "idle": {"frames": 6, "file": "explorador_idle_master_v1.png"},
+    "walk": {"frames": 8, "file": "explorador_caminar_master_v1.png"},
+    "run": {"frames": 8, "file": "explorador_correr_master_v1.png"},
+    "jump": {"frames": 8, "file": "explorador_salto_master_v1.png"},
+    "crouch": {"frames": 6, "file": "explorador_agacharse_master_v1.png"},
+    "draw_sword": {"frames": 8, "file": "explorador_sacar_espada_master_v1.png"},
+    "sword_attack": {"frames": 12, "file": "explorador_ataque_espada_master_v1.png"},
+    "ladder": {"frames": 12, "file": "explorador_escalera_master_v1.png"},
+    "ledge_hang": {"frames": 8, "file": "explorador_colgado_master_v1.png"}
+  }
+}
