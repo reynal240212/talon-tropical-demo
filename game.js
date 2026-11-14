@@ -13,6 +13,7 @@ const doubleJumpSheet = new Image();
 const sleepSheet = new Image();
 const hangSheet = new Image();
 const climbSheet = new Image();
+const platformTexture = new Image();
 bg.src = 'assets/nivel_tropical_plataformas_v1.webp';
 sheet.src = 'assets/explorador_caminar_master_v1.webp';
 runSheet.src = 'assets/explorador_correr_master_v1.webp?v=f28c70d';
@@ -27,6 +28,7 @@ doubleJumpSheet.onerror = () => { doubleJumpSheet.src = 'assets/explorador_salto
 sleepSheet.src = 'assets/explorador_dormir_master_v1.png?v=1';
 hangSheet.src = 'assets/explorador_colgado_personaje_v3.png?v=1';
 climbSheet.src = 'assets/explorador_subir_personaje_v2.png?v=1';
+platformTexture.src = 'assets/plataforma_tropical_textura_v1.png?v=1';
 
 const keyboardKeys = new Set();
 const touchKeys = new Set();
@@ -174,6 +176,13 @@ function drawPlatformVolume(){
   }
   ctx.restore();
 }
+function drawPlatformTexture(){
+  if(!platformTexture.complete || !platformTexture.width)return;
+  const p=platforms[3], s=scale(), cam=cameraX();
+  ctx.save(); ctx.globalAlpha=.98;
+  ctx.drawImage(platformTexture,(p.x-cam)*s,p.y*s,p.w*s,105*s);
+  ctx.restore();
+}
 function update(dt){
   const wakeInput=pressed('ArrowLeft','ArrowRight','KeyA','KeyD','Space','ArrowUp','ArrowDown','KeyW','KeyS','KeyC','KeyE','KeyX','KeyZ','ControlLeft','ControlRight');
   if(player.sleepTime>0){
@@ -275,7 +284,7 @@ const FRAMES = {
 };
 function render(){
   document.querySelector('.climb').hidden=player.hangTime<=0;
-  ctx.clearRect(0,0,innerWidth,gameHeight()); drawWorld(bg); drawAtmosphere(performance.now()); drawPlatformVolume(); drawCollisionDebug();
+  ctx.clearRect(0,0,innerWidth,gameHeight()); drawWorld(bg); drawAtmosphere(performance.now()); drawPlatformVolume(); drawPlatformTexture(); drawCollisionDebug();
   const s=scale(), cam=cameraX(), px=(player.x-cam)*s, py=player.y*s;
   window.__tropicalCamera={scale:s,cameraX:cam,viewportWidth:innerWidth,viewportHeight:gameHeight()};
   const moving=Math.abs(player.vx)>0 && player.onGround;
