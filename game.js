@@ -195,7 +195,7 @@ function update(dt){
   }
   player.jumpLatch=jumpPressed;
   runTapJump=false;
-  const oldY=player.y, wasGrounded=player.onGround; player.x=Math.max(0,Math.min(world.w-player.w,player.x+player.vx*dt)); player.vy+=1250*dt; player.y+=player.vy*dt; player.onGround=false;
+  const oldX=player.x, oldY=player.y, wasGrounded=player.onGround; player.x=Math.max(0,Math.min(world.w-player.w,player.x+player.vx*dt)); player.vy+=1250*dt; player.y+=player.vy*dt; player.onGround=false;
   if(player.vy>0 && !player.onGround){
     for(const p of platforms){
       const nearLeft=Math.abs((player.x+player.w)-p.x)<70 && player.x+player.w>=p.x-70 && player.x<p.x+18;
@@ -215,6 +215,14 @@ function update(dt){
     const overlapsX=player.x+player.w>p.x && player.x<p.x+p.w;
     if(player.vy<0 && overlapsX && oldY>=p.y+p.h && player.y<=p.y+p.h){
       player.y=p.y+p.h; player.vy=0;
+    }
+  }
+  if(player.hangTime<=0){
+    for(const p of platforms){
+      const overlapsY=player.y<p.y+p.h && player.y+player.h>p.y;
+      if(!overlapsY)continue;
+      if(player.vx>0 && oldX+player.w<=p.x && player.x+player.w>p.x){ player.x=p.x-player.w; player.vx=0; }
+      if(player.vx<0 && oldX>=p.x+p.w && player.x<p.x+p.w){ player.x=p.x+p.w; player.vx=0; }
     }
   }
   for(const p of platforms){ if(player.vy>=0 && oldY+player.h<=p.y && player.y+player.h>=p.y && player.x+player.w>p.x && player.x<p.x+p.w){ player.y=p.y-player.h; player.vy=0; player.onGround=true; } }
