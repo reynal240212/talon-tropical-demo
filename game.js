@@ -180,11 +180,11 @@ function render(){
   else if(player.hangTime>0){ animKey='hang'; activeSheet=hangSheet; frame=Math.min(7,Math.floor(player.hangTime*9)); }
   else if(player.attackTime>0){ animKey='attack'; activeSheet=comboSheet; frame=Math.min(7,Math.floor(player.attackTime/.64*8)); }
   else if(player.swordTime>0){ animKey='sword'; activeSheet=swordSheet; const step=Math.min(7,Math.floor(player.swordTime/.64*8)); frame=player.swordOut?step:7-step; }
-  else if(player.swordOut && moving){ animKey='swordRun'; activeSheet=swordRunSheet; frame=player.frame; }
-  else if(player.swordOut){ animKey='sword'; activeSheet=swordSheet; frame=7; }
   else if(jumping){ animKey='jump'; activeSheet=jumpSheet; frame=player.vy<-300?1:player.vy<-80?2:player.vy<120?3:player.vy<320?5:6; }
   else if(player.landTime>0){ animKey='jump'; activeSheet=jumpSheet; frame=7; }
   else if(crouching){ animKey='crouch'; activeSheet=crouchSheet; frame=Math.min(4,Math.floor(player.crouchTime*16)); }
+  else if(player.swordOut && moving){ animKey='swordRun'; activeSheet=swordRunSheet; frame=player.frame; }
+  else if(player.swordOut){ animKey='sword'; activeSheet=swordSheet; frame=7; }
   else if(player.running){ animKey='run'; activeSheet=runSheet; }
   else if(moving){ animKey='walk'; activeSheet=sheet; }
 
