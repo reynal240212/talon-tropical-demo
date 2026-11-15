@@ -14,9 +14,10 @@ const sleepSheet = new Image();
 const hangSheet = new Image();
 const climbSheet = new Image();
 const platformTexture = new Image();
+const enemySheet = new Image();
 bg.src = 'assets/nivel_tropical_extendido_v2.png?v=1';
 sheet.src = 'assets/explorador_caminar_master_v1.webp';
-runSheet.src = 'assets/explorador_correr_master_v1.webp?v=f28c70d';
+runSheet.src = 'assets/explorador_correr_master_v3.png';
 swordRunSheet.src = 'assets/explorador_correr_espada_master_v2.webp';
 idleSheet.src = 'assets/explorador_idle_master_v1.webp';
 swordSheet.src = 'assets/explorador_espada_master_v2.webp';
@@ -29,6 +30,7 @@ sleepSheet.src = 'assets/explorador_dormir_master_v1.png?v=1';
 hangSheet.src = 'assets/explorador_colgado_personaje_v3.png?v=1';
 climbSheet.src = 'assets/explorador_subir_personaje_v2.png?v=1';
 platformTexture.src = 'assets/plataforma_tropical_textura_v1.png?v=1';
+enemySheet.src = 'assets/enemigo_tiki_master_v1.png';
 
 const keyboardKeys = new Set();
 const touchKeys = new Set();
@@ -39,12 +41,17 @@ let dragPlatform=null;
 let dragOffsetX=0, dragOffsetY=0;
 let resizeMode=null;
 let selectedPlatform=null;
-const savedPlatforms=localStorage.getItem('talon-platform-collisions');
 addEventListener('keydown', e => {
   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','ControlLeft','ControlRight','KeyZ','KeyX','KeyE','KeyC'].includes(e.code)) e.preventDefault();
   if(e.code) keyboardKeys.add(e.code);
   if(e.code==='KeyH'){ collisionEditor=!collisionEditor; collisionDebug=collisionEditor; }
-  if(e.code==='KeyR' && collisionEditor){ localStorage.removeItem('talon-platform-collisions'); localStorage.removeItem('talon-stair-collisions'); location.reload(); }
+  if(e.code==='KeyR' && collisionEditor){
+    localStorage.removeItem('talon-platform-collisions-v2');
+    localStorage.removeItem('talon-stair-collisions-v2');
+    localStorage.removeItem('talon-platform-collisions');
+    localStorage.removeItem('talon-stair-collisions');
+    location.reload();
+  }
 });
 addEventListener('keyup', e => {
   if(e.code) keyboardKeys.delete(e.code);
@@ -64,17 +71,31 @@ document.querySelectorAll('[data-key]').forEach(btn => {
   btn.addEventListener('pointerdown', e => { btn.setPointerCapture(e.pointerId); down(e); }); btn.addEventListener('pointerup', up); btn.addEventListener('pointercancel', up); btn.addEventListener('lostpointercapture', up);
 });
 
-const VIEW_BASE = { w: 1668, h: 941 };
+const VIEW_BASE = { w: 1668, h: 724 };
 const MASTER_CHARACTER = { w: 62, h: 124 };
-const world = { w: 2500, h: VIEW_BASE.h };
+const world = { w: 2172, h: 724 };
 const platforms = [
-  {x:0,y:650,w:2500,h:291}, {x:205,y:470,w:265,h:70}, {x:330,y:300,w:225,h:65},
-  {x:625,y:425,w:395,h:76}, {x:1058,y:470,w:266,h:70}, {x:1095,y:290,w:275,h:70}, {x:1485,y:500,w:183,h:217},
-  {x:1710,y:470,w:260,h:70}, {x:1950,y:350,w:285,h:70}, {x:2200,y:470,w:250,h:70}, {x:2320,y:300,w:180,h:70}
+  {x:0, y:533, w:2172, h:191},       // Suelo principal continuo
+  {x:140, y:368, w:190, h:65},       // P1: Izquierda baja (cascada)
+  {x:226, y:206, w:160, h:60},       // P2: Izquierda alta
+  {x:442, y:298, w:286, h:65},       // P3: Izquierda media (grande)
+  {x:742, y:369, w:193, h:65},       // P4: Central baja
+  {x:766, y:205, w:196, h:60},       // P5: Central alta
+  {x:1055, y:366, w:235, h:170},     // P6: Plataforma de la palmera central
+  {x:1378, y:254, w:174, h:60},      // P7: Derecha alta (palmera)
+  {x:1600, y:358, w:180, h:65},      // P8: Derecha baja
+  {x:1695, y:212, w:155, h:60},      // P9: Derecha alta
+  {x:1968, y:248, w:204, h:285}      // P10: Terraza del arco maya derecho
 ];
-const stairSteps=[{x:1300,y:620,w:31,h:321},{x:1331,y:590,w:31,h:351},{x:1362,y:560,w:31,h:381},{x:1393,y:530,w:31,h:411},{x:1424,y:500,w:31,h:441},{x:1455,y:480,w:30,h:461}];
-const savedStairs=localStorage.getItem('talon-stair-collisions');
+const stairSteps=[
+  // Escalera central (sube a palmera)
+  {x:902, y:498, w:30, h:35}, {x:932, y:466, w:30, h:67}, {x:962, y:434, w:32, h:99}, {x:994, y:402, w:30, h:131}, {x:1024, y:370, w:32, h:163},
+  // Escalera derecha (sube al arco)
+  {x:1860, y:485, w:25, h:48}, {x:1885, y:440, w:25, h:93}, {x:1910, y:395, w:25, h:138}, {x:1935, y:345, w:25, h:188}, {x:1960, y:295, w:25, h:238}
+];
+const savedStairs=localStorage.getItem('talon-stair-collisions-v2');
 if(savedStairs){try{const saved=JSON.parse(savedStairs);if(Array.isArray(saved)&&saved.length===stairSteps.length)saved.forEach((p,i)=>Object.assign(stairSteps[i],p));}catch{}}
+const savedPlatforms=localStorage.getItem('talon-platform-collisions-v2');
 if(savedPlatforms){
   try{
     const saved=JSON.parse(savedPlatforms);
@@ -124,17 +145,34 @@ canvas.addEventListener('pointermove',e=>{
 });
 canvas.addEventListener('pointerup',e=>{
   if(!dragPlatform)return;
-  localStorage.setItem('talon-platform-collisions',JSON.stringify(platforms));
-  if(stairSteps.includes(dragPlatform)) localStorage.setItem('talon-stair-collisions',JSON.stringify(stairSteps));
+  localStorage.setItem('talon-platform-collisions-v2',JSON.stringify(platforms));
+  if(stairSteps.includes(dragPlatform)) localStorage.setItem('talon-stair-collisions-v2',JSON.stringify(stairSteps));
   dragPlatform=null; resizeMode=null; e.preventDefault();
 });
-// Altura de cada peldaño de la escalera de piedra dibujada a la derecha.
+// Altura de cada peldaño de la escalera de piedra dibujada.
 function stairHeight(x){
-  if(x<1300||x>1560)return null;
-  if(x>=1485)return 500;
   return stairSteps.find(p=>x>=p.x&&x<p.x+p.w)?.y??null;
 }
-const player = {x:110,y:500,w:MASTER_CHARACTER.w,h:MASTER_CHARACTER.h,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,idleTime:0,sleepTime:0,snoreTime:0,jumpCount:0,jumpLatch:false,doubleJumpTime:0,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0};
+const player = {x:110,y:409,w:MASTER_CHARACTER.w,h:MASTER_CHARACTER.h,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,idleTime:0,sleepTime:0,snoreTime:0,jumpCount:0,jumpLatch:false,doubleJumpTime:0,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0,hurtTime:0};
+
+const ENEMY_FRAMES = [
+  {x: 10, w: 332, cx: 166, fy: 560},
+  {x: 362, w: 353, cx: 176, fy: 560},
+  {x: 735, w: 507, cx: 253, fy: 560},
+  {x: 1262, w: 405, cx: 202, fy: 560},
+  {x: 1687, w: 517, cx: 258, fy: 560},
+  {x: 2224, w: 632, cx: 316, fy: 560},
+  {x: 2876, w: 434, cx: 217, fy: 560},
+  {x: 3330, w: 571, cx: 285, fy: 560}
+];
+
+const enemies = [
+  { id: 1, x: 620, y: 437, minX: 470, maxX: 880, vx: 70, face: 1, state: 'walk', anim: 0, w: 48, h: 96, deadTimer: 0 },
+  { id: 2, x: 500, y: 202, minX: 450, maxX: 710, vx: 60, face: 1, state: 'walk', anim: 0, w: 48, h: 96, deadTimer: 0 },
+  { id: 3, x: 1100, y: 270, minX: 1060, maxX: 1260, vx: 50, face: 1, state: 'walk', anim: 0, w: 48, h: 96, deadTimer: 0 },
+  { id: 4, x: 1450, y: 437, minX: 1380, maxX: 1750, vx: 75, face: 1, state: 'walk', anim: 0, w: 48, h: 96, deadTimer: 0 },
+  { id: 5, x: 2020, y: 152, minX: 1980, maxX: 2130, vx: 55, face: 1, state: 'walk', anim: 0, w: 48, h: 96, deadTimer: 0 }
+];
 let last = performance.now();
 function resize(){ const dpr=Math.min(devicePixelRatio||1,2); const height=Math.round(visualViewport?.height||innerHeight); document.documentElement.style.setProperty('--game-height',height+'px'); canvas.width=innerWidth*dpr; canvas.height=height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
 addEventListener('resize', resize); visualViewport?.addEventListener('resize',resize); addEventListener('orientationchange',()=>setTimeout(resize,200)); resize();
@@ -339,7 +377,47 @@ function update(dt){
   for(const p of platforms){ if(player.vy>=0 && oldY+player.h<=p.y && player.y+player.h>=p.y && player.x+player.w>p.x && player.x<p.x+p.w){ player.y=p.y-player.h; player.vy=0; player.onGround=true; } }
   if(wasAir && player.onGround){ player.landTime=0.12; player.jumpCount=0; player.doubleJumpTime=0; }
   if(player.landTime>0) player.landTime-=dt;
-  if(player.y>world.h+100){player.x=110;player.y=500;player.vy=0;}
+  if(player.hurtTime>0) player.hurtTime-=dt;
+  if(player.y>world.h+80){player.x=110;player.y=409;player.vy=0;}
+
+  // Actualización y combate de enemigos Tiki
+  for(const enemy of enemies){
+    if(enemy.state==='hit'){
+      enemy.deadTimer+=dt;
+      if(enemy.deadTimer>12){ enemy.state='walk'; enemy.deadTimer=0; }
+      continue;
+    }
+    enemy.x += enemy.vx * enemy.face * dt;
+    if(enemy.face>0 && enemy.x>=enemy.maxX){ enemy.x=enemy.maxX; enemy.face=-1; }
+    else if(enemy.face<0 && enemy.x<=enemy.minX){ enemy.x=enemy.minX; enemy.face=1; }
+    enemy.anim += dt*6.5;
+
+    const dx = (player.x+player.w/2) - (enemy.x+enemy.w/2);
+    const dy = (player.y+player.h/2) - (enemy.y+enemy.h/2);
+    const dist = Math.hypot(dx, dy);
+
+    // Ataque con espada impacta al Tiki
+    const attacking = player.attackTime>0.08 && player.attackTime<0.54;
+    const facing = (player.face>0 && dx<0) || (player.face<0 && dx>0);
+    if(attacking && facing && Math.abs(dx)<85 && Math.abs(dy)<60){
+      enemy.state='hit'; enemy.deadTimer=0.001; playStep('stone'); continue;
+    }
+
+    // Salto o pisotón sobre la cabeza del Tiki
+    if(player.vy>60 && player.y+player.h>=enemy.y-5 && player.y+player.h<=enemy.y+35 && Math.abs(dx)<42){
+      enemy.state='hit'; enemy.deadTimer=0.001; player.vy=-450; player.jumpCount=1; playStep('stone'); continue;
+    }
+
+    // Daño y empuje al jugador si entra en contacto
+    if(dist<48 && player.hurtTime<=0 && player.sleepTime<=0){
+      player.hurtTime=0.9;
+      player.vx=(dx>=0?1:-1)*260;
+      player.vy=-280;
+      player.onGround=false;
+      playStep('grass');
+    }
+  }
+
   if(Math.abs(player.vx)>0 && player.onGround){ player.anim+=dt*(running?14:9); player.frame=Math.floor(player.anim)%8; }
   else if(player.onGround){ player.anim+=dt*5; player.frame=Math.floor(player.anim)%6; }
   else { player.anim=0; player.frame=0; }
@@ -357,8 +435,8 @@ const FRAMES = {
   idle:   { scale: 124/624, list: [{x:38,w:275,cx:142,fy:680},{x:399,w:277,cx:143,fy:680},{x:761,w:281,cx:145,fy:680},{x:1120,w:275,cx:142,fy:680},{x:1482,w:273,cx:142,fy:680},{x:1846,w:275,cx:140,fy:680}] },
   crouch: { scale: 124/369, list: [{x:27,w:187,cx:101,fy:577},{x:264,w:175,cx:92,fy:578},{x:487,w:170,cx:92,fy:577},{x:712,w:177,cx:91,fy:575},{x:943,w:175,cx:90,fy:576},{x:1166,w:176,cx:89,fy:576}] },
   walk:   { scale: 124/586, list: [{x:0,w:281,cx:135,fy:652},{x:278,w:235,cx:131,fy:652},{x:554,w:233,cx:127,fy:652},{x:825,w:267,cx:127,fy:652},{x:1089,w:287,cx:136,fy:652},{x:1372,w:245,cx:124,fy:652},{x:1640,w:239,cx:126,fy:652},{x:1912,w:260,cx:126,fy:652}] },
-  // Los anchos terminan antes del siguiente fotograma para evitar que se filtre su dibujo.
-  run:    { scale: 124/564, list: [{x:6,w:285,cx:139,fy:642},{x:295,w:232,cx:121,fy:642},{x:531,w:288,cx:154,fy:642},{x:823,w:283,cx:135,fy:642},{x:1110,w:264,cx:112,fy:642},{x:1378,w:234,cx:119,fy:642},{x:1616,w:286,cx:150,fy:642},{x:1906,w:258,cx:128,fy:642}] },
+  // Animación de correr atlética con movimiento fluido de ambos brazos.
+  run:    { scale: 124/560, list: [{x:10,w:446,cx:223,fy:660},{x:476,w:382,cx:191,fy:660},{x:878,w:454,cx:227,fy:660},{x:1352,w:428,cx:214,fy:660},{x:1800,w:454,cx:227,fy:660},{x:2274,w:445,cx:222,fy:660},{x:2739,w:470,cx:235,fy:660},{x:3229,w:453,cx:226,fy:660}] },
   jump:   { scale: 124/540, list: [{x:30,w:259,cx:130,fy:662},{x:312,w:225,cx:110,fy:662},{x:535,w:275,cx:145,fy:662},{x:826,w:269,cx:127,fy:662},{x:1097,w:259,cx:130,fy:662},{x:1382,w:233,cx:115,fy:662},{x:1646,w:241,cx:124,fy:662},{x:1910,w:231,cx:120,fy:662}] },
   doubleJump: { scale: 124/360 },
   sleep: { scale: 124/360 },
@@ -376,6 +454,46 @@ function render(){
   const moving=Math.abs(player.vx)>0 && player.onGround;
   const crouching=pressed('ArrowDown','KeyS');
   const jumping=!player.onGround;
+
+  // Render enemigos Tiki
+  if(enemySheet.complete && enemySheet.naturalWidth){
+    const sc = 96 / 560;
+    for(const enemy of enemies){
+      if(enemy.state === 'hit' && enemy.deadTimer > 4.5) continue;
+      let fIdx = 0;
+      if(enemy.state === 'hit'){
+        fIdx = 6 + (Math.floor(enemy.deadTimer * 6) % 2);
+      } else {
+        const dx = Math.abs((player.x + player.w/2) - (enemy.x + enemy.w/2));
+        const dy = Math.abs((player.y + player.h/2) - (enemy.y + enemy.h/2));
+        if(dx < 80 && dy < 50){
+          fIdx = 4 + (Math.floor(performance.now() * 0.005) % 2);
+        } else {
+          fIdx = Math.floor(enemy.anim) % 4;
+        }
+      }
+      const f = ENEMY_FRAMES[fIdx];
+      const ex = (enemy.x - cam) * s, ey = (enemy.y + enemy.h) * s;
+      ctx.save();
+      if(enemy.state === 'hit' && enemy.deadTimer > 3.0){
+        ctx.globalAlpha = Math.max(0, 1 - (enemy.deadTimer - 3.0) / 1.5);
+      }
+      ctx.translate(ex + (enemy.w / 2) * s, ey);
+      ctx.scale(enemy.face * s * sc, s * sc);
+      ctx.drawImage(enemySheet, f.x, 0, f.w, enemySheet.height, -f.cx, -f.fy, f.w, enemySheet.height);
+      ctx.restore();
+
+      if(enemy.state === 'hit' && enemy.deadTimer <= 3.0){
+        ctx.save();
+        ctx.fillStyle = '#ffe066';
+        ctx.font = 'bold 12px system-ui';
+        const dizzyBob = Math.sin(enemy.deadTimer * 8) * 3;
+        ctx.fillText('💫 K.O.!', ex - 2 * s, (enemy.y - 8) * s + dizzyBob);
+        ctx.restore();
+      }
+    }
+  }
+
   let animKey='idle', activeSheet=idleSheet, frame=player.frame;
   if(player.sleepTime>0){ animKey='sleep'; activeSheet=sleepSheet; frame=player.sleepTime<1.2?Math.min(5,Math.floor(player.sleepTime/1.2*6)):2+Math.floor((player.sleepTime-1.2)*3)%4; }
   else if(player.climbTime>0){ animKey='climb'; activeSheet=climbSheet; frame=Math.min(11,Math.floor(player.climbTime*11)); }
@@ -397,6 +515,9 @@ function render(){
     const sc=meta?.scale || 124/460;
     const fh=activeSheet.height;
     ctx.save();
+    if(player.hurtTime > 0 && Math.floor(player.hurtTime * 24) % 2 === 0){
+      ctx.globalAlpha = 0.35;
+    }
     ctx.translate(px+player.w*s/2, py+player.h*s);
     ctx.scale(player.face*s*sc, s*sc);
     if(animKey==='swordRun' || animKey==='doubleJump' || animKey==='sleep' || animKey==='attack' || animKey==='hang' || animKey==='climb'){
@@ -409,8 +530,17 @@ function render(){
   }
   const stateTxt = player.climbTime>0?'SUBIENDO':player.attackTime>0?'ATACANDO':player.swordTime>0?(player.swordOut?'DESENVAINANDO':'ENVAINANDO'):jumping?'SALTANDO':crouching?'AGACHADO':player.running?'CORRIENDO':moving?'CAMINANDO':'QUIETO';
   ctx.fillStyle='#ffffffcc'; ctx.font='bold 15px system-ui'; ctx.fillText('Movimiento: '+stateTxt,18,gameHeight()-18);
+  const defeated = enemies.filter(e => e.state === 'hit').length;
+  ctx.fillStyle='#ffe066'; ctx.font='bold 15px system-ui';
+  ctx.fillText('Tikis K.O.: ' + defeated + ' / ' + enemies.length, innerWidth - 170, 32);
   if(player.idleTime>0){ const remaining=Math.max(0,15-player.idleTime); ctx.fillStyle='#fff4c9e8'; ctx.font='bold 16px system-ui'; ctx.fillText(remaining>0?'Sueño en: '+remaining.toFixed(1)+' s':'Preparando sueño…',18,gameHeight()-42); }
   if(player.sleepTime>0){ const bob=Math.sin(player.sleepTime*2)*2; ctx.save(); ctx.globalAlpha=.72+.2*Math.sin(player.sleepTime*3); ctx.fillStyle='#fff4c9'; ctx.font='bold 20px system-ui'; ctx.fillText('Z',px+player.w*s*.58,py+10*s-bob); ctx.font='bold 15px system-ui'; ctx.fillText('z',px+player.w*s*.78,py-5*s-bob); ctx.font='bold 12px system-ui'; ctx.fillText('z',px+player.w*s*.94,py-18*s-bob); ctx.restore(); }
 }
 function loop(now){ const dt=Math.min((now-last)/1000,.033); last=now; update(dt); render(); requestAnimationFrame(loop); }
-Promise.all([new Promise(r=>bg.onload=r),new Promise(r=>sheet.onload=r),new Promise(r=>runSheet.onload=r),new Promise(r=>swordRunSheet.onload=r),new Promise(r=>idleSheet.onload=r),new Promise(r=>swordSheet.onload=r),new Promise(r=>comboSheet.onload=r),new Promise(r=>crouchSheet.onload=r),new Promise(r=>jumpSheet.onload=r),new Promise(r=>doubleJumpSheet.onload=r),new Promise(r=>sleepSheet.onload=r),new Promise(r=>hangSheet.onload=r),new Promise(r=>climbSheet.onload=r)]).then(()=>requestAnimationFrame(loop));
+const loadImg = img => (img.complete && img.naturalWidth !== 0) ? Promise.resolve() : new Promise(r => { img.onload = img.onerror = r; });
+Promise.all([
+  loadImg(bg), loadImg(sheet), loadImg(runSheet), loadImg(swordRunSheet),
+  loadImg(idleSheet), loadImg(swordSheet), loadImg(comboSheet), loadImg(crouchSheet),
+  loadImg(jumpSheet), loadImg(doubleJumpSheet), loadImg(sleepSheet), loadImg(hangSheet),
+  loadImg(climbSheet), loadImg(enemySheet)
+]).then(() => requestAnimationFrame(loop));
