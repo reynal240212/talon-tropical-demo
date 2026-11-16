@@ -153,7 +153,24 @@ canvas.addEventListener('pointerup',e=>{
 function stairHeight(x){
   return stairSteps.find(p=>x>=p.x&&x<p.x+p.w)?.y??null;
 }
-const player = {x:110,y:409,w:MASTER_CHARACTER.w,h:MASTER_CHARACTER.h,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,idleTime:0,sleepTime:0,snoreTime:0,jumpCount:0,jumpLatch:false,doubleJumpTime:0,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0,hurtTime:0};
+const player = {x:110,y:409,w:MASTER_CHARACTER.w,h:MASTER_CHARACTER.h,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,idleTime:0,sleepTime:0,snoreTime:0,jumpCount:0,jumpLatch:false,doubleJumpTime:0,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,comboStep:0,comboTimer:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0,hurtTime:0};
+let screenShake = 0;
+const particles = [];
+function spawnSlashSparks(x, y, count=14, color='#ffd152'){
+  for(let i=0; i<count; i++){
+    const angle = (Math.PI * 2 * i / count) + (Math.random() - 0.5) * 0.9;
+    const speed = 140 + Math.random() * 280;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 80,
+      size: 2.5 + Math.random() * 3.5,
+      color: i % 2 === 0 ? '#ffffff' : color,
+      life: 0.28 + Math.random() * 0.16,
+      maxLife: 0.44
+    });
+  }
+}
 
 const ENEMY_FRAMES = [
   {x: 24, w: 289, cx: 144, fy: 550},
@@ -203,6 +220,52 @@ function playSnore(){
   osc.type='sine'; osc.frequency.setValueAtTime(105,now); osc.frequency.exponentialRampToValueAtTime(62,now+.55);
   gain.gain.setValueAtTime(.0001,now); gain.gain.exponentialRampToValueAtTime(.045,now+.12); gain.gain.exponentialRampToValueAtTime(.0001,now+.68);
   osc.connect(gain); gain.connect(audioContext.destination); osc.start(now); osc.stop(now+.7);
+}
+function playSwordSwing(step=0){
+  if(!audioContext||audioContext.state!=='running')return;
+  const now=audioContext.currentTime;
+  const bufferSize = Math.floor(audioContext.sampleRate * 0.16);
+  const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+  const data = buffer.getChannelData(0);
+  for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
+  const noise = audioContext.createBufferSource();
+  noise.buffer = buffer;
+  const filter = audioContext.createBiquadFilter();
+  filter.type = 'bandpass';
+  const startFreq = step === 2 ? 900 : step === 1 ? 1600 : 1250;
+  const endFreq = step === 2 ? 220 : step === 1 ? 380 : 320;
+  filter.frequency.setValueAtTime(startFreq, now);
+  filter.frequency.exponentialRampToValueAtTime(endFreq, now + 0.14);
+  filter.Q.value = 3.2;
+  const gain = audioContext.createGain();
+  gain.gain.setValueAtTime(0.001, now);
+  gain.gain.exponentialRampToValueAtTime(step === 2 ? 0.16 : 0.11, now + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+  noise.connect(filter); filter.connect(gain); gain.connect(audioContext.destination);
+  noise.start(now); noise.stop(now + 0.16);
+
+  const osc = audioContext.createOscillator();
+  const oscGain = audioContext.createGain();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(step === 2 ? 480 : step === 1 ? 840 : 680, now);
+  osc.frequency.exponentialRampToValueAtTime(120, now + 0.13);
+  oscGain.gain.setValueAtTime(0.03, now);
+  oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
+  osc.connect(oscGain); oscGain.connect(audioContext.destination);
+  osc.start(now); osc.stop(now + 0.14);
+}
+function playSwordHit(){
+  if(!audioContext||audioContext.state!=='running')return;
+  const now=audioContext.currentTime;
+  const osc1 = audioContext.createOscillator();
+  const osc2 = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  osc1.type = 'sawtooth'; osc1.frequency.setValueAtTime(1120, now); osc1.frequency.exponentialRampToValueAtTime(260, now + 0.11);
+  osc2.type = 'square'; osc2.frequency.setValueAtTime(1580, now); osc2.frequency.exponentialRampToValueAtTime(380, now + 0.09);
+  gain.gain.setValueAtTime(0.12, now);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
+  osc1.connect(gain); osc2.connect(gain); gain.connect(audioContext.destination);
+  osc1.start(now); osc2.start(now); osc1.stop(now + 0.11); osc2.stop(now + 0.11);
 }
 async function startMusic(){
   if(!music.paused)return;
@@ -324,15 +387,25 @@ function update(dt){
   const attackPressed=pressed('KeyX','x','X','KeyZ','z','Z','KeyJ','j','J');
   if(attackPressed && !player.attackLatch && player.attackTime<=0 && player.swordTime<=0){
     player.swordOut=true;
+    if(player.comboTimer > 0){
+      player.comboStep = (player.comboStep + 1) % 3;
+    } else {
+      player.comboStep = 0;
+    }
     player.attackTime=0.001;
+    player.comboTimer=0.85;
+    playSwordSwing(player.comboStep);
+    player.vx = player.face * (player.comboStep === 2 ? 220 : 130);
   }
   player.attackLatch=attackPressed;
+  if(player.comboTimer > 0) player.comboTimer -= dt;
+  if(player.attackTime > 0) player.attackTime += dt;
+  const attackDuration = player.comboStep === 2 ? 0.46 : 0.36;
+  if(player.attackTime >= attackDuration) player.attackTime = 0;
   const swordPressed=pressed('KeyE','e','E','KeyK','k','K');
   if(swordPressed && !player.swordLatch && player.swordTime<=0 && player.attackTime<=0){ player.swordOut=!player.swordOut; player.swordTime=.001; }
   player.swordLatch=swordPressed;
   if(player.swordTime>0) player.swordTime+=dt;
-  if(player.attackTime>0) player.attackTime+=dt;
-  if(player.attackTime>=.56) player.attackTime=0;
   if(player.swordTime>=.64) player.swordTime=0;
   const left=pressed('ArrowLeft','a','KeyA'), right=pressed('ArrowRight','d','KeyD');
   const running=pressed('ShiftLeft','ShiftRight','Shift','ControlLeft','ControlRight','Control');
@@ -396,15 +469,23 @@ function update(dt){
     const dist = Math.hypot(dx, dy);
 
     // Ataque con espada impacta al Tiki
-    const attacking = player.attackTime>0.08 && player.attackTime<0.50;
+    const attacking = player.attackTime>0.06 && player.attackTime<(attackDuration-0.04);
     const facing = (player.face>0 && dx<0) || (player.face<0 && dx>0);
-    if(attacking && facing && Math.abs(dx)<95 && Math.abs(dy)<65){
-      enemy.state='hit'; enemy.deadTimer=0.001; playStep('stone'); continue;
+    const reach = player.comboStep === 2 ? 115 : 95;
+    if(attacking && facing && Math.abs(dx)<reach && Math.abs(dy)<65){
+      enemy.state='hit'; enemy.deadTimer=0.001;
+      playSwordHit();
+      screenShake = 0.09;
+      spawnSlashSparks(enemy.x+enemy.w/2, enemy.y+enemy.h/2, player.comboStep === 2 ? 18 : 12);
+      continue;
     }
 
     // Salto o pisotón sobre la cabeza del Tiki
     if(player.vy>60 && player.y+player.h>=enemy.y-5 && player.y+player.h<=enemy.y+35 && Math.abs(dx)<45){
-      enemy.state='hit'; enemy.deadTimer=0.001; player.vy=-450; player.jumpCount=1; playStep('stone'); continue;
+      enemy.state='hit'; enemy.deadTimer=0.001; player.vy=-450; player.jumpCount=1;
+      playStep('stone');
+      spawnSlashSparks(enemy.x+enemy.w/2, enemy.y+15, 10, '#ffffff');
+      continue;
     }
 
     // Comportamiento activo del Tiki: patrulla, persecución y estocada
@@ -469,6 +550,16 @@ function update(dt){
   if(player.onGround && !player.vx && !jumpPressed && !attackPressed && !swordPressed && !crouching && player.hangTime<=0) player.idleTime=Math.min(15,player.idleTime+dt);
   else player.idleTime=0;
   if(player.idleTime>=15 && player.sleepTime<=0) player.sleepTime=.001;
+
+  if(screenShake > 0) screenShake -= dt;
+  for(let i=particles.length-1; i>=0; i--){
+    const p = particles[i];
+    p.life -= dt;
+    if(p.life <= 0){ particles.splice(i, 1); continue; }
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 420 * dt;
+  }
 }
 const FRAMES = {
   idle:   { scale: 124/624, list: [{x:38,w:275,cx:142,fy:680},{x:399,w:277,cx:143,fy:680},{x:761,w:281,cx:145,fy:680},{x:1120,w:275,cx:142,fy:680},{x:1482,w:273,cx:142,fy:680},{x:1846,w:275,cx:140,fy:680}] },
@@ -500,7 +591,17 @@ const FRAMES = {
 };
 function render(){
   document.querySelector('.climb').hidden=player.hangTime<=0;
-  ctx.clearRect(0,0,innerWidth,gameHeight()); drawWorld(bg); drawAtmosphere(performance.now()); drawPlatformVolume(); drawCollisionDebug();
+  ctx.clearRect(0,0,innerWidth,gameHeight());
+
+  let shakeX = 0, shakeY = 0;
+  if(screenShake > 0){
+    shakeX = (Math.random() - 0.5) * 8 * (screenShake / 0.08);
+    shakeY = (Math.random() - 0.5) * 6 * (screenShake / 0.08);
+  }
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+
+  drawWorld(bg); drawAtmosphere(performance.now()); drawPlatformVolume(); drawCollisionDebug();
   const s=scale(), cam=cameraX(), px=(player.x-cam)*s, py=player.y*s;
   const moving=Math.abs(player.vx)>0 && player.onGround;
   const crouching=pressed('ArrowDown','KeyS');
@@ -553,7 +654,14 @@ function render(){
   if(player.sleepTime>0){ animKey='sleep'; activeSheet=sleepSheet; frame=player.sleepTime<1.2?Math.min(5,Math.floor(player.sleepTime/1.2*6)):2+Math.floor((player.sleepTime-1.2)*3)%4; }
   else if(player.climbTime>0){ animKey='climb'; activeSheet=climbSheet; frame=Math.min(11,Math.floor(player.climbTime*11)); }
   else if(player.hangTime>0){ animKey='hang'; activeSheet=hangSheet; frame=Math.min(7,Math.floor(player.hangTime*9)); }
-  else if(player.attackTime>0){ animKey='attack'; activeSheet=comboSheet; frame=Math.min(7,Math.floor(player.attackTime/.56*8)); }
+  else if(player.attackTime>0){
+    animKey='attack';
+    activeSheet=comboSheet;
+    const attackDuration = player.comboStep === 2 ? 0.46 : 0.36;
+    const stepFrames = player.comboStep === 0 ? [0, 1, 3, 7] : player.comboStep === 1 ? [7, 5, 6, 0] : [1, 2, 4, 5, 7];
+    const progress = Math.min(stepFrames.length - 1, Math.floor(player.attackTime / attackDuration * stepFrames.length));
+    frame = stepFrames[progress];
+  }
   else if(player.swordTime>0){ animKey='sword'; activeSheet=swordSheet; const step=Math.min(7,Math.floor(player.swordTime/.64*8)); frame=player.swordOut?step:7-step; }
   else if(player.doubleJumpTime>0 && jumping){ animKey='doubleJump'; activeSheet=doubleJumpSheet; frame=Math.min(7,Math.floor(player.doubleJumpTime/.72*8)); }
   else if(jumping){ animKey='jump'; activeSheet=jumpSheet; frame=player.vy<-300?1:player.vy<-80?2:player.vy<120?3:player.vy<320?5:6; }
@@ -583,6 +691,84 @@ function render(){
     }else ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
     ctx.restore();
   }
+
+  // Efecto visual de arco cortante luminoso (Slash Arc FX)
+  const curAtkDuration = player.comboStep === 2 ? 0.46 : 0.36;
+  if(player.attackTime > 0.04 && player.attackTime < curAtkDuration - 0.03){
+    const progress = player.attackTime / curAtkDuration;
+    ctx.save();
+    ctx.translate(px + (player.w * s) / 2, py + (player.h * s) * 0.52);
+    ctx.scale(player.face * s, s);
+    const step = player.comboStep;
+
+    if(step === 0){
+      // Combo 1: Tajo horizontal veloz cian/blanco
+      ctx.rotate(-0.15 + progress * 0.3);
+      const grad = ctx.createLinearGradient(15, 0, 95, 0);
+      grad.addColorStop(0, 'rgba(255,255,255,0.95)');
+      grad.addColorStop(0.45, 'rgba(90,230,255,0.85)');
+      grad.addColorStop(1, 'rgba(0,180,255,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(15, -18);
+      ctx.quadraticCurveTo(65, -35, 105, 0);
+      ctx.quadraticCurveTo(60, 32, 20, 18);
+      ctx.quadraticCurveTo(45, 0, 15, -18);
+      ctx.fill();
+    } else if(step === 1){
+      // Combo 2: Tajo ascendente enérgico dorado/ámbar
+      ctx.rotate(0.35 - progress * 0.7);
+      const grad = ctx.createLinearGradient(15, 25, 95, -30);
+      grad.addColorStop(0, 'rgba(255,255,255,0.98)');
+      grad.addColorStop(0.45, 'rgba(255,220,70,0.9)');
+      grad.addColorStop(1, 'rgba(255,140,20,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(15, 28);
+      ctx.quadraticCurveTo(60, 38, 102, -12);
+      ctx.quadraticCurveTo(70, -48, 25, -22);
+      ctx.quadraticCurveTo(48, 0, 15, 28);
+      ctx.fill();
+    } else {
+      // Combo 3: Golpe de poder pesado con llamarada
+      ctx.rotate(-0.65 + progress * 1.3);
+      const grad = ctx.createRadialGradient(50, 0, 10, 50, 0, 125);
+      grad.addColorStop(0, 'rgba(255,255,255,0.99)');
+      grad.addColorStop(0.35, 'rgba(255,210,40,0.95)');
+      grad.addColorStop(0.7, 'rgba(255,60,20,0.8)');
+      grad.addColorStop(1, 'rgba(255,30,10,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(20, -70);
+      ctx.quadraticCurveTo(100, -60, 128, 25);
+      ctx.quadraticCurveTo(90, 85, 25, 50);
+      ctx.quadraticCurveTo(65, 0, 20, -70);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // Render partículas de impacto y chispas
+  for(const p of particles){
+    const alpha = Math.max(0, p.life / p.maxLife);
+    ctx.save();
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = alpha;
+    const sx = (p.x - cam) * s, sy = p.y * s;
+    ctx.fillRect(sx - (p.size * s) / 2, sy - (p.size * s) / 2, p.size * s, p.size * s);
+    ctx.restore();
+  }
+
+  // Indicador de Combo sobre el jugador
+  if(player.comboTimer > 0){
+    ctx.save();
+    ctx.fillStyle = player.comboStep === 2 ? '#ff5252' : (player.comboStep === 1 ? '#ffd740' : '#69f0ae');
+    ctx.font = 'bold 15px system-ui';
+    const comboLabel = player.comboStep === 2 ? '🔥 COMBO 3: ¡GOLPE DE PODER!' : (player.comboStep === 1 ? '⚡ COMBO 2: ¡TAJO ASCENDENTE!' : '⚔ COMBO 1: TAJO VELOZ');
+    ctx.fillText(comboLabel, px - 35 * s, (player.y - 18) * s);
+    ctx.restore();
+  }
+
   const stateTxt = player.climbTime>0?'SUBIENDO':player.attackTime>0?'ATACANDO':player.swordTime>0?(player.swordOut?'DESENVAINANDO':'ENVAINANDO'):jumping?'SALTANDO':crouching?'AGACHADO':player.running?'CORRIENDO':moving?'CAMINANDO':'QUIETO';
   ctx.fillStyle='#ffffffcc'; ctx.font='bold 15px system-ui'; ctx.fillText('Movimiento: '+stateTxt,18,gameHeight()-18);
   const defeated = enemies.filter(e => e.state === 'hit').length;
@@ -590,6 +776,7 @@ function render(){
   ctx.fillText('Tikis K.O.: ' + defeated + ' / ' + enemies.length, innerWidth - 170, 32);
   if(player.idleTime>0){ const remaining=Math.max(0,15-player.idleTime); ctx.fillStyle='#fff4c9e8'; ctx.font='bold 16px system-ui'; ctx.fillText(remaining>0?'Sueño en: '+remaining.toFixed(1)+' s':'Preparando sueño…',18,gameHeight()-42); }
   if(player.sleepTime>0){ const bob=Math.sin(player.sleepTime*2)*2; ctx.save(); ctx.globalAlpha=.72+.2*Math.sin(player.sleepTime*3); ctx.fillStyle='#fff4c9'; ctx.font='bold 20px system-ui'; ctx.fillText('Z',px+player.w*s*.58,py+10*s-bob); ctx.font='bold 15px system-ui'; ctx.fillText('z',px+player.w*s*.78,py-5*s-bob); ctx.font='bold 12px system-ui'; ctx.fillText('z',px+player.w*s*.94,py-18*s-bob); ctx.restore(); }
+  ctx.restore(); // Screen shake restore
 }
 function loop(now){ const dt=Math.min((now-last)/1000,.033); last=now; update(dt); render(); requestAnimationFrame(loop); }
 const loadImg = img => (img.complete && img.naturalWidth !== 0) ? Promise.resolve() : new Promise(r => { img.onload = img.onerror = r; });
