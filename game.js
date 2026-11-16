@@ -30,6 +30,8 @@ platformTexture.src = 'assets/plataforma_tropical_textura_v1.png?v=1';
 enemySheet.src = 'assets/enemigo_tiki_master_v2.png';
 cocoSheet.src = 'assets/coco_salvaje_master_v1.png';
 cocoPiratasSheet.src = 'assets/coco_piratas_master_v1.png';
+const cocoConchaWalkSheet = new Image();
+cocoConchaWalkSheet.src = 'assets/coco_concha_caminar_perfil_master.png';
 slingSheet.src = 'assets/explorador_resortera_master_v1.png';
 
 const keyboardKeys = new Set();
@@ -1249,14 +1251,26 @@ function render(){
 
       const ex = (enemy.x + enemy.w / 2 - cam) * s;
       const ey = (enemy.y + enemy.h) * s;
-      ctx.save();
-      if(enemy.state === 'hit' && enemy.deadTimer > 3.0){
-        ctx.globalAlpha = Math.max(0, 1 - (enemy.deadTimer - 3.0) / 1.5);
+      
+      // Si es Coco Concha patrullando o corriendo, usa su spritesheet de perfil 2D cuadro por cuadro
+      if(enemy.type === 0 && (enemy.state === 'patrol' || enemy.state === 'chase') && cocoConchaWalkSheet.complete && cocoConchaWalkSheet.naturalWidth){
+        const f = Math.floor(enemy.anim * (enemy.state === 'chase' ? 9 : 6)) % 6;
+        const psc = enemy.h / 240;
+        ctx.save();
+        ctx.translate(ex, ey);
+        ctx.scale(enemy.face * s * psc, s * psc);
+        ctx.drawImage(cocoConchaWalkSheet, f * 180, 0, 180, 270, -90, -260, 180, 270);
+        ctx.restore();
+      } else {
+        ctx.save();
+        if(enemy.state === 'hit' && enemy.deadTimer > 3.0){
+          ctx.globalAlpha = Math.max(0, 1 - (enemy.deadTimer - 3.0) / 1.5);
+        }
+        ctx.translate(ex, ey);
+        ctx.scale(enemy.face * s * sc, s * sc);
+        ctx.drawImage(cocoPiratasSheet, col * 140, prof.row * 160, 140, 160, -70, -150, 140, 160);
+        ctx.restore();
       }
-      ctx.translate(ex, ey);
-      ctx.scale(enemy.face * s * sc, s * sc);
-      ctx.drawImage(cocoPiratasSheet, col * 140, prof.row * 160, 140, 160, -70, -150, 140, 160);
-      ctx.restore();
 
       if(enemy.state === 'hit' && enemy.deadTimer <= 3.0){
         ctx.save();
@@ -1415,5 +1429,5 @@ Promise.all([
   loadImg(idleSheet), loadImg(crouchSheet),
   loadImg(jumpSheet), loadImg(doubleJumpSheet), loadImg(sleepSheet), loadImg(hangSheet),
   loadImg(climbSheet), loadImg(enemySheet), loadImg(cocoSheet), loadImg(cocoPiratasSheet),
-  loadImg(slingSheet)
+  loadImg(cocoConchaWalkSheet), loadImg(slingSheet)
 ]).then(() => requestAnimationFrame(loop));
