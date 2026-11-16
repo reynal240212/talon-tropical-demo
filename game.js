@@ -13,6 +13,8 @@ const climbSheet = new Image();
 const platformTexture = new Image();
 const enemySheet = new Image();
 const cocoSheet = new Image();
+const cocoPiratasSheet = new Image();
+const slingSheet = new Image();
 bg.src = 'assets/nivel_tropical_extendido_v2.png?v=1';
 sheet.src = 'assets/explorador_caminar_master_v1.webp';
 runSheet.src = 'assets/explorador_correr_master_v1.webp';
@@ -27,6 +29,8 @@ climbSheet.src = 'assets/explorador_subir_personaje_v2.png?v=1';
 platformTexture.src = 'assets/plataforma_tropical_textura_v1.png?v=1';
 enemySheet.src = 'assets/enemigo_tiki_master_v2.png';
 cocoSheet.src = 'assets/coco_salvaje_master_v1.png';
+cocoPiratasSheet.src = 'assets/coco_piratas_master_v1.png';
+slingSheet.src = 'assets/explorador_resortera_master_v1.png';
 
 const keyboardKeys = new Set();
 const touchKeys = new Set();
@@ -195,12 +199,20 @@ const ENEMY_FRAMES = [
   {x: 2346, w: 288, cx: 144, fy: 550}
 ];
 
+const COCO_PIRATA_PROFILES = [
+  { name: 'Coco Concha', row: 0, w: 56, h: 66, speed: 90, chaseSpeed: 140, attackRange: 55, attackDur: 0.52, warCry: '💢 ¡¡DEFENDER!!' },
+  { name: 'Gran Jefe Coco', row: 1, w: 62, h: 72, speed: 75, chaseSpeed: 130, attackRange: 75, attackDur: 0.58, warCry: '💢 ¡¡A LA CARGA!!' },
+  { name: 'Coco Bambú', row: 2, w: 52, h: 64, speed: 110, chaseSpeed: 160, attackRange: 50, attackDur: 0.45, warCry: '💢 ¡¡AQUÍ VOY!!' },
+  { name: 'Coco Saltarín', row: 3, w: 48, h: 60, speed: 125, chaseSpeed: 180, attackRange: 45, attackDur: 0.40, warCry: '💢 ¡¡WAAAH!!' }
+];
+
 const enemies = [
-  { id: 1, x: 620, y: 437, minX: 470, maxX: 880, vx: 100, face: 1, state: 'patrol', anim: 0, w: 50, h: 96, deadTimer: 0, attackTimer: 0 },
-  { id: 2, x: 500, y: 202, minX: 450, maxX: 710, vx: 90, face: 1, state: 'patrol', anim: 0, w: 50, h: 96, deadTimer: 0, attackTimer: 0 },
-  { id: 3, x: 1100, y: 270, minX: 1060, maxX: 1260, vx: 80, face: 1, state: 'patrol', anim: 0, w: 50, h: 96, deadTimer: 0, attackTimer: 0 },
-  { id: 4, x: 1450, y: 437, minX: 1380, maxX: 1750, vx: 105, face: 1, state: 'patrol', anim: 0, w: 50, h: 96, deadTimer: 0, attackTimer: 0 },
-  { id: 5, x: 2020, y: 152, minX: 1980, maxX: 2130, vx: 85, face: 1, state: 'patrol', anim: 0, w: 50, h: 96, deadTimer: 0, attackTimer: 0 }
+  { id: 1, type: 0, x: 620, y: 467, minX: 470, maxX: 880, vx: 90, face: 1, state: 'patrol', anim: 0, w: 56, h: 66, deadTimer: 0, attackTimer: 0 },
+  { id: 2, type: 1, x: 500, y: 226, minX: 450, maxX: 710, vx: 75, face: 1, state: 'patrol', anim: 0, w: 62, h: 72, deadTimer: 0, attackTimer: 0 },
+  { id: 3, type: 2, x: 1100, y: 302, minX: 1060, maxX: 1260, vx: 110, face: 1, state: 'patrol', anim: 0, w: 52, h: 64, deadTimer: 0, attackTimer: 0 },
+  { id: 4, type: 3, x: 1450, y: 473, minX: 1380, maxX: 1750, vx: 125, face: 1, state: 'patrol', anim: 0, w: 48, h: 60, deadTimer: 0, attackTimer: 0 },
+  { id: 5, type: 0, x: 1650, y: 292, minX: 1600, maxX: 1770, vx: 90, face: 1, state: 'patrol', anim: 0, w: 56, h: 66, deadTimer: 0, attackTimer: 0 },
+  { id: 6, type: 1, x: 2020, y: 176, minX: 1980, maxX: 2130, vx: 75, face: 1, state: 'patrol', anim: 0, w: 62, h: 72, deadTimer: 0, attackTimer: 0 }
 ];
 
 // Cocos Salvajes agresivos que caen de las copas de las palmeras
@@ -741,8 +753,9 @@ function update(dt){
     if(st.x < -40 || st.x > world.w + 40){ stones.splice(i, 1); continue; }
   }
 
-  // Actualización, IA agresiva y combate de enemigos Tiki
+  // Actualización, IA agresiva y combate de enemigos Cocos Piratas (Kakamora)
   for(const enemy of enemies){
+    const prof = COCO_PIRATA_PROFILES[enemy.type] || COCO_PIRATA_PROFILES[0];
     if(enemy.state==='hit'){
       enemy.deadTimer+=dt;
       if(enemy.deadTimer>10){ enemy.state='patrol'; enemy.deadTimer=0; }
@@ -753,20 +766,20 @@ function update(dt){
     const dy = (player.y+player.h/2) - (enemy.y+enemy.h/2);
     const dist = Math.hypot(dx, dy);
 
-    // Salto o pisotón sobre la cabeza del Tiki
+    // Salto o pisotón sobre la cabeza del coco pirata
     if(player.vy>60 && player.y+player.h>=enemy.y-5 && player.y+player.h<=enemy.y+35 && Math.abs(dx)<45){
       enemy.state='hit'; enemy.deadTimer=0.001; player.vy=-450; player.jumpCount=1;
       playStep('stone');
-      spawnSlashSparks(enemy.x+enemy.w/2, enemy.y+15, 10, '#ffffff');
+      spawnSlashSparks(enemy.x+enemy.w/2, enemy.y+15, 12, '#8d6e63');
       continue;
     }
 
-    // Comportamiento activo del Tiki: patrulla, persecución y estocada
+    // Comportamiento activo del Coco Pirata: patrulla, persecución y ataque
     const inPerception = Math.abs(dx) < 250 && Math.abs(dy) < 65;
     if(enemy.state === 'attack'){
       enemy.attackTimer -= dt;
-      // Daño al jugador si la estocada conecta
-      if(enemy.attackTimer > 0.15 && enemy.attackTimer < 0.45 && Math.abs(dx) < 65 && Math.abs(dy) < 55){
+      // Daño al jugador si el ataque conecta
+      if(enemy.attackTimer > 0.12 && enemy.attackTimer < prof.attackDur - 0.1 && Math.abs(dx) < prof.attackRange + 15 && Math.abs(dy) < 55){
         if(player.hurtTime <= 0 && player.sleepTime <= 0){
           player.hurtTime = 0.9;
           player.vx = (dx >= 0 ? 1 : -1) * 280;
@@ -781,16 +794,15 @@ function update(dt){
     } else if(inPerception){
       // Modo persecución: corre activamente hacia el jugador
       enemy.state = 'chase';
-      enemy.face = dx < 0 ? 1 : -1;
-      const chaseSpeed = 145;
-      enemy.x += enemy.face * chaseSpeed * dt;
+      enemy.face = dx < 0 ? -1 : 1;
+      enemy.x += enemy.face * prof.chaseSpeed * dt;
       enemy.x = Math.max(enemy.minX - 25, Math.min(enemy.maxX + 25, enemy.x));
       enemy.anim += dt * 10.5;
 
-      // Si está a distancia de ataque, lanza estocada con lanza
-      if(Math.abs(dx) < 70 && Math.abs(dy) < 50){
+      // Si está a distancia de ataque, lanza ataque
+      if(Math.abs(dx) < prof.attackRange && Math.abs(dy) < 50){
         enemy.state = 'attack';
-        enemy.attackTimer = 0.52;
+        enemy.attackTimer = prof.attackDur;
       }
     } else {
       // Modo patrullaje continuo y activo
@@ -1184,7 +1196,8 @@ const FRAMES = {
   hangOnly: { scale: 124/420 },
   climbOnly: { scale: 124/470 },
   hang:   { scale: 124/520 },
-  climb:  { scale: 124/300 }
+  climb:  { scale: 124/300 },
+  slingshot: { scale: 124/295 }
 };
 function render(){
   document.querySelector('.climb').hidden=player.hangTime<=0;
@@ -1204,30 +1217,44 @@ function render(){
   const crouching=pressed('ArrowDown','KeyS');
   const jumping=!player.onGround;
 
-  // Render enemigos Tiki
-  if(enemySheet.complete && enemySheet.naturalWidth){
-    const sc = 96 / 550;
+  // Render enemigos Cocos Piratas (Kakamora)
+  if(cocoPiratasSheet.complete && cocoPiratasSheet.naturalWidth){
     for(const enemy of enemies){
       if(enemy.state === 'hit' && enemy.deadTimer > 4.5) continue;
-      let fIdx = 0;
+      const prof = COCO_PIRATA_PROFILES[enemy.type] || COCO_PIRATA_PROFILES[0];
+      const sc = enemy.h / 76;
+      let col = 0;
+      let tilt = 0;
+      let bob = 0;
       if(enemy.state === 'hit'){
-        fIdx = 6 + (Math.floor(enemy.deadTimer * 5) % 2);
+        col = 2; // Pose K.O. mareado con estrellas
+        bob = Math.sin(enemy.deadTimer * 7) * 2;
       } else if(enemy.state === 'attack'){
-        fIdx = enemy.attackTimer > 0.32 ? 4 : 5;
+        col = 1; // Ataque activo
+        tilt = enemy.face * 0.15;
       } else if(enemy.state === 'chase'){
-        fIdx = Math.floor(enemy.anim) % 4;
+        col = Math.floor(enemy.anim * 1.5) % 2; // Alterna paso rápido
+        tilt = Math.sin(enemy.anim * 9) * 0.14;
+        bob = Math.abs(Math.sin(enemy.anim * 9)) * 5;
+        if(enemy.type === 3){
+          bob += Math.abs(Math.sin(enemy.anim * 11)) * 10; // Salto acrobático de Coco Saltarín
+        }
       } else {
-        fIdx = Math.floor(enemy.anim) % 4;
+        col = 0; // Patrulla / caminata
+        tilt = Math.sin(enemy.anim * 6) * 0.08;
+        bob = Math.abs(Math.sin(enemy.anim * 6)) * 3;
       }
-      const f = ENEMY_FRAMES[fIdx];
-      const ex = (enemy.x - cam) * s, ey = (enemy.y + enemy.h) * s;
+
+      const ex = (enemy.x + enemy.w / 2 - cam) * s;
+      const ey = (enemy.y + enemy.h) * s - bob * s;
       ctx.save();
       if(enemy.state === 'hit' && enemy.deadTimer > 3.0){
         ctx.globalAlpha = Math.max(0, 1 - (enemy.deadTimer - 3.0) / 1.5);
       }
-      ctx.translate(ex + (enemy.w / 2) * s, ey);
+      ctx.translate(ex, ey);
+      ctx.rotate(tilt);
       ctx.scale(enemy.face * s * sc, s * sc);
-      ctx.drawImage(enemySheet, f.x, 0, f.w, enemySheet.height, -f.cx, -f.fy, f.w, enemySheet.height);
+      ctx.drawImage(cocoPiratasSheet, col * 100, prof.row * 80, 100, 80, -50, -76, 100, 80);
       ctx.restore();
 
       if(enemy.state === 'hit' && enemy.deadTimer <= 3.0){
@@ -1235,13 +1262,13 @@ function render(){
         ctx.fillStyle = '#ffe066';
         ctx.font = 'bold 12px system-ui';
         const dizzyBob = Math.sin(enemy.deadTimer * 8) * 3;
-        ctx.fillText('💫 K.O.!', ex - 2 * s, (enemy.y - 10) * s + dizzyBob);
+        ctx.fillText('💫 K.O.!', ex - 18 * s, (enemy.y - 10) * s + dizzyBob);
         ctx.restore();
       } else if(enemy.state === 'chase' || enemy.state === 'attack'){
         ctx.save();
         ctx.fillStyle = '#ff3b3b';
-        ctx.font = 'bold 14px system-ui';
-        ctx.fillText('💢', ex + 6 * s, (enemy.y - 8) * s);
+        ctx.font = 'bold 12px system-ui';
+        ctx.fillText(prof.warCry, ex - 28 * s, (enemy.y - 10) * s);
         ctx.restore();
       }
     }
@@ -1293,7 +1320,15 @@ function render(){
   else if(crouching){ animKey='crouch'; activeSheet=crouchSheet; frame=Math.min(4,Math.floor(player.crouchTime*16)); }
   else if(player.running){ animKey='run'; activeSheet=runSheet; }
   else if(moving){ animKey='walk'; activeSheet=sheet; }
-  else if(player.attackTime>0){ animKey='walk'; activeSheet=sheet; frame=2; }
+  else if(player.attackTime>0){
+    if(slingSheet.complete && slingSheet.naturalWidth){
+      animKey='slingshot'; activeSheet=slingSheet;
+      const progress = 1 - (player.attackTime / 0.28);
+      frame = Math.min(7, Math.floor(progress * 8));
+    } else {
+      animKey='walk'; activeSheet=sheet; frame=2;
+    }
+  }
 
   if(activeSheet.complete && activeSheet.width){
     const meta=FRAMES[animKey];
@@ -1306,15 +1341,17 @@ function render(){
     }
     ctx.translate(px+player.w*s/2, py+player.h*s);
     ctx.scale(player.face*s*sc, s*sc);
-    if(animKey==='doubleJump' || animKey==='sleep' || animKey==='hang' || animKey==='climb'){
-      const count=animKey==='sleep'?6:animKey==='climb'?12:8, fw=activeSheet.width/count;
+    if(animKey==='doubleJump' || animKey==='sleep' || animKey==='hang' || animKey==='climb' || animKey==='slingshot'){
+      const count=animKey==='sleep'?6:animKey==='climb'?12:animKey==='slingshot'?8:8, fw=activeSheet.width/count;
       const inset=animKey==='sleep'?4:animKey==='hang'||animKey==='climb'?4:0;
-      const drawY=animKey==='sleep'?-520:animKey==='hang'?-320:animKey==='climb'?-520:-624;
+      const drawY=animKey==='sleep'?-520:animKey==='hang'?-320:animKey==='climb'?-520:animKey==='slingshot'?-311:-624;
       ctx.drawImage(activeSheet, frame*fw+inset, 0, fw-inset*2, fh, -fw/2+inset, drawY, fw-inset*2, fh);
     }else ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
 
-    // Dibuja la auténtica resortera de aventura en el personaje maestro apuntando a 360°
-    drawResortera(ctx, player.attackTime > 0, player.attackTime / 0.28, crouching, player.aimAngle || 0);
+    // Dibuja la resortera direccional en apuntado vertical/diagonal o el cinto en reposo
+    if(animKey !== 'slingshot' || (player.aimAngle && Math.abs(player.aimAngle) > 0.05)){
+      drawResortera(ctx, player.attackTime > 0, player.attackTime / 0.28, crouching, player.aimAngle || 0);
+    }
     ctx.restore();
   }
 
@@ -1368,14 +1405,14 @@ function render(){
 
   const stateTxt = player.climbTime>0?'SUBIENDO':player.attackTime>0?'DISPARANDO RESORTERA':jumping?'SALTANDO':crouching?'AGACHADO':player.running?'CORRIENDO':moving?'CAMINANDO':'QUIETO';
   ctx.fillStyle='#ffffffcc'; ctx.font='bold 15px system-ui'; ctx.fillText('Movimiento: '+stateTxt,18,gameHeight()-18);
-  const defeatedTikis = enemies.filter(e => e.state === 'hit').length;
+  const defeatedPiratas = enemies.filter(e => e.state === 'hit').length;
   const defeatedCocos = cocos.filter(e => e.state === 'hit' || e.state === 'respawning').length;
   ctx.fillStyle='#ffe066'; ctx.font='bold 15px system-ui';
-  ctx.fillText('Tikis K.O.: ' + defeatedTikis + ' / ' + enemies.length, innerWidth - 175, 32);
+  ctx.fillText('🏴‍☠️ Cocos Piratas K.O.: ' + defeatedPiratas + ' / ' + enemies.length, innerWidth - 235, 32);
   ctx.fillStyle='#80cbc4'; ctx.font='bold 14px system-ui';
-  ctx.fillText('🥥 Cocos rotos: ' + defeatedCocos, innerWidth - 175, 52);
+  ctx.fillText('🥥 Cocos salvajes: ' + defeatedCocos, innerWidth - 235, 52);
   ctx.fillStyle='#ffb74d'; ctx.font='bold 14px system-ui';
-  ctx.fillText('🎯 Resortera 360° (Piedras)', innerWidth - 215, 72);
+  ctx.fillText('🎯 Resortera 360° (Piedras)', innerWidth - 235, 72);
   if(player.idleTime>0){ const remaining=Math.max(0,15-player.idleTime); ctx.fillStyle='#fff4c9e8'; ctx.font='bold 16px system-ui'; ctx.fillText(remaining>0?'Sueño en: '+remaining.toFixed(1)+' s':'Preparando sueño…',18,gameHeight()-42); }
   if(player.sleepTime>0){ const bob=Math.sin(player.sleepTime*2)*2; ctx.save(); ctx.globalAlpha=.72+.2*Math.sin(player.sleepTime*3); ctx.fillStyle='#fff4c9'; ctx.font='bold 20px system-ui'; ctx.fillText('Z',px+player.w*s*.58,py+10*s-bob); ctx.font='bold 15px system-ui'; ctx.fillText('z',px+player.w*s*.78,py-5*s-bob); ctx.font='bold 12px system-ui'; ctx.fillText('z',px+player.w*s*.94,py-18*s-bob); ctx.restore(); }
   ctx.restore(); // Screen shake restore
@@ -1386,5 +1423,6 @@ Promise.all([
   loadImg(bg), loadImg(sheet), loadImg(runSheet),
   loadImg(idleSheet), loadImg(crouchSheet),
   loadImg(jumpSheet), loadImg(doubleJumpSheet), loadImg(sleepSheet), loadImg(hangSheet),
-  loadImg(climbSheet), loadImg(enemySheet), loadImg(cocoSheet)
+  loadImg(climbSheet), loadImg(enemySheet), loadImg(cocoSheet), loadImg(cocoPiratasSheet),
+  loadImg(slingSheet)
 ]).then(() => requestAnimationFrame(loop));
