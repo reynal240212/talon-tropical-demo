@@ -12,12 +12,16 @@
     <canvas id="game" aria-label="Prototipo jugable de Talon Tropical"></canvas>
     <audio id="music" src="assets/The_Emerald_Spires.mp3" loop preload="auto"></audio>
     <button id="fullscreen" type="button" aria-label="Activar pantalla completa" title="Pantalla completa">⛶</button>
-    <div class="hint">←/→ o A/D mover · Shift correr · Espacio saltar · Z/X atacar · E espada · ↓ agachar</div>
+    <div class="hint">←/→ o A/D mover · Shift correr · Espacio saltar · Z/X resortera · ↓ agachar</div>
     <div class="touch-controls" aria-label="Controles táctiles">
       <div class="left-controls"><div class="dpad"><button data-key="ArrowLeft" aria-label="Izquierda">◀</button><button data-key="ArrowRight" aria-label="Derecha">▶</button></div><button class="run" data-key="ControlLeft" aria-label="Toque para saltar, mantener para correr">➤<small>Toque: salto<br>Mantén: corre</small></button></div>
-      <div class="actions"><div class="secondary"><button class="crouch" data-key="ArrowDown" aria-label="Agacharse">⌄<small>Agachar</small></button><button class="sword" data-key="KeyE" aria-label="Sacar espada">⚔<small>Espada</small></button></div><div class="primary"><button class="attack" data-key="KeyX" aria-label="Atacar">✦<small>Atacar</small></button><button class="jump" data-key="Space" aria-label="Saltar o subir">↑<small>Saltar</small></button></div><button class="climb" data-key="ArrowUp" aria-label="Subir al borde" hidden>↑<small>Subir</small></button></div>
+      <div class="actions">
+        <div class="secondary"><button class="crouch" data-key="ArrowDown" aria-label="Agacharse">⌄<small>Agachar</small></button></div>
+        <div class="primary"><button class="attack" data-key="KeyX" aria-label="Disparar resortera">🎯<small>Resortera</small></button><button class="jump" data-key="Space" aria-label="Saltar o subir">↑<small>Saltar</small></button></div>
+        <button class="climb" data-key="ArrowUp" aria-label="Subir al borde" hidden>↑<small>Subir</small></button>
+      </div>
     </div>
   </main>
-  <script src="game.js?v=combo_momentum_v7"></script>
+  <script src="game.js?v=resortera_v1"></script>
 </body>
 </html>

@@ -3,10 +3,7 @@ const ctx = canvas.getContext('2d');
 const bg = new Image();
 const sheet = new Image();
 const runSheet = new Image();
-const swordRunSheet = new Image();
 const idleSheet = new Image();
-const swordSheet = new Image();
-const comboSheet = new Image();
 const crouchSheet = new Image();
 const jumpSheet = new Image();
 const doubleJumpSheet = new Image();
@@ -18,10 +15,7 @@ const enemySheet = new Image();
 bg.src = 'assets/nivel_tropical_extendido_v2.png?v=1';
 sheet.src = 'assets/explorador_caminar_master_v1.webp';
 runSheet.src = 'assets/explorador_correr_master_v1.webp';
-swordRunSheet.src = 'assets/explorador_correr_espada_master_v2.webp';
 idleSheet.src = 'assets/explorador_idle_master_v1.webp';
-swordSheet.src = 'assets/explorador_espada_master_v2.webp';
-comboSheet.src = 'assets/explorador_ataque_master_v2.webp';
 crouchSheet.src = 'assets/explorador_agacharse_master_v1.png';
 jumpSheet.src = 'assets/explorador_salto_master_v1.webp';
 doubleJumpSheet.src = 'assets/explorador_doble_salto_master_v1.png?v=2';
@@ -153,7 +147,7 @@ canvas.addEventListener('pointerup',e=>{
 function stairHeight(x){
   return stairSteps.find(p=>x>=p.x&&x<p.x+p.w)?.y??null;
 }
-const player = {x:110,y:409,w:MASTER_CHARACTER.w,h:MASTER_CHARACTER.h,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,idleTime:0,sleepTime:0,snoreTime:0,jumpCount:0,jumpLatch:false,doubleJumpTime:0,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,comboStep:0,comboTimer:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0,hurtTime:0};
+const player = {x:110,y:409,w:MASTER_CHARACTER.w,h:MASTER_CHARACTER.h,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,idleTime:0,sleepTime:0,snoreTime:0,jumpCount:0,jumpLatch:false,doubleJumpTime:0,attackLatch:false,attackTime:0,slingFired:false,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0,hurtTime:0};
 let screenShake = 0;
 const particles = [];
 function spawnSlashSparks(x, y, count=14, color='#ffd152'){
@@ -170,6 +164,22 @@ function spawnSlashSparks(x, y, count=14, color='#ffd152'){
       maxLife: 0.44
     });
   }
+}
+
+// Proyectiles de piedra de la resortera
+const stones = [];
+function spawnStone(x, y, vx, vy, isPower = false){
+  stones.push({
+    x, y,
+    prevX: x, prevY: y,
+    vx, vy,
+    rot: 0,
+    r: isPower ? 7.5 : 5.5,
+    life: 2.5,
+    bounces: 0,
+    isPower: isPower,
+    trail: []
+  });
 }
 
 const ENEMY_FRAMES = [
@@ -221,51 +231,71 @@ function playSnore(){
   gain.gain.setValueAtTime(.0001,now); gain.gain.exponentialRampToValueAtTime(.045,now+.12); gain.gain.exponentialRampToValueAtTime(.0001,now+.68);
   osc.connect(gain); gain.connect(audioContext.destination); osc.start(now); osc.stop(now+.7);
 }
-function playSwordSwing(step=0){
+function playSlingshotStretch(){
   if(!audioContext||audioContext.state!=='running')return;
   const now=audioContext.currentTime;
-  const bufferSize = Math.floor(audioContext.sampleRate * 0.16);
-  const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-  const data = buffer.getChannelData(0);
-  for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
-  const noise = audioContext.createBufferSource();
-  noise.buffer = buffer;
-  const filter = audioContext.createBiquadFilter();
-  filter.type = 'bandpass';
-  const startFreq = step === 2 ? 900 : step === 1 ? 1600 : 1250;
-  const endFreq = step === 2 ? 220 : step === 1 ? 380 : 320;
-  filter.frequency.setValueAtTime(startFreq, now);
-  filter.frequency.exponentialRampToValueAtTime(endFreq, now + 0.14);
-  filter.Q.value = 3.2;
-  const gain = audioContext.createGain();
-  gain.gain.setValueAtTime(0.001, now);
-  gain.gain.exponentialRampToValueAtTime(step === 2 ? 0.16 : 0.11, now + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-  noise.connect(filter); filter.connect(gain); gain.connect(audioContext.destination);
-  noise.start(now); noise.stop(now + 0.16);
-
-  const osc = audioContext.createOscillator();
-  const oscGain = audioContext.createGain();
-  osc.type = 'triangle';
-  osc.frequency.setValueAtTime(step === 2 ? 480 : step === 1 ? 840 : 680, now);
-  osc.frequency.exponentialRampToValueAtTime(120, now + 0.13);
-  oscGain.gain.setValueAtTime(0.03, now);
-  oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
-  osc.connect(oscGain); oscGain.connect(audioContext.destination);
-  osc.start(now); osc.stop(now + 0.14);
+  const osc=audioContext.createOscillator();
+  const gain=audioContext.createGain();
+  osc.type='sine';
+  osc.frequency.setValueAtTime(140,now);
+  osc.frequency.linearRampToValueAtTime(320,now+0.07);
+  gain.gain.setValueAtTime(0.001,now);
+  gain.gain.exponentialRampToValueAtTime(0.04,now+0.03);
+  gain.gain.exponentialRampToValueAtTime(0.0001,now+0.08);
+  osc.connect(gain); gain.connect(audioContext.destination);
+  osc.start(now); osc.stop(now+0.08);
 }
-function playSwordHit(){
+function playSlingshotShoot(){
   if(!audioContext||audioContext.state!=='running')return;
   const now=audioContext.currentTime;
-  const osc1 = audioContext.createOscillator();
-  const osc2 = audioContext.createOscillator();
-  const gain = audioContext.createGain();
-  osc1.type = 'sawtooth'; osc1.frequency.setValueAtTime(1120, now); osc1.frequency.exponentialRampToValueAtTime(260, now + 0.11);
-  osc2.type = 'square'; osc2.frequency.setValueAtTime(1580, now); osc2.frequency.exponentialRampToValueAtTime(380, now + 0.09);
-  gain.gain.setValueAtTime(0.12, now);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
+  const bufferSize=Math.floor(audioContext.sampleRate*0.07);
+  const buffer=audioContext.createBuffer(1,bufferSize,audioContext.sampleRate);
+  const data=buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++) data[i]=Math.random()*2-1;
+  const noise=audioContext.createBufferSource();
+  noise.buffer=buffer;
+  const filter=audioContext.createBiquadFilter();
+  filter.type='highpass';
+  filter.frequency.setValueAtTime(1300,now);
+  const gain=audioContext.createGain();
+  gain.gain.setValueAtTime(0.14,now);
+  gain.gain.exponentialRampToValueAtTime(0.001,now+0.06);
+  noise.connect(filter); filter.connect(gain); gain.connect(audioContext.destination);
+  noise.start(now); noise.stop(now+0.07);
+
+  const osc=audioContext.createOscillator();
+  const oscGain=audioContext.createGain();
+  osc.type='triangle';
+  osc.frequency.setValueAtTime(920,now);
+  osc.frequency.exponentialRampToValueAtTime(160,now+0.09);
+  oscGain.gain.setValueAtTime(0.09,now);
+  oscGain.gain.exponentialRampToValueAtTime(0.0001,now+0.09);
+  osc.connect(oscGain); oscGain.connect(audioContext.destination);
+  osc.start(now); osc.stop(now+0.10);
+}
+function playStoneHit(){
+  if(!audioContext||audioContext.state!=='running')return;
+  const now=audioContext.currentTime;
+  const osc1=audioContext.createOscillator();
+  const osc2=audioContext.createOscillator();
+  const gain=audioContext.createGain();
+  osc1.type='triangle'; osc1.frequency.setValueAtTime(290,now); osc1.frequency.exponentialRampToValueAtTime(55,now+0.12);
+  osc2.type='square'; osc2.frequency.setValueAtTime(560,now); osc2.frequency.exponentialRampToValueAtTime(120,now+0.08);
+  gain.gain.setValueAtTime(0.18,now);
+  gain.gain.exponentialRampToValueAtTime(0.0001,now+0.12);
   osc1.connect(gain); osc2.connect(gain); gain.connect(audioContext.destination);
-  osc1.start(now); osc2.start(now); osc1.stop(now + 0.11); osc2.stop(now + 0.11);
+  osc1.start(now); osc2.start(now); osc1.stop(now+0.12); osc2.stop(now+0.12);
+}
+function playStoneBounce(){
+  if(!audioContext||audioContext.state!=='running')return;
+  const now=audioContext.currentTime;
+  const osc=audioContext.createOscillator();
+  const gain=audioContext.createGain();
+  osc.type='sine'; osc.frequency.setValueAtTime(1450,now); osc.frequency.exponentialRampToValueAtTime(680,now+0.05);
+  gain.gain.setValueAtTime(0.06,now);
+  gain.gain.exponentialRampToValueAtTime(0.0001,now+0.05);
+  osc.connect(gain); gain.connect(audioContext.destination);
+  osc.start(now); osc.stop(now+0.05);
 }
 async function startMusic(){
   if(!music.paused)return;
@@ -427,48 +457,49 @@ function update(dt){
     }
   }
   const attackPressed=pressed('KeyX','x','X','KeyZ','z','Z','KeyJ','j','J');
-  if(attackPressed && !player.attackLatch && player.attackTime<=0 && player.swordTime<=0){
-    player.swordOut=true;
-    if(player.comboTimer > 0){
-      player.comboStep = (player.comboStep + 1) % 3;
-    } else {
-      player.comboStep = 0;
-    }
+  if(attackPressed && !player.attackLatch && player.attackTime<=0 && player.hangTime<=0){
     player.attackTime=0.001;
-    player.comboTimer=0.85;
-    playSwordSwing(player.comboStep);
-    player.vx = player.face * (player.comboStep === 2 ? 220 : 130);
+    player.slingFired=false;
+    playSlingshotStretch();
   }
   player.attackLatch=attackPressed;
-  if(player.comboTimer > 0) player.comboTimer -= dt;
-  if(player.attackTime > 0) player.attackTime += dt;
-  const attackDuration = player.comboStep === 2 ? 0.46 : 0.36;
-  if(player.attackTime >= attackDuration) player.attackTime = 0;
-  const swordPressed=pressed('KeyE','e','E','KeyK','k','K');
-  if(swordPressed && !player.swordLatch && player.swordTime<=0 && player.attackTime<=0){ player.swordOut=!player.swordOut; player.swordTime=.001; }
-  player.swordLatch=swordPressed;
-  if(player.swordTime>0) player.swordTime+=dt;
-  if(player.swordTime>=.64) player.swordTime=0;
+
   const left=pressed('ArrowLeft','a','KeyA'), right=pressed('ArrowRight','d','KeyD');
   const running=pressed('ShiftLeft','ShiftRight','Shift','ControlLeft','ControlRight','Control');
-  const crouching=pressed('ArrowDown','KeyS','s','S') && player.onGround && player.hangTime<=0 && player.attackTime<=0 && player.swordTime<=0;
+  const crouching=pressed('ArrowDown','KeyS','s','S') && player.onGround && player.hangTime<=0 && player.attackTime<=0;
   if(crouching) player.crouchTime+=dt; else player.crouchTime=0;
 
+  if(player.attackTime > 0){
+    player.attackTime += dt;
+    // Disparo sincronizado al soltar la goma elástica (t = 0.09s)
+    if(player.attackTime >= 0.09 && !player.slingFired){
+      player.slingFired = true;
+      const spawnX = player.x + (player.face > 0 ? player.w + 14 : -14);
+      const spawnY = crouching ? player.y + player.h * 0.65 : player.y + player.h * 0.42;
+      const baseSpeed = running ? 760 : 640;
+      const pvx = player.face * baseSpeed + (player.vx * 0.35);
+      const pvy = -45;
+      spawnStone(spawnX, spawnY, pvx, pvy);
+      playSlingshotShoot();
+      spawnSlashSparks(spawnX, spawnY, 8, '#ffe082');
+    }
+    if(player.attackTime >= 0.28){
+      player.attackTime = 0;
+      player.slingFired = false;
+    }
+  }
+
   const moveSpeed=running?360:230;
-  if(player.swordTime>0 || player.hangTime>0 || crouching){
+  if(player.hangTime>0 || crouching){
     player.vx = 0;
   } else if(player.attackTime>0){
-    // Ataque dinámico con avance ofensivo continuo
+    // Permite caminar o correr fluidamente mientras dispara la resortera
     const inputDir = right ? 1 : (left ? -1 : 0);
     if(inputDir !== 0){
-      player.vx = inputDir * (running ? 320 : 210);
+      player.vx = inputDir * (running ? 330 : 210);
       player.face = inputDir;
     } else {
-      // Inercia de zancada y embestida hacia adelante (lunge)
-      const stepSpeed = player.comboStep === 2 ? 280 : (player.comboStep === 1 ? 200 : 160);
-      const progress = player.attackTime / attackDuration;
-      const decay = Math.max(0, 1 - progress * 1.4);
-      player.vx = player.face * stepSpeed * decay;
+      player.vx = 0;
     }
   } else {
     player.vx = (right ? moveSpeed : 0) - (left ? moveSpeed : 0);
@@ -523,6 +554,76 @@ function update(dt){
   if(player.hurtTime>0) player.hurtTime-=dt;
   if(player.y>world.h+80){player.x=110;player.y=409;player.vy=0;}
 
+  // Actualización de proyectiles de piedra de la resortera
+  for(let i = stones.length - 1; i >= 0; i--){
+    const st = stones[i];
+    st.life -= dt;
+    if(st.life <= 0){ stones.splice(i, 1); continue; }
+    st.prevX = st.x; st.prevY = st.y;
+    st.x += st.vx * dt;
+    st.vy += 450 * dt;
+    st.y += st.vy * dt;
+    st.rot += 16 * dt * Math.sign(st.vx || 1);
+
+    st.trail.push({x: st.x, y: st.y});
+    if(st.trail.length > 5) st.trail.shift();
+
+    // Impacto de piedra en enemigos Tiki
+    let hitSomething = false;
+    for(const enemy of enemies){
+      if(enemy.state === 'hit') continue;
+      const edx = st.x - (enemy.x + enemy.w / 2);
+      const edy = st.y - (enemy.y + enemy.h / 2);
+      if(Math.hypot(edx, edy) < 38){
+        enemy.state = 'hit';
+        enemy.deadTimer = 0.001;
+        playStoneHit();
+        screenShake = 0.1;
+        spawnSlashSparks(st.x, st.y, 16, '#cfd8dc');
+        hitSomething = true;
+        break;
+      }
+    }
+    if(hitSomething){ stones.splice(i, 1); continue; }
+
+    // Rebote o desintegración de piedra contra suelo o plataformas
+    if(st.y >= 540){
+      st.y = 540;
+      if(st.bounces < 2 && Math.abs(st.vy) > 100){
+        st.vy = -st.vy * 0.45;
+        st.vx *= 0.65;
+        st.bounces++;
+        playStoneBounce();
+        spawnSlashSparks(st.x, st.y, 4, '#a1887f');
+      } else {
+        spawnSlashSparks(st.x, st.y, 6, '#a1887f');
+        stones.splice(i, 1);
+        continue;
+      }
+    } else {
+      for(const p of platforms){
+        if(st.vy > 0 && st.prevY <= p.y && st.y >= p.y && st.x >= p.x && st.x <= p.x + p.w){
+          st.y = p.y;
+          if(st.bounces < 2 && Math.abs(st.vy) > 90){
+            st.vy = -st.vy * 0.45;
+            st.vx *= 0.65;
+            st.bounces++;
+            playStoneBounce();
+            spawnSlashSparks(st.x, st.y, 4, '#b0bec5');
+          } else {
+            spawnSlashSparks(st.x, st.y, 6, '#b0bec5');
+            stones.splice(i, 1);
+            hitSomething = true;
+            break;
+          }
+        }
+      }
+      if(hitSomething) continue;
+    }
+
+    if(st.x < -40 || st.x > world.w + 40){ stones.splice(i, 1); continue; }
+  }
+
   // Actualización, IA agresiva y combate de enemigos Tiki
   for(const enemy of enemies){
     if(enemy.state==='hit'){
@@ -534,18 +635,6 @@ function update(dt){
     const dx = (player.x+player.w/2) - (enemy.x+enemy.w/2);
     const dy = (player.y+player.h/2) - (enemy.y+enemy.h/2);
     const dist = Math.hypot(dx, dy);
-
-    // Ataque con espada impacta al Tiki
-    const attacking = player.attackTime>0.06 && player.attackTime<(attackDuration-0.04);
-    const facing = (player.face>0 && dx<0) || (player.face<0 && dx>0);
-    const reach = player.comboStep === 2 ? 115 : 95;
-    if(attacking && facing && Math.abs(dx)<reach && Math.abs(dy)<65){
-      enemy.state='hit'; enemy.deadTimer=0.001;
-      playSwordHit();
-      screenShake = 0.09;
-      spawnSlashSparks(enemy.x+enemy.w/2, enemy.y+enemy.h/2, player.comboStep === 2 ? 18 : 12);
-      continue;
-    }
 
     // Salto o pisotón sobre la cabeza del Tiki
     if(player.vy>60 && player.y+player.h>=enemy.y-5 && player.y+player.h<=enemy.y+35 && Math.abs(dx)<45){
@@ -614,7 +703,7 @@ function update(dt){
     stepDistance+=Math.abs(player.vx)*dt;
     if(stepDistance>=78){ stepDistance=0; playStep(stairHeight(player.x+player.w/2)!==null?'stone':'grass'); }
   }else if(!player.onGround)stepDistance=0;
-  if(player.onGround && !player.vx && !jumpPressed && !attackPressed && !swordPressed && !crouching && player.hangTime<=0) player.idleTime=Math.min(15,player.idleTime+dt);
+  if(player.onGround && !player.vx && !jumpPressed && !attackPressed && !crouching && player.hangTime<=0) player.idleTime=Math.min(15,player.idleTime+dt);
   else player.idleTime=0;
   if(player.idleTime>=15 && player.sleepTime<=0) player.sleepTime=.001;
 
@@ -628,6 +717,203 @@ function update(dt){
     p.vy += 420 * dt;
   }
 }
+
+// Ilustración y renderizado de la auténtica resortera de aventura del explorador
+function drawResortera(ctx, isAiming, progress, isCrouching){
+  ctx.save();
+  const rootY = isCrouching ? -210 : -345;
+  if(isAiming){
+    const stretchProg = Math.min(1, progress / 0.32);
+    const hasReleased = progress >= 0.32;
+    const handX = 85;
+    const handY = rootY + 5;
+
+    // Brazo frontal extendido apuntando la resortera
+    ctx.strokeStyle = '#1b120c';
+    ctx.lineWidth = 16;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-5, rootY - 10);
+    ctx.lineTo(handX, handY);
+    ctx.stroke();
+
+    // Manga verde de la túnica del explorador maestro
+    ctx.strokeStyle = '#2e7d32';
+    ctx.lineWidth = 18;
+    ctx.beginPath();
+    ctx.moveTo(-8, rootY - 10);
+    ctx.lineTo(25, rootY - 5);
+    ctx.stroke();
+
+    // Antebrazo y muñeca (color de piel)
+    ctx.strokeStyle = '#f0c090';
+    ctx.lineWidth = 11;
+    ctx.beginPath();
+    ctx.moveTo(25, rootY - 5);
+    ctx.lineTo(handX - 2, handY);
+    ctx.stroke();
+
+    // Mano sosteniendo el mango
+    ctx.fillStyle = '#f0c090';
+    ctx.beginPath();
+    ctx.arc(handX, handY, 11, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#1b120c';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Horqueta de madera (Y)
+    const forkX = handX + 4;
+    const forkY = handY - 10;
+
+    // Mango de madera tallada con envoltura de cuero
+    ctx.strokeStyle = '#4e342e';
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.moveTo(forkX - 2, forkY + 36);
+    ctx.lineTo(forkX, forkY);
+    ctx.stroke();
+
+    // Envoltura de cinta de cuero en el mango
+    ctx.strokeStyle = '#d7ccc8';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(forkX - 4, forkY + 28);
+    ctx.lineTo(forkX + 2, forkY + 22);
+    ctx.moveTo(forkX - 3, forkY + 18);
+    ctx.lineTo(forkX + 2, forkY + 12);
+    ctx.stroke();
+
+    // Dos ramas bifurcadas de madera (horqueta)
+    const prongL = { x: forkX - 14, y: forkY - 40 };
+    const prongR = { x: forkX + 24, y: forkY - 36 };
+
+    ctx.strokeStyle = '#8d6e63';
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(forkX, forkY);
+    ctx.quadraticCurveTo(forkX - 16, forkY - 18, prongL.x, prongL.y);
+    ctx.moveTo(forkX, forkY);
+    ctx.quadraticCurveTo(forkX + 18, forkY - 16, prongR.x, prongR.y);
+    ctx.stroke();
+
+    // Puntas con ataduras de cuerda dorada
+    ctx.fillStyle = '#ffb74d';
+    ctx.fillRect(prongL.x - 4, prongL.y - 3, 8, 5);
+    ctx.fillRect(prongR.x - 4, prongR.y - 3, 8, 5);
+
+    // Goma elástica y badana con piedra
+    let pouchX, pouchY;
+    if(!hasReleased){
+      // Tensando la goma elástica hacia la mejilla del explorador
+      const pullDist = 35 + stretchProg * 45;
+      pouchX = forkX - pullDist;
+      pouchY = forkY - 10;
+
+      // Brazo trasero jalando la badana
+      ctx.strokeStyle = '#1b120c';
+      ctx.lineWidth = 14;
+      ctx.beginPath();
+      ctx.moveTo(-20, rootY - 12);
+      ctx.lineTo(pouchX - 8, pouchY + 5);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#f0c090';
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.moveTo(-10, rootY - 10);
+      ctx.lineTo(pouchX - 8, pouchY + 5);
+      ctx.stroke();
+
+      // Bandas elásticas rojas bajo tensión
+      ctx.strokeStyle = '#ff3d00';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(prongL.x, prongL.y);
+      ctx.lineTo(pouchX, pouchY);
+      ctx.moveTo(prongR.x, prongR.y);
+      ctx.lineTo(pouchX, pouchY);
+      ctx.stroke();
+
+      // Piedra de río cargada en la badana
+      ctx.fillStyle = '#78909c';
+      ctx.beginPath();
+      ctx.arc(pouchX + 4, pouchY, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#eceff1';
+      ctx.beginPath();
+      ctx.arc(pouchX + 2, pouchY - 3, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Badana de cuero grueso
+      ctx.fillStyle = '#3e2723';
+      ctx.beginPath();
+      ctx.ellipse(pouchX, pouchY, 7, 11, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // ¡Soltada! La goma elástica se proyecta hacia adelante con latigazo elástico
+      const snapProgress = (progress - 0.32) / 0.68;
+      const snapOsc = Math.sin(snapProgress * Math.PI) * 28;
+      pouchX = forkX + 16 + snapOsc;
+      pouchY = forkY - 20;
+
+      ctx.strokeStyle = '#ff5722';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(prongL.x, prongL.y);
+      ctx.quadraticCurveTo(pouchX, pouchY - 10, pouchX, pouchY);
+      ctx.moveTo(prongR.x, prongR.y);
+      ctx.quadraticCurveTo(pouchX, pouchY + 10, pouchX, pouchY);
+      ctx.stroke();
+
+      // Badana vacía oscilando
+      ctx.fillStyle = '#3e2723';
+      ctx.beginPath();
+      ctx.ellipse(pouchX, pouchY, 4, 8, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else {
+    // Resortera guardada en el cinturón de cuero del explorador maestro
+    const beltX = -32;
+    const beltY = rootY + 115;
+    ctx.save();
+    ctx.translate(beltX, beltY);
+    ctx.rotate(0.38);
+
+    // Mini horqueta en cinto
+    ctx.strokeStyle = '#4e342e';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(0, 18);
+    ctx.lineTo(0, 0);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#8d6e63';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-9, -20);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(9, -20);
+    ctx.stroke();
+
+    // Goma elástica roja colgando
+    ctx.strokeStyle = '#ff3d00';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, -7, 10, 0, Math.PI);
+    ctx.stroke();
+
+    // Badana de cuero
+    ctx.fillStyle = '#3e2723';
+    ctx.beginPath();
+    ctx.arc(0, 4, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
 const FRAMES = {
   idle:   { scale: 124/624, list: [{x:38,w:275,cx:142,fy:680},{x:399,w:277,cx:143,fy:680},{x:761,w:281,cx:145,fy:680},{x:1120,w:275,cx:142,fy:680},{x:1482,w:273,cx:142,fy:680},{x:1846,w:275,cx:140,fy:680}] },
   crouch: { scale: 124/369, list: [{x:27,w:187,cx:101,fy:577},{x:264,w:175,cx:92,fy:578},{x:487,w:170,cx:92,fy:577},{x:712,w:177,cx:91,fy:575},{x:943,w:175,cx:90,fy:576},{x:1166,w:176,cx:89,fy:576}] },
@@ -639,20 +925,6 @@ const FRAMES = {
   sleep: { scale: 124/360 },
   hangOnly: { scale: 124/420 },
   climbOnly: { scale: 124/470 },
-  sword:  { scale: 124/550, list: [{x:6,w:247,cx:130,fy:640},{x:272,w:251,cx:131,fy:640},{x:541,w:251,cx:131,fy:640},{x:808,w:251,cx:131,fy:640},{x:1077,w:251,cx:127,fy:640},{x:1343,w:259,cx:128,fy:640},{x:1607,w:267,cx:131,fy:640},{x:1875,w:293,cx:130,fy:640}] },
-  attack: {
-    scale: 124 / 470,
-    list: [
-      {x: 16, w: 237, cx: 118, fy: 607},
-      {x: 277, w: 232, cx: 116, fy: 607},
-      {x: 551, w: 195, cx: 97, fy: 606},
-      {x: 785, w: 245, cx: 122, fy: 606},
-      {x: 1030, w: 300, cx: 150, fy: 607},
-      {x: 1330, w: 290, cx: 145, fy: 606},
-      {x: 1620, w: 253, cx: 126, fy: 607},
-      {x: 1915, w: 240, cx: 120, fy: 607}
-    ]
-  },
   hang:   { scale: 124/520 },
   climb:  { scale: 124/300 }
 };
@@ -721,23 +993,13 @@ function render(){
   if(player.sleepTime>0){ animKey='sleep'; activeSheet=sleepSheet; frame=player.sleepTime<1.2?Math.min(5,Math.floor(player.sleepTime/1.2*6)):2+Math.floor((player.sleepTime-1.2)*3)%4; }
   else if(player.climbTime>0){ animKey='climb'; activeSheet=climbSheet; frame=Math.min(11,Math.floor(player.climbTime*11)); }
   else if(player.hangTime>0){ animKey='hang'; activeSheet=hangSheet; frame=Math.min(7,Math.floor(player.hangTime*9)); }
-  else if(player.attackTime>0){
-    animKey='attack';
-    activeSheet=comboSheet;
-    const attackDuration = player.comboStep === 2 ? 0.46 : 0.36;
-    const stepFrames = player.comboStep === 0 ? [0, 1, 3, 7] : player.comboStep === 1 ? [7, 5, 6, 0] : [1, 2, 4, 5, 7];
-    const progress = Math.min(stepFrames.length - 1, Math.floor(player.attackTime / attackDuration * stepFrames.length));
-    frame = stepFrames[progress];
-  }
-  else if(player.swordTime>0){ animKey='sword'; activeSheet=swordSheet; const step=Math.min(7,Math.floor(player.swordTime/.64*8)); frame=player.swordOut?step:7-step; }
   else if(player.doubleJumpTime>0 && jumping){ animKey='doubleJump'; activeSheet=doubleJumpSheet; frame=Math.min(7,Math.floor(player.doubleJumpTime/.72*8)); }
   else if(jumping){ animKey='jump'; activeSheet=jumpSheet; frame=player.vy<-300?1:player.vy<-80?2:player.vy<120?3:player.vy<320?5:6; }
   else if(player.landTime>0){ animKey='jump'; activeSheet=jumpSheet; frame=7; }
   else if(crouching){ animKey='crouch'; activeSheet=crouchSheet; frame=Math.min(4,Math.floor(player.crouchTime*16)); }
-  else if(player.swordOut && moving){ animKey='swordRun'; activeSheet=swordRunSheet; frame=player.frame; }
-  else if(player.swordOut){ animKey='sword'; activeSheet=swordSheet; frame=7; }
   else if(player.running){ animKey='run'; activeSheet=runSheet; }
   else if(moving){ animKey='walk'; activeSheet=sheet; }
+  else if(player.attackTime>0){ animKey='walk'; activeSheet=sheet; frame=2; }
 
   if(activeSheet.complete && activeSheet.width){
     const meta=FRAMES[animKey];
@@ -750,68 +1012,52 @@ function render(){
     }
     ctx.translate(px+player.w*s/2, py+player.h*s);
     ctx.scale(player.face*s*sc, s*sc);
-    if(animKey==='swordRun' || animKey==='doubleJump' || animKey==='sleep' || animKey==='hang' || animKey==='climb'){
+    if(animKey==='doubleJump' || animKey==='sleep' || animKey==='hang' || animKey==='climb'){
       const count=animKey==='sleep'?6:animKey==='climb'?12:8, fw=activeSheet.width/count;
       const inset=animKey==='sleep'?4:animKey==='hang'||animKey==='climb'?4:0;
       const drawY=animKey==='sleep'?-520:animKey==='hang'?-320:animKey==='climb'?-520:-624;
       ctx.drawImage(activeSheet, frame*fw+inset, 0, fw-inset*2, fh, -fw/2+inset, drawY, fw-inset*2, fh);
     }else ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
+
+    // Dibuja la auténtica resortera de aventura en el personaje maestro
+    drawResortera(ctx, player.attackTime > 0, player.attackTime / 0.28, crouching);
     ctx.restore();
   }
 
-  // Efecto visual de arco cortante luminoso (Slash Arc FX)
-  const curAtkDuration = player.comboStep === 2 ? 0.46 : 0.36;
-  if(player.attackTime > 0.04 && player.attackTime < curAtkDuration - 0.03){
-    const progress = player.attackTime / curAtkDuration;
-    ctx.save();
-    ctx.translate(px + (player.w * s) / 2, py + (player.h * s) * 0.52);
-    ctx.scale(player.face * s, s);
-    const step = player.comboStep;
-
-    if(step === 0){
-      // Combo 1: Tajo horizontal veloz cian/blanco
-      ctx.rotate(-0.15 + progress * 0.3);
-      const grad = ctx.createLinearGradient(15, 0, 95, 0);
-      grad.addColorStop(0, 'rgba(255,255,255,0.95)');
-      grad.addColorStop(0.45, 'rgba(90,230,255,0.85)');
-      grad.addColorStop(1, 'rgba(0,180,255,0)');
-      ctx.fillStyle = grad;
+  // Render de proyectiles de piedra de la resortera en vuelo
+  for(const st of stones){
+    const sx = (st.x - cam) * s, sy = st.y * s;
+    for(let t = 0; t < st.trail.length; t++){
+      const pt = st.trail[t];
+      const tx = (pt.x - cam) * s, ty = pt.y * s;
+      const progress = (t + 1) / st.trail.length;
+      ctx.save();
+      ctx.fillStyle = `rgba(176, 190, 197, ${progress * 0.45})`;
       ctx.beginPath();
-      ctx.moveTo(15, -18);
-      ctx.quadraticCurveTo(65, -35, 105, 0);
-      ctx.quadraticCurveTo(60, 32, 20, 18);
-      ctx.quadraticCurveTo(45, 0, 15, -18);
+      ctx.arc(tx, ty, st.r * s * progress * 0.7, 0, Math.PI * 2);
       ctx.fill();
-    } else if(step === 1){
-      // Combo 2: Tajo ascendente enérgico dorado/ámbar
-      ctx.rotate(0.35 - progress * 0.7);
-      const grad = ctx.createLinearGradient(15, 25, 95, -30);
-      grad.addColorStop(0, 'rgba(255,255,255,0.98)');
-      grad.addColorStop(0.45, 'rgba(255,220,70,0.9)');
-      grad.addColorStop(1, 'rgba(255,140,20,0)');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.moveTo(15, 28);
-      ctx.quadraticCurveTo(60, 38, 102, -12);
-      ctx.quadraticCurveTo(70, -48, 25, -22);
-      ctx.quadraticCurveTo(48, 0, 15, 28);
-      ctx.fill();
-    } else {
-      // Combo 3: Golpe de poder pesado con llamarada
-      ctx.rotate(-0.65 + progress * 1.3);
-      const grad = ctx.createRadialGradient(50, 0, 10, 50, 0, 125);
-      grad.addColorStop(0, 'rgba(255,255,255,0.99)');
-      grad.addColorStop(0.35, 'rgba(255,210,40,0.95)');
-      grad.addColorStop(0.7, 'rgba(255,60,20,0.8)');
-      grad.addColorStop(1, 'rgba(255,30,10,0)');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.moveTo(20, -70);
-      ctx.quadraticCurveTo(100, -60, 128, 25);
-      ctx.quadraticCurveTo(90, 85, 25, 50);
-      ctx.quadraticCurveTo(65, 0, 20, -70);
-      ctx.fill();
+      ctx.restore();
     }
+
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(st.rot);
+    const grad = ctx.createRadialGradient(-st.r * s * 0.35, -st.r * s * 0.35, 1, 0, 0, st.r * s);
+    grad.addColorStop(0, '#eceff1');
+    grad.addColorStop(0.45, '#90a4ae');
+    grad.addColorStop(1, '#37474f');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(0, 0, st.r * s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#263238';
+    ctx.lineWidth = 1.2 * s;
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(-st.r * s * 0.35, -st.r * s * 0.35, st.r * s * 0.28, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
   }
 
@@ -826,21 +1072,13 @@ function render(){
     ctx.restore();
   }
 
-  // Indicador de Combo sobre el jugador
-  if(player.comboTimer > 0){
-    ctx.save();
-    ctx.fillStyle = player.comboStep === 2 ? '#ff5252' : (player.comboStep === 1 ? '#ffd740' : '#69f0ae');
-    ctx.font = 'bold 15px system-ui';
-    const comboLabel = player.comboStep === 2 ? '🔥 COMBO 3: ¡GOLPE DE PODER!' : (player.comboStep === 1 ? '⚡ COMBO 2: ¡TAJO ASCENDENTE!' : '⚔ COMBO 1: TAJO VELOZ');
-    ctx.fillText(comboLabel, px - 35 * s, (player.y - 18) * s);
-    ctx.restore();
-  }
-
-  const stateTxt = player.climbTime>0?'SUBIENDO':player.attackTime>0?'ATACANDO':player.swordTime>0?(player.swordOut?'DESENVAINANDO':'ENVAINANDO'):jumping?'SALTANDO':crouching?'AGACHADO':player.running?'CORRIENDO':moving?'CAMINANDO':'QUIETO';
+  const stateTxt = player.climbTime>0?'SUBIENDO':player.attackTime>0?'DISPARANDO RESORTERA':jumping?'SALTANDO':crouching?'AGACHADO':player.running?'CORRIENDO':moving?'CAMINANDO':'QUIETO';
   ctx.fillStyle='#ffffffcc'; ctx.font='bold 15px system-ui'; ctx.fillText('Movimiento: '+stateTxt,18,gameHeight()-18);
   const defeated = enemies.filter(e => e.state === 'hit').length;
   ctx.fillStyle='#ffe066'; ctx.font='bold 15px system-ui';
   ctx.fillText('Tikis K.O.: ' + defeated + ' / ' + enemies.length, innerWidth - 170, 32);
+  ctx.fillStyle='#ffb74d'; ctx.font='bold 14px system-ui';
+  ctx.fillText('🎯 Arma: Resortera (Piedras)', innerWidth - 215, 54);
   if(player.idleTime>0){ const remaining=Math.max(0,15-player.idleTime); ctx.fillStyle='#fff4c9e8'; ctx.font='bold 16px system-ui'; ctx.fillText(remaining>0?'Sueño en: '+remaining.toFixed(1)+' s':'Preparando sueño…',18,gameHeight()-42); }
   if(player.sleepTime>0){ const bob=Math.sin(player.sleepTime*2)*2; ctx.save(); ctx.globalAlpha=.72+.2*Math.sin(player.sleepTime*3); ctx.fillStyle='#fff4c9'; ctx.font='bold 20px system-ui'; ctx.fillText('Z',px+player.w*s*.58,py+10*s-bob); ctx.font='bold 15px system-ui'; ctx.fillText('z',px+player.w*s*.78,py-5*s-bob); ctx.font='bold 12px system-ui'; ctx.fillText('z',px+player.w*s*.94,py-18*s-bob); ctx.restore(); }
   ctx.restore(); // Screen shake restore
@@ -848,8 +1086,8 @@ function render(){
 function loop(now){ const dt=Math.min((now-last)/1000,.033); last=now; update(dt); render(); requestAnimationFrame(loop); }
 const loadImg = img => (img.complete && img.naturalWidth !== 0) ? Promise.resolve() : new Promise(r => { img.onload = img.onerror = r; });
 Promise.all([
-  loadImg(bg), loadImg(sheet), loadImg(runSheet), loadImg(swordRunSheet),
-  loadImg(idleSheet), loadImg(swordSheet), loadImg(comboSheet), loadImg(crouchSheet),
+  loadImg(bg), loadImg(sheet), loadImg(runSheet),
+  loadImg(idleSheet), loadImg(crouchSheet),
   loadImg(jumpSheet), loadImg(doubleJumpSheet), loadImg(sleepSheet), loadImg(hangSheet),
   loadImg(climbSheet), loadImg(enemySheet)
 ]).then(() => requestAnimationFrame(loop));
