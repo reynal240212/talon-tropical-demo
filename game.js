@@ -1254,7 +1254,7 @@ function render(){
       ctx.translate(ex, ey);
       ctx.rotate(tilt);
       ctx.scale(enemy.face * s * sc, s * sc);
-      ctx.drawImage(cocoPiratasSheet, col * 100, prof.row * 80, 100, 80, -50, -76, 100, 80);
+      ctx.drawImage(cocoPiratasSheet, col * 140, prof.row * 160, 140, 160, -70, -152, 140, 160);
       ctx.restore();
 
       if(enemy.state === 'hit' && enemy.deadTimer <= 3.0){
@@ -1320,15 +1320,7 @@ function render(){
   else if(crouching){ animKey='crouch'; activeSheet=crouchSheet; frame=Math.min(4,Math.floor(player.crouchTime*16)); }
   else if(player.running){ animKey='run'; activeSheet=runSheet; }
   else if(moving){ animKey='walk'; activeSheet=sheet; }
-  else if(player.attackTime>0){
-    if(slingSheet.complete && slingSheet.naturalWidth){
-      animKey='slingshot'; activeSheet=slingSheet;
-      const progress = 1 - (player.attackTime / 0.28);
-      frame = Math.min(7, Math.floor(progress * 8));
-    } else {
-      animKey='walk'; activeSheet=sheet; frame=2;
-    }
-  }
+  else if(player.attackTime>0){ animKey='walk'; activeSheet=sheet; frame=2; }
 
   if(activeSheet.complete && activeSheet.width){
     const meta=FRAMES[animKey];
@@ -1341,17 +1333,15 @@ function render(){
     }
     ctx.translate(px+player.w*s/2, py+player.h*s);
     ctx.scale(player.face*s*sc, s*sc);
-    if(animKey==='doubleJump' || animKey==='sleep' || animKey==='hang' || animKey==='climb' || animKey==='slingshot'){
-      const count=animKey==='sleep'?6:animKey==='climb'?12:animKey==='slingshot'?8:8, fw=activeSheet.width/count;
+    if(animKey==='doubleJump' || animKey==='sleep' || animKey==='hang' || animKey==='climb'){
+      const count=animKey==='sleep'?6:animKey==='climb'?12:8, fw=activeSheet.width/count;
       const inset=animKey==='sleep'?4:animKey==='hang'||animKey==='climb'?4:0;
-      const drawY=animKey==='sleep'?-520:animKey==='hang'?-320:animKey==='climb'?-520:animKey==='slingshot'?-311:-624;
+      const drawY=animKey==='sleep'?-520:animKey==='hang'?-320:animKey==='climb'?-520:-624;
       ctx.drawImage(activeSheet, frame*fw+inset, 0, fw-inset*2, fh, -fw/2+inset, drawY, fw-inset*2, fh);
     }else ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
 
-    // Dibuja la resortera direccional en apuntado vertical/diagonal o el cinto en reposo
-    if(animKey !== 'slingshot' || (player.aimAngle && Math.abs(player.aimAngle) > 0.05)){
-      drawResortera(ctx, player.attackTime > 0, player.attackTime / 0.28, crouching, player.aimAngle || 0);
-    }
+    // Dibuja la auténtica resortera de aventura en el personaje maestro apuntando a 360°
+    drawResortera(ctx, player.attackTime > 0, player.attackTime / 0.28, crouching, player.aimAngle || 0);
     ctx.restore();
   }
 
