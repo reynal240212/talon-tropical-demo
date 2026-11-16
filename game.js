@@ -453,8 +453,27 @@ function update(dt){
   const running=pressed('ShiftLeft','ShiftRight','Shift','ControlLeft','ControlRight','Control');
   const crouching=pressed('ArrowDown','KeyS','s','S') && player.onGround && player.hangTime<=0 && player.attackTime<=0 && player.swordTime<=0;
   if(crouching) player.crouchTime+=dt; else player.crouchTime=0;
-  const attackSpeed=player.attackTime>0?150:running?360:230;
-  player.vx=(player.swordTime>0||player.hangTime>0||crouching)?0:(right?attackSpeed:0)-(left?attackSpeed:0); if(player.vx) player.face=player.vx>0?1:-1;
+
+  const moveSpeed=running?360:230;
+  if(player.swordTime>0 || player.hangTime>0 || crouching){
+    player.vx = 0;
+  } else if(player.attackTime>0){
+    // Ataque dinámico con avance ofensivo continuo
+    const inputDir = right ? 1 : (left ? -1 : 0);
+    if(inputDir !== 0){
+      player.vx = inputDir * (running ? 320 : 210);
+      player.face = inputDir;
+    } else {
+      // Inercia de zancada y embestida hacia adelante (lunge)
+      const stepSpeed = player.comboStep === 2 ? 280 : (player.comboStep === 1 ? 200 : 160);
+      const progress = player.attackTime / attackDuration;
+      const decay = Math.max(0, 1 - progress * 1.4);
+      player.vx = player.face * stepSpeed * decay;
+    }
+  } else {
+    player.vx = (right ? moveSpeed : 0) - (left ? moveSpeed : 0);
+    if(player.vx) player.face = player.vx > 0 ? 1 : -1;
+  }
   const jumpPressed=pressed('Space','ArrowUp','w','KeyW','KeyC','c','C')||runTapJump;
   if(jumpPressed && !player.jumpLatch){
     if(player.onGround){ player.vy=-520; player.onGround=false; player.jumpCount=1; }
