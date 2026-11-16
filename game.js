@@ -31,7 +31,7 @@ enemySheet.src = 'assets/enemigo_tiki_master_v2.png';
 cocoSheet.src = 'assets/coco_salvaje_master_v1.png';
 cocoPiratasSheet.src = 'assets/coco_piratas_master_v1.png';
 const cocoConchaWalkSheet = new Image();
-cocoConchaWalkSheet.src = 'assets/coco_concha_caminar_perfil_master.png';
+cocoConchaWalkSheet.src = 'assets/coco_concha_perfil_puro_master.png';
 slingSheet.src = 'assets/explorador_resortera_master_v1.png';
 
 const keyboardKeys = new Set();
@@ -1252,14 +1252,14 @@ function render(){
       const ex = (enemy.x + enemy.w / 2 - cam) * s;
       const ey = (enemy.y + enemy.h) * s;
       
-      // Si es Coco Concha patrullando o corriendo, usa su spritesheet de perfil 2D cuadro por cuadro
+      // Si es Coco Concha patrullando o corriendo, usa su spritesheet de perfil 2D puro cuadro por cuadro
       if(enemy.type === 0 && (enemy.state === 'patrol' || enemy.state === 'chase') && cocoConchaWalkSheet.complete && cocoConchaWalkSheet.naturalWidth){
-        const f = Math.floor(enemy.anim * (enemy.state === 'chase' ? 9 : 6)) % 6;
-        const psc = enemy.h / 240;
+        const f = Math.floor(enemy.anim * (enemy.state === 'chase' ? 8.5 : 5.5)) % 6;
+        const psc = enemy.h / 193;
         ctx.save();
         ctx.translate(ex, ey);
         ctx.scale(enemy.face * s * psc, s * psc);
-        ctx.drawImage(cocoConchaWalkSheet, f * 180, 0, 180, 270, -90, -260, 180, 270);
+        ctx.drawImage(cocoConchaWalkSheet, f * 180, 0, 180, 240, -83, -218, 180, 240);
         ctx.restore();
       } else {
         ctx.save();
