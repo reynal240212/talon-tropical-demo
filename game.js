@@ -12,6 +12,7 @@ const hangSheet = new Image();
 const climbSheet = new Image();
 const platformTexture = new Image();
 const enemySheet = new Image();
+const cocoSheet = new Image();
 bg.src = 'assets/nivel_tropical_extendido_v2.png?v=1';
 sheet.src = 'assets/explorador_caminar_master_v1.webp';
 runSheet.src = 'assets/explorador_correr_master_v1.webp';
@@ -25,6 +26,7 @@ hangSheet.src = 'assets/explorador_colgado_personaje_v3.png?v=1';
 climbSheet.src = 'assets/explorador_subir_personaje_v2.png?v=1';
 platformTexture.src = 'assets/plataforma_tropical_textura_v1.png?v=1';
 enemySheet.src = 'assets/enemigo_tiki_master_v2.png';
+cocoSheet.src = 'assets/coco_salvaje_master_v1.png';
 
 const keyboardKeys = new Set();
 const touchKeys = new Set();
@@ -147,7 +149,7 @@ canvas.addEventListener('pointerup',e=>{
 function stairHeight(x){
   return stairSteps.find(p=>x>=p.x&&x<p.x+p.w)?.y??null;
 }
-const player = {x:110,y:409,w:MASTER_CHARACTER.w,h:MASTER_CHARACTER.h,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,idleTime:0,sleepTime:0,snoreTime:0,jumpCount:0,jumpLatch:false,doubleJumpTime:0,attackLatch:false,attackTime:0,slingFired:false,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0,hurtTime:0};
+const player = {x:110,y:409,w:MASTER_CHARACTER.w,h:MASTER_CHARACTER.h,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,idleTime:0,sleepTime:0,snoreTime:0,jumpCount:0,jumpLatch:false,doubleJumpTime:0,attackLatch:false,attackTime:0,slingFired:false,aimAngle:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0,hurtTime:0};
 let screenShake = 0;
 const particles = [];
 function spawnSlashSparks(x, y, count=14, color='#ffd152'){
@@ -200,6 +202,44 @@ const enemies = [
   { id: 4, x: 1450, y: 437, minX: 1380, maxX: 1750, vx: 105, face: 1, state: 'patrol', anim: 0, w: 50, h: 96, deadTimer: 0, attackTimer: 0 },
   { id: 5, x: 2020, y: 152, minX: 1980, maxX: 2130, vx: 85, face: 1, state: 'patrol', anim: 0, w: 50, h: 96, deadTimer: 0, attackTimer: 0 }
 ];
+
+// Cocos Salvajes agresivos que caen de las copas de las palmeras
+const cocos = [
+  { id: 1, palmX: 310, palmY: 155, x: 310, y: 155, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: 1, rot: 0, anim: 0, w: 34, h: 34 },
+  { id: 2, palmX: 715, palmY: 140, x: 715, y: 140, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: -1, rot: 0, anim: 0, w: 34, h: 34 },
+  { id: 3, palmX: 1120, palmY: 215, x: 1120, y: 215, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: 1, rot: 0, anim: 0, w: 34, h: 34 },
+  { id: 4, palmX: 1430, palmY: 175, x: 1430, y: 175, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: -1, rot: 0, anim: 0, w: 34, h: 34 },
+  { id: 5, palmX: 1960, palmY: 165, x: 1960, y: 165, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: -1, rot: 0, anim: 0, w: 34, h: 34 }
+];
+
+function spawnCoconutShatter(x, y){
+  for(let i=0; i<8; i++){
+    const angle = (Math.PI * 2 * i / 8) + (Math.random() - 0.5) * 0.6;
+    const speed = 120 + Math.random() * 220;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 120,
+      size: 4 + Math.random() * 5,
+      color: i % 2 === 0 ? '#4e342e' : '#795548',
+      life: 0.45 + Math.random() * 0.2,
+      maxLife: 0.65
+    });
+  }
+  for(let i=0; i<12; i++){
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 60 + Math.random() * 180;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 60,
+      size: 2.5 + Math.random() * 3,
+      color: '#ffffff',
+      life: 0.35 + Math.random() * 0.2,
+      maxLife: 0.55
+    });
+  }
+}
 let last = performance.now();
 function resize(){ const dpr=Math.min(devicePixelRatio||1,2); const height=Math.round(visualViewport?.height||innerHeight); document.documentElement.style.setProperty('--game-height',height+'px'); canvas.width=innerWidth*dpr; canvas.height=height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
 addEventListener('resize', resize); visualViewport?.addEventListener('resize',resize); addEventListener('orientationchange',()=>setTimeout(resize,200)); resize();
@@ -296,6 +336,39 @@ function playStoneBounce(){
   gain.gain.exponentialRampToValueAtTime(0.0001,now+0.05);
   osc.connect(gain); gain.connect(audioContext.destination);
   osc.start(now); osc.stop(now+0.05);
+}
+function playCoconutCrack(){
+  if(!audioContext||audioContext.state!=='running')return;
+  const now=audioContext.currentTime;
+  const osc1=audioContext.createOscillator();
+  const osc2=audioContext.createOscillator();
+  const gain=audioContext.createGain();
+  osc1.type='triangle'; osc1.frequency.setValueAtTime(360,now); osc1.frequency.exponentialRampToValueAtTime(70,now+0.12);
+  osc2.type='sawtooth'; osc2.frequency.setValueAtTime(780,now); osc2.frequency.exponentialRampToValueAtTime(140,now+0.08);
+  gain.gain.setValueAtTime(0.22,now);
+  gain.gain.exponentialRampToValueAtTime(0.0001,now+0.13);
+  osc1.connect(gain); osc2.connect(gain); gain.connect(audioContext.destination);
+  osc1.start(now); osc2.start(now); osc1.stop(now+0.13); osc2.stop(now+0.13);
+}
+function playHollowThud(){
+  if(!audioContext||audioContext.state!=='running')return;
+  const now=audioContext.currentTime;
+  const osc=audioContext.createOscillator();
+  const gain=audioContext.createGain();
+  osc.type='sine'; osc.frequency.setValueAtTime(180,now); osc.frequency.exponentialRampToValueAtTime(45,now+0.14);
+  gain.gain.setValueAtTime(0.18,now); gain.gain.exponentialRampToValueAtTime(0.0001,now+0.14);
+  osc.connect(gain); gain.connect(audioContext.destination);
+  osc.start(now); osc.stop(now+0.15);
+}
+function playCoconutAlert(){
+  if(!audioContext||audioContext.state!=='running')return;
+  const now=audioContext.currentTime;
+  const osc=audioContext.createOscillator();
+  const gain=audioContext.createGain();
+  osc.type='triangle'; osc.frequency.setValueAtTime(520,now); osc.frequency.linearRampToValueAtTime(820,now+0.09);
+  gain.gain.setValueAtTime(0.08,now); gain.gain.exponentialRampToValueAtTime(0.0001,now+0.11);
+  osc.connect(gain); gain.connect(audioContext.destination);
+  osc.start(now); osc.stop(now+0.11);
 }
 async function startMusic(){
   if(!music.paused)return;
@@ -457,28 +530,55 @@ function update(dt){
     }
   }
   const attackPressed=pressed('KeyX','x','X','KeyZ','z','Z','KeyJ','j','J');
+  const upKey = pressed('ArrowUp','w','KeyW');
+  const downKey = pressed('ArrowDown','s','KeyS');
+  const left=pressed('ArrowLeft','a','KeyA'), right=pressed('ArrowRight','d','KeyD');
+  const horizKey = left || right;
+
+  // Ángulo de apuntado multi-direccional en 360° (arriba, diagonales, horizontal, abajo en salto)
+  let targetAngle = 0;
+  if(upKey && horizKey){
+    targetAngle = -Math.PI / 4; // Diagonal arriba (45°)
+  } else if(upKey){
+    targetAngle = -Math.PI / 2; // Directo arriba (90° vertical hacia las palmeras)
+  } else if(downKey && !player.onGround && horizKey){
+    targetAngle = Math.PI / 4;  // Diagonal abajo en el aire (45°)
+  } else if(downKey && !player.onGround){
+    targetAngle = Math.PI / 2;  // Directo abajo en el aire (90° vertical)
+  } else {
+    targetAngle = 0;            // Horizontal recto al frente
+  }
+
   if(attackPressed && !player.attackLatch && player.attackTime<=0 && player.hangTime<=0){
     player.attackTime=0.001;
     player.slingFired=false;
+    player.aimAngle = targetAngle;
     playSlingshotStretch();
   }
   player.attackLatch=attackPressed;
 
-  const left=pressed('ArrowLeft','a','KeyA'), right=pressed('ArrowRight','d','KeyD');
   const running=pressed('ShiftLeft','ShiftRight','Shift','ControlLeft','ControlRight','Control');
   const crouching=pressed('ArrowDown','KeyS','s','S') && player.onGround && player.hangTime<=0 && player.attackTime<=0;
   if(crouching) player.crouchTime+=dt; else player.crouchTime=0;
 
   if(player.attackTime > 0){
     player.attackTime += dt;
+    // Permite ajustar el ángulo de tiro en tiempo real mientras apunta
+    player.aimAngle = targetAngle;
+
     // Disparo sincronizado al soltar la goma elástica (t = 0.09s)
     if(player.attackTime >= 0.09 && !player.slingFired){
       player.slingFired = true;
-      const spawnX = player.x + (player.face > 0 ? player.w + 14 : -14);
-      const spawnY = crouching ? player.y + player.h * 0.65 : player.y + player.h * 0.42;
-      const baseSpeed = running ? 760 : 640;
-      const pvx = player.face * baseSpeed + (player.vx * 0.35);
-      const pvy = -45;
+      const angle = player.aimAngle;
+      const worldAngle = player.face > 0 ? angle : (Math.PI - angle);
+      const baseSpeed = running ? 780 : 660;
+      const pvx = Math.cos(worldAngle) * baseSpeed + (player.vx * 0.25);
+      const pvy = Math.sin(worldAngle) * baseSpeed;
+
+      const spawnDist = 20;
+      const spawnX = player.x + player.w / 2 + Math.cos(worldAngle) * spawnDist;
+      const spawnY = (crouching ? player.y + player.h * 0.65 : player.y + player.h * 0.42) + Math.sin(worldAngle) * spawnDist;
+
       spawnStone(spawnX, spawnY, pvx, pvy);
       playSlingshotShoot();
       spawnSlashSparks(spawnX, spawnY, 8, '#ffe082');
@@ -580,6 +680,23 @@ function update(dt){
         playStoneHit();
         screenShake = 0.1;
         spawnSlashSparks(st.x, st.y, 16, '#cfd8dc');
+        hitSomething = true;
+        break;
+      }
+    }
+    if(hitSomething){ stones.splice(i, 1); continue; }
+
+    // Impacto de piedra en Cocos Salvajes (en el suelo o en la palmera)
+    for(const coco of cocos){
+      if(coco.state === 'hit' || coco.state === 'respawning') continue;
+      const cdx = st.x - (coco.x + coco.w / 2);
+      const cdy = st.y - (coco.y + coco.h / 2);
+      if(Math.hypot(cdx, cdy) < 32){
+        coco.state = 'hit';
+        coco.respawnTimer = 7.5;
+        playCoconutCrack();
+        screenShake = 0.08;
+        spawnCoconutShatter(coco.x + coco.w / 2, coco.y + coco.h / 2);
         hitSomething = true;
         break;
       }
@@ -694,6 +811,138 @@ function update(dt){
     }
   }
 
+  // Actualización e inteligencia artificial de Cocos Salvajes agresivos
+  for(const coco of cocos){
+    if(coco.state === 'respawning'){
+      coco.respawnTimer -= dt;
+      if(coco.respawnTimer <= 0){
+        coco.state = 'hanging';
+        coco.x = coco.palmX;
+        coco.y = coco.palmY;
+        coco.vx = 0; coco.vy = 0;
+        coco.alertTimer = 0;
+      }
+      continue;
+    }
+    if(coco.state === 'hit'){
+      coco.respawnTimer -= dt;
+      if(coco.respawnTimer <= 0){
+        coco.state = 'respawning';
+        coco.respawnTimer = 1.0;
+      }
+      continue;
+    }
+
+    const cdx = (player.x + player.w / 2) - (coco.x + coco.w / 2);
+    const cdy = (player.y + player.h / 2) - (coco.y + coco.h / 2);
+    const dist = Math.hypot(cdx, cdy);
+
+    if(coco.state === 'hanging'){
+      // Balanceo en la copa de la palmera
+      coco.anim += dt * 3.5;
+      coco.x = coco.palmX + Math.sin(coco.anim) * 2;
+      coco.y = coco.palmY + Math.cos(coco.anim * 0.7) * 2;
+
+      // Alerta si el jugador pasa por debajo de la palmera
+      if(Math.abs(cdx) < 130 && player.y > coco.y && player.y < coco.y + 450){
+        coco.alertTimer += dt;
+        coco.x += (Math.random() - 0.5) * 4; // Tiembla de furia
+        if(coco.alertTimer >= 0.45){
+          coco.state = 'falling';
+          coco.vy = 120;
+          coco.vx = (Math.random() - 0.5) * 40;
+          playCoconutAlert();
+        }
+      } else {
+        coco.alertTimer = Math.max(0, coco.alertTimer - dt);
+      }
+    } else if(coco.state === 'falling'){
+      coco.vy += 750 * dt;
+      coco.y += coco.vy * dt;
+      coco.x += coco.vx * dt;
+      coco.rot += (coco.vx >= 0 ? 1 : -1) * 12 * dt;
+
+      // Golpe directo en caída sobre el explorador
+      if(dist < 38 && player.hurtTime <= 0 && player.sleepTime <= 0){
+        player.hurtTime = 0.9;
+        player.vx = (cdx >= 0 ? 1 : -1) * 250;
+        player.vy = -260;
+        player.onGround = false;
+        playHollowThud();
+      }
+
+      // Colisión contra plataformas o suelo
+      if(coco.y + coco.h >= 540){
+        coco.y = 540 - coco.h;
+        coco.vy = -180;
+        coco.state = 'chase';
+        playHollowThud();
+        spawnSlashSparks(coco.x + coco.w / 2, coco.y + coco.h, 6, '#8d6e63');
+      } else {
+        for(const p of platforms){
+          if(coco.vy > 0 && coco.y + coco.h >= p.y && coco.y + coco.h <= p.y + 25 && coco.x + coco.w > p.x && coco.x < p.x + p.w){
+            coco.y = p.y - coco.h;
+            coco.vy = -180;
+            coco.state = 'chase';
+            playHollowThud();
+            spawnSlashSparks(coco.x + coco.w / 2, coco.y + coco.h, 6, '#8d6e63');
+            break;
+          }
+        }
+      }
+    } else if(coco.state === 'chase'){
+      // Persecución activa en tierra mordiendo y dando botes
+      coco.face = cdx < 0 ? -1 : 1;
+      coco.anim += dt * 9;
+      coco.vx = coco.face * 135;
+      coco.vy += 850 * dt;
+      coco.x += coco.vx * dt;
+      coco.y += coco.vy * dt;
+      coco.rot += coco.face * 10 * dt;
+
+      // Colisiones de salto con suelo y plataformas
+      let grounded = false;
+      if(coco.y + coco.h >= 540){
+        coco.y = 540 - coco.h;
+        coco.vy = 0;
+        grounded = true;
+      } else {
+        for(const p of platforms){
+          if(coco.vy >= 0 && coco.y + coco.h >= p.y && coco.y + coco.h <= p.y + 20 && coco.x + coco.w > p.x && coco.x < p.x + p.w){
+            coco.y = p.y - coco.h;
+            coco.vy = 0;
+            grounded = true;
+            break;
+          }
+        }
+      }
+      if(grounded && Math.random() < 0.08){
+        coco.vy = -240; // Bote agresivo
+      }
+
+      // Pisotón del jugador sobre el coco
+      if(player.vy > 60 && player.y + player.h >= coco.y - 5 && player.y + player.h <= coco.y + 28 && Math.abs(cdx) < 36){
+        coco.state = 'hit';
+        coco.respawnTimer = 8.0;
+        player.vy = -450;
+        player.jumpCount = 1;
+        playCoconutCrack();
+        screenShake = 0.08;
+        spawnCoconutShatter(coco.x + coco.w / 2, coco.y + coco.h / 2);
+        continue;
+      }
+
+      // Mordisco / impacto al jugador
+      if(dist < 40 && player.hurtTime <= 0 && player.sleepTime <= 0){
+        player.hurtTime = 0.9;
+        player.vx = (cdx >= 0 ? 1 : -1) * 260;
+        player.vy = -260;
+        player.onGround = false;
+        playHollowThud();
+      }
+    }
+  }
+
   if(Math.abs(player.vx)>0 && player.onGround){ player.anim+=dt*(running?14:9); player.frame=Math.floor(player.anim)%8; }
   else if(player.onGround){ player.anim+=dt*5; player.frame=Math.floor(player.anim)%6; }
   else { player.anim=0; player.frame=0; }
@@ -718,22 +967,30 @@ function update(dt){
   }
 }
 
-// Ilustración y renderizado de la auténtica resortera de aventura del explorador
-function drawResortera(ctx, isAiming, progress, isCrouching){
+// Ilustración y renderizado de la auténtica resortera de aventura del explorador con apuntado 360°
+function drawResortera(ctx, isAiming, progress, isCrouching, aimAngle = 0){
   ctx.save();
   const rootY = isCrouching ? -210 : -345;
   if(isAiming){
     const stretchProg = Math.min(1, progress / 0.32);
     const hasReleased = progress >= 0.32;
-    const handX = 85;
-    const handY = rootY + 5;
+    const shoulderX = -10;
+    const shoulderY = rootY - 10;
+
+    // Rotación del conjunto brazo-resortera según el ángulo de apuntado (arriba, diagonales, abajo)
+    ctx.save();
+    ctx.translate(shoulderX, shoulderY);
+    ctx.rotate(aimAngle);
+
+    const handX = 95;
+    const handY = 15;
 
     // Brazo frontal extendido apuntando la resortera
     ctx.strokeStyle = '#1b120c';
     ctx.lineWidth = 16;
     ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(-5, rootY - 10);
+    ctx.moveTo(0, 0);
     ctx.lineTo(handX, handY);
     ctx.stroke();
 
@@ -741,15 +998,15 @@ function drawResortera(ctx, isAiming, progress, isCrouching){
     ctx.strokeStyle = '#2e7d32';
     ctx.lineWidth = 18;
     ctx.beginPath();
-    ctx.moveTo(-8, rootY - 10);
-    ctx.lineTo(25, rootY - 5);
+    ctx.moveTo(-5, 0);
+    ctx.lineTo(32, 5);
     ctx.stroke();
 
     // Antebrazo y muñeca (color de piel)
     ctx.strokeStyle = '#f0c090';
     ctx.lineWidth = 11;
     ctx.beginPath();
-    ctx.moveTo(25, rootY - 5);
+    ctx.moveTo(32, 5);
     ctx.lineTo(handX - 2, handY);
     ctx.stroke();
 
@@ -814,14 +1071,14 @@ function drawResortera(ctx, isAiming, progress, isCrouching){
       ctx.strokeStyle = '#1b120c';
       ctx.lineWidth = 14;
       ctx.beginPath();
-      ctx.moveTo(-20, rootY - 12);
+      ctx.moveTo(-15, -2);
       ctx.lineTo(pouchX - 8, pouchY + 5);
       ctx.stroke();
 
       ctx.strokeStyle = '#f0c090';
       ctx.lineWidth = 10;
       ctx.beginPath();
-      ctx.moveTo(-10, rootY - 10);
+      ctx.moveTo(-8, 0);
       ctx.lineTo(pouchX - 8, pouchY + 5);
       ctx.stroke();
 
@@ -872,6 +1129,7 @@ function drawResortera(ctx, isAiming, progress, isCrouching){
       ctx.ellipse(pouchX, pouchY, 4, 8, 0.4, 0, Math.PI * 2);
       ctx.fill();
     }
+    ctx.restore(); // Restaura la rotación del hombro
   } else {
     // Resortera guardada en el cinturón de cuero del explorador maestro
     const beltX = -32;
@@ -989,6 +1247,42 @@ function render(){
     }
   }
 
+  // Render de Cocos Salvajes agresivos
+  if(cocoSheet.complete && cocoSheet.naturalWidth){
+    for(const coco of cocos){
+      if(coco.state === 'respawning') continue;
+      const cx = (coco.x - cam) * s, cy = coco.y * s;
+      const cw = coco.w * s, ch = coco.h * s;
+
+      let fIdx = 0;
+      if(coco.state === 'hanging'){
+        fIdx = coco.alertTimer > 0 ? 1 : 0;
+      } else if(coco.state === 'falling'){
+        fIdx = 1;
+      } else if(coco.state === 'chase'){
+        fIdx = Math.floor(coco.anim) % 2 === 0 ? 2 : 3;
+      }
+
+      ctx.save();
+      ctx.translate(cx + cw / 2, cy + ch / 2);
+      if(coco.state === 'falling' || coco.state === 'chase'){
+        ctx.rotate(coco.rot);
+      }
+      ctx.scale(coco.face * s * (38 / 64), s * (38 / 64));
+      ctx.drawImage(cocoSheet, fIdx * 64, 0, 64, 64, -32, -32, 64, 64);
+      ctx.restore();
+
+      // Indicador de alerta cuando tiembla antes de caer de la palmera
+      if(coco.state === 'hanging' && coco.alertTimer > 0){
+        ctx.save();
+        ctx.fillStyle = '#ff5722';
+        ctx.font = 'bold 15px system-ui';
+        ctx.fillText('💢', cx + 4 * s, cy - 8 * s);
+        ctx.restore();
+      }
+    }
+  }
+
   let animKey='idle', activeSheet=idleSheet, frame=player.frame;
   if(player.sleepTime>0){ animKey='sleep'; activeSheet=sleepSheet; frame=player.sleepTime<1.2?Math.min(5,Math.floor(player.sleepTime/1.2*6)):2+Math.floor((player.sleepTime-1.2)*3)%4; }
   else if(player.climbTime>0){ animKey='climb'; activeSheet=climbSheet; frame=Math.min(11,Math.floor(player.climbTime*11)); }
@@ -1019,8 +1313,8 @@ function render(){
       ctx.drawImage(activeSheet, frame*fw+inset, 0, fw-inset*2, fh, -fw/2+inset, drawY, fw-inset*2, fh);
     }else ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
 
-    // Dibuja la auténtica resortera de aventura en el personaje maestro
-    drawResortera(ctx, player.attackTime > 0, player.attackTime / 0.28, crouching);
+    // Dibuja la auténtica resortera de aventura en el personaje maestro apuntando a 360°
+    drawResortera(ctx, player.attackTime > 0, player.attackTime / 0.28, crouching, player.aimAngle || 0);
     ctx.restore();
   }
 
@@ -1074,11 +1368,14 @@ function render(){
 
   const stateTxt = player.climbTime>0?'SUBIENDO':player.attackTime>0?'DISPARANDO RESORTERA':jumping?'SALTANDO':crouching?'AGACHADO':player.running?'CORRIENDO':moving?'CAMINANDO':'QUIETO';
   ctx.fillStyle='#ffffffcc'; ctx.font='bold 15px system-ui'; ctx.fillText('Movimiento: '+stateTxt,18,gameHeight()-18);
-  const defeated = enemies.filter(e => e.state === 'hit').length;
+  const defeatedTikis = enemies.filter(e => e.state === 'hit').length;
+  const defeatedCocos = cocos.filter(e => e.state === 'hit' || e.state === 'respawning').length;
   ctx.fillStyle='#ffe066'; ctx.font='bold 15px system-ui';
-  ctx.fillText('Tikis K.O.: ' + defeated + ' / ' + enemies.length, innerWidth - 170, 32);
+  ctx.fillText('Tikis K.O.: ' + defeatedTikis + ' / ' + enemies.length, innerWidth - 175, 32);
+  ctx.fillStyle='#80cbc4'; ctx.font='bold 14px system-ui';
+  ctx.fillText('🥥 Cocos rotos: ' + defeatedCocos, innerWidth - 175, 52);
   ctx.fillStyle='#ffb74d'; ctx.font='bold 14px system-ui';
-  ctx.fillText('🎯 Arma: Resortera (Piedras)', innerWidth - 215, 54);
+  ctx.fillText('🎯 Resortera 360° (Piedras)', innerWidth - 215, 72);
   if(player.idleTime>0){ const remaining=Math.max(0,15-player.idleTime); ctx.fillStyle='#fff4c9e8'; ctx.font='bold 16px system-ui'; ctx.fillText(remaining>0?'Sueño en: '+remaining.toFixed(1)+' s':'Preparando sueño…',18,gameHeight()-42); }
   if(player.sleepTime>0){ const bob=Math.sin(player.sleepTime*2)*2; ctx.save(); ctx.globalAlpha=.72+.2*Math.sin(player.sleepTime*3); ctx.fillStyle='#fff4c9'; ctx.font='bold 20px system-ui'; ctx.fillText('Z',px+player.w*s*.58,py+10*s-bob); ctx.font='bold 15px system-ui'; ctx.fillText('z',px+player.w*s*.78,py-5*s-bob); ctx.font='bold 12px system-ui'; ctx.fillText('z',px+player.w*s*.94,py-18*s-bob); ctx.restore(); }
   ctx.restore(); // Screen shake restore
@@ -1089,5 +1386,5 @@ Promise.all([
   loadImg(bg), loadImg(sheet), loadImg(runSheet),
   loadImg(idleSheet), loadImg(crouchSheet),
   loadImg(jumpSheet), loadImg(doubleJumpSheet), loadImg(sleepSheet), loadImg(hangSheet),
-  loadImg(climbSheet), loadImg(enemySheet)
+  loadImg(climbSheet), loadImg(enemySheet), loadImg(cocoSheet)
 ]).then(() => requestAnimationFrame(loop));
