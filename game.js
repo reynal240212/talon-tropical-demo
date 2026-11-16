@@ -21,7 +21,7 @@ runSheet.src = 'assets/explorador_correr_master_v3.png';
 swordRunSheet.src = 'assets/explorador_correr_espada_master_v2.webp';
 idleSheet.src = 'assets/explorador_idle_master_v1.webp';
 swordSheet.src = 'assets/explorador_espada_master_v2.webp';
-comboSheet.src = 'assets/explorador_ataque_master_v4.png?v=1';
+comboSheet.src = 'assets/explorador_ataque_master_v5.png';
 crouchSheet.src = 'assets/explorador_agacharse_master_v1.png';
 jumpSheet.src = 'assets/explorador_salto_master_v1.webp';
 doubleJumpSheet.src = 'assets/explorador_doble_salto_master_v1.png?v=2';
@@ -30,7 +30,7 @@ sleepSheet.src = 'assets/explorador_dormir_master_v1.png?v=1';
 hangSheet.src = 'assets/explorador_colgado_personaje_v3.png?v=1';
 climbSheet.src = 'assets/explorador_subir_personaje_v2.png?v=1';
 platformTexture.src = 'assets/plataforma_tropical_textura_v1.png?v=1';
-enemySheet.src = 'assets/enemigo_tiki_master_v1.png';
+enemySheet.src = 'assets/enemigo_tiki_master_v2.png';
 
 const keyboardKeys = new Set();
 const touchKeys = new Set();
@@ -156,22 +156,22 @@ function stairHeight(x){
 const player = {x:110,y:409,w:MASTER_CHARACTER.w,h:MASTER_CHARACTER.h,vx:0,vy:0,onGround:false,face:1,frame:0,anim:0,running:false,idleTime:0,sleepTime:0,snoreTime:0,jumpCount:0,jumpLatch:false,doubleJumpTime:0,swordTime:0,swordOut:false,swordLatch:false,attackLatch:false,attackTime:0,hangTime:0,climbTime:0,hangPlatform:null,landTime:0,crouchTime:0,hurtTime:0};
 
 const ENEMY_FRAMES = [
-  {x: 10, w: 332, cx: 166, fy: 560},
-  {x: 362, w: 353, cx: 176, fy: 560},
-  {x: 735, w: 507, cx: 253, fy: 560},
-  {x: 1262, w: 405, cx: 202, fy: 560},
-  {x: 1687, w: 517, cx: 258, fy: 560},
-  {x: 2224, w: 632, cx: 316, fy: 560},
-  {x: 2876, w: 434, cx: 217, fy: 560},
-  {x: 3330, w: 571, cx: 285, fy: 560}
+  {x: 24, w: 289, cx: 144, fy: 550},
+  {x: 337, w: 264, cx: 132, fy: 550},
+  {x: 625, w: 274, cx: 137, fy: 550},
+  {x: 923, w: 378, cx: 189, fy: 550},
+  {x: 1325, w: 274, cx: 137, fy: 550},
+  {x: 1623, w: 301, cx: 150, fy: 550},
+  {x: 1948, w: 374, cx: 187, fy: 550},
+  {x: 2346, w: 288, cx: 144, fy: 550}
 ];
 
 const enemies = [
-  { id: 1, x: 620, y: 437, minX: 470, maxX: 880, vx: 70, face: 1, state: 'walk', anim: 0, w: 48, h: 96, deadTimer: 0 },
-  { id: 2, x: 500, y: 202, minX: 450, maxX: 710, vx: 60, face: 1, state: 'walk', anim: 0, w: 48, h: 96, deadTimer: 0 },
-  { id: 3, x: 1100, y: 270, minX: 1060, maxX: 1260, vx: 50, face: 1, state: 'walk', anim: 0, w: 48, h: 96, deadTimer: 0 },
-  { id: 4, x: 1450, y: 437, minX: 1380, maxX: 1750, vx: 75, face: 1, state: 'walk', anim: 0, w: 48, h: 96, deadTimer: 0 },
-  { id: 5, x: 2020, y: 152, minX: 1980, maxX: 2130, vx: 55, face: 1, state: 'walk', anim: 0, w: 48, h: 96, deadTimer: 0 }
+  { id: 1, x: 620, y: 437, minX: 470, maxX: 880, vx: 100, face: 1, state: 'patrol', anim: 0, w: 50, h: 96, deadTimer: 0, attackTimer: 0 },
+  { id: 2, x: 500, y: 202, minX: 450, maxX: 710, vx: 90, face: 1, state: 'patrol', anim: 0, w: 50, h: 96, deadTimer: 0, attackTimer: 0 },
+  { id: 3, x: 1100, y: 270, minX: 1060, maxX: 1260, vx: 80, face: 1, state: 'patrol', anim: 0, w: 50, h: 96, deadTimer: 0, attackTimer: 0 },
+  { id: 4, x: 1450, y: 437, minX: 1380, maxX: 1750, vx: 105, face: 1, state: 'patrol', anim: 0, w: 50, h: 96, deadTimer: 0, attackTimer: 0 },
+  { id: 5, x: 2020, y: 152, minX: 1980, maxX: 2130, vx: 85, face: 1, state: 'patrol', anim: 0, w: 50, h: 96, deadTimer: 0, attackTimer: 0 }
 ];
 let last = performance.now();
 function resize(){ const dpr=Math.min(devicePixelRatio||1,2); const height=Math.round(visualViewport?.height||innerHeight); document.documentElement.style.setProperty('--game-height',height+'px'); canvas.width=innerWidth*dpr; canvas.height=height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
@@ -322,14 +322,17 @@ function update(dt){
     else { player.hangTime=Math.min(player.hangTime+dt,.85); player.vx=0; player.vy=0; player.y=p.y-65; return; }
   }
   const attackPressed=pressed('KeyX','x','X','KeyZ','z','Z','KeyJ','j','J');
-  if(attackPressed && !player.attackLatch && player.swordOut && player.attackTime<=0 && player.swordTime<=0) player.attackTime=.001;
+  if(attackPressed && !player.attackLatch && player.attackTime<=0 && player.swordTime<=0){
+    player.swordOut=true;
+    player.attackTime=0.001;
+  }
   player.attackLatch=attackPressed;
   const swordPressed=pressed('KeyE','e','E','KeyK','k','K');
   if(swordPressed && !player.swordLatch && player.swordTime<=0 && player.attackTime<=0){ player.swordOut=!player.swordOut; player.swordTime=.001; }
   player.swordLatch=swordPressed;
   if(player.swordTime>0) player.swordTime+=dt;
   if(player.attackTime>0) player.attackTime+=dt;
-  if(player.attackTime>=.64) player.attackTime=0;
+  if(player.attackTime>=.56) player.attackTime=0;
   if(player.swordTime>=.64) player.swordTime=0;
   const left=pressed('ArrowLeft','a','KeyA'), right=pressed('ArrowRight','d','KeyD');
   const running=pressed('ShiftLeft','ShiftRight','Shift','ControlLeft','ControlRight','Control');
@@ -380,40 +383,76 @@ function update(dt){
   if(player.hurtTime>0) player.hurtTime-=dt;
   if(player.y>world.h+80){player.x=110;player.y=409;player.vy=0;}
 
-  // Actualización y combate de enemigos Tiki
+  // Actualización, IA agresiva y combate de enemigos Tiki
   for(const enemy of enemies){
     if(enemy.state==='hit'){
       enemy.deadTimer+=dt;
-      if(enemy.deadTimer>12){ enemy.state='walk'; enemy.deadTimer=0; }
+      if(enemy.deadTimer>10){ enemy.state='patrol'; enemy.deadTimer=0; }
       continue;
     }
-    enemy.x += enemy.vx * enemy.face * dt;
-    if(enemy.face>0 && enemy.x>=enemy.maxX){ enemy.x=enemy.maxX; enemy.face=-1; }
-    else if(enemy.face<0 && enemy.x<=enemy.minX){ enemy.x=enemy.minX; enemy.face=1; }
-    enemy.anim += dt*6.5;
 
     const dx = (player.x+player.w/2) - (enemy.x+enemy.w/2);
     const dy = (player.y+player.h/2) - (enemy.y+enemy.h/2);
     const dist = Math.hypot(dx, dy);
 
     // Ataque con espada impacta al Tiki
-    const attacking = player.attackTime>0.08 && player.attackTime<0.54;
+    const attacking = player.attackTime>0.08 && player.attackTime<0.50;
     const facing = (player.face>0 && dx<0) || (player.face<0 && dx>0);
-    if(attacking && facing && Math.abs(dx)<85 && Math.abs(dy)<60){
+    if(attacking && facing && Math.abs(dx)<95 && Math.abs(dy)<65){
       enemy.state='hit'; enemy.deadTimer=0.001; playStep('stone'); continue;
     }
 
     // Salto o pisotón sobre la cabeza del Tiki
-    if(player.vy>60 && player.y+player.h>=enemy.y-5 && player.y+player.h<=enemy.y+35 && Math.abs(dx)<42){
+    if(player.vy>60 && player.y+player.h>=enemy.y-5 && player.y+player.h<=enemy.y+35 && Math.abs(dx)<45){
       enemy.state='hit'; enemy.deadTimer=0.001; player.vy=-450; player.jumpCount=1; playStep('stone'); continue;
     }
 
-    // Daño y empuje al jugador si entra en contacto
-    if(dist<48 && player.hurtTime<=0 && player.sleepTime<=0){
-      player.hurtTime=0.9;
-      player.vx=(dx>=0?1:-1)*260;
-      player.vy=-280;
-      player.onGround=false;
+    // Comportamiento activo del Tiki: patrulla, persecución y estocada
+    const inPerception = Math.abs(dx) < 250 && Math.abs(dy) < 65;
+    if(enemy.state === 'attack'){
+      enemy.attackTimer -= dt;
+      // Daño al jugador si la estocada conecta
+      if(enemy.attackTimer > 0.15 && enemy.attackTimer < 0.45 && Math.abs(dx) < 65 && Math.abs(dy) < 55){
+        if(player.hurtTime <= 0 && player.sleepTime <= 0){
+          player.hurtTime = 0.9;
+          player.vx = (dx >= 0 ? 1 : -1) * 280;
+          player.vy = -260;
+          player.onGround = false;
+          playStep('grass');
+        }
+      }
+      if(enemy.attackTimer <= 0){
+        enemy.state = inPerception ? 'chase' : 'patrol';
+      }
+    } else if(inPerception){
+      // Modo persecución: corre activamente hacia el jugador
+      enemy.state = 'chase';
+      enemy.face = dx < 0 ? 1 : -1;
+      const chaseSpeed = 145;
+      enemy.x += enemy.face * chaseSpeed * dt;
+      enemy.x = Math.max(enemy.minX - 25, Math.min(enemy.maxX + 25, enemy.x));
+      enemy.anim += dt * 10.5;
+
+      // Si está a distancia de ataque, lanza estocada con lanza
+      if(Math.abs(dx) < 70 && Math.abs(dy) < 50){
+        enemy.state = 'attack';
+        enemy.attackTimer = 0.52;
+      }
+    } else {
+      // Modo patrullaje continuo y activo
+      enemy.state = 'patrol';
+      enemy.x += enemy.vx * enemy.face * dt;
+      if(enemy.face > 0 && enemy.x >= enemy.maxX){ enemy.x = enemy.maxX; enemy.face = -1; }
+      else if(enemy.face < 0 && enemy.x <= enemy.minX){ enemy.x = enemy.minX; enemy.face = 1; }
+      enemy.anim += dt * 7.5;
+    }
+
+    // Daño por contacto general si no está noqueado
+    if(dist < 46 && player.hurtTime <= 0 && player.sleepTime <= 0 && enemy.state !== 'hit'){
+      player.hurtTime = 0.9;
+      player.vx = (dx >= 0 ? 1 : -1) * 260;
+      player.vy = -280;
+      player.onGround = false;
       playStep('grass');
     }
   }
@@ -443,7 +482,19 @@ const FRAMES = {
   hangOnly: { scale: 124/420 },
   climbOnly: { scale: 124/470 },
   sword:  { scale: 124/550, list: [{x:6,w:247,cx:130,fy:640},{x:272,w:251,cx:131,fy:640},{x:541,w:251,cx:131,fy:640},{x:808,w:251,cx:131,fy:640},{x:1077,w:251,cx:127,fy:640},{x:1343,w:259,cx:128,fy:640},{x:1607,w:267,cx:131,fy:640},{x:1875,w:293,cx:130,fy:640}] },
-  attack: { scale: 124/260 },
+  attack: {
+    scale: 124 / 560,
+    list: [
+      {x: 24, w: 403, cx: 201, fy: 650},
+      {x: 451, w: 367, cx: 183, fy: 650},
+      {x: 842, w: 365, cx: 182, fy: 650},
+      {x: 1231, w: 343, cx: 171, fy: 650},
+      {x: 1598, w: 343, cx: 171, fy: 650},
+      {x: 1965, w: 293, cx: 146, fy: 650},
+      {x: 2282, w: 362, cx: 181, fy: 650},
+      {x: 2668, w: 390, cx: 195, fy: 650}
+    ]
+  },
   hang:   { scale: 124/520 },
   climb:  { scale: 124/300 }
 };
@@ -457,20 +508,18 @@ function render(){
 
   // Render enemigos Tiki
   if(enemySheet.complete && enemySheet.naturalWidth){
-    const sc = 96 / 560;
+    const sc = 96 / 550;
     for(const enemy of enemies){
       if(enemy.state === 'hit' && enemy.deadTimer > 4.5) continue;
       let fIdx = 0;
       if(enemy.state === 'hit'){
-        fIdx = 6 + (Math.floor(enemy.deadTimer * 6) % 2);
+        fIdx = 6 + (Math.floor(enemy.deadTimer * 5) % 2);
+      } else if(enemy.state === 'attack'){
+        fIdx = enemy.attackTimer > 0.32 ? 4 : 5;
+      } else if(enemy.state === 'chase'){
+        fIdx = Math.floor(enemy.anim) % 4;
       } else {
-        const dx = Math.abs((player.x + player.w/2) - (enemy.x + enemy.w/2));
-        const dy = Math.abs((player.y + player.h/2) - (enemy.y + enemy.h/2));
-        if(dx < 80 && dy < 50){
-          fIdx = 4 + (Math.floor(performance.now() * 0.005) % 2);
-        } else {
-          fIdx = Math.floor(enemy.anim) % 4;
-        }
+        fIdx = Math.floor(enemy.anim) % 4;
       }
       const f = ENEMY_FRAMES[fIdx];
       const ex = (enemy.x - cam) * s, ey = (enemy.y + enemy.h) * s;
@@ -488,7 +537,13 @@ function render(){
         ctx.fillStyle = '#ffe066';
         ctx.font = 'bold 12px system-ui';
         const dizzyBob = Math.sin(enemy.deadTimer * 8) * 3;
-        ctx.fillText('💫 K.O.!', ex - 2 * s, (enemy.y - 8) * s + dizzyBob);
+        ctx.fillText('💫 K.O.!', ex - 2 * s, (enemy.y - 10) * s + dizzyBob);
+        ctx.restore();
+      } else if(enemy.state === 'chase' || enemy.state === 'attack'){
+        ctx.save();
+        ctx.fillStyle = '#ff3b3b';
+        ctx.font = 'bold 14px system-ui';
+        ctx.fillText('💢', ex + 6 * s, (enemy.y - 8) * s);
         ctx.restore();
       }
     }
@@ -498,7 +553,7 @@ function render(){
   if(player.sleepTime>0){ animKey='sleep'; activeSheet=sleepSheet; frame=player.sleepTime<1.2?Math.min(5,Math.floor(player.sleepTime/1.2*6)):2+Math.floor((player.sleepTime-1.2)*3)%4; }
   else if(player.climbTime>0){ animKey='climb'; activeSheet=climbSheet; frame=Math.min(11,Math.floor(player.climbTime*11)); }
   else if(player.hangTime>0){ animKey='hang'; activeSheet=hangSheet; frame=Math.min(7,Math.floor(player.hangTime*9)); }
-  else if(player.attackTime>0){ animKey='attack'; activeSheet=comboSheet; frame=Math.min(11,Math.floor(player.attackTime/.64*12)); }
+  else if(player.attackTime>0){ animKey='attack'; activeSheet=comboSheet; frame=Math.min(7,Math.floor(player.attackTime/.56*8)); }
   else if(player.swordTime>0){ animKey='sword'; activeSheet=swordSheet; const step=Math.min(7,Math.floor(player.swordTime/.64*8)); frame=player.swordOut?step:7-step; }
   else if(player.doubleJumpTime>0 && jumping){ animKey='doubleJump'; activeSheet=doubleJumpSheet; frame=Math.min(7,Math.floor(player.doubleJumpTime/.72*8)); }
   else if(jumping){ animKey='jump'; activeSheet=jumpSheet; frame=player.vy<-300?1:player.vy<-80?2:player.vy<120?3:player.vy<320?5:6; }
@@ -520,10 +575,10 @@ function render(){
     }
     ctx.translate(px+player.w*s/2, py+player.h*s);
     ctx.scale(player.face*s*sc, s*sc);
-    if(animKey==='swordRun' || animKey==='doubleJump' || animKey==='sleep' || animKey==='attack' || animKey==='hang' || animKey==='climb'){
-      const count=animKey==='sleep'?6:animKey==='attack'?12:animKey==='climb'?12:8, fw=activeSheet.width/count;
-      const inset=animKey==='sleep'?4:animKey==='attack'?5:animKey==='hang'||animKey==='climb'?4:0;
-      const drawY=animKey==='sleep'?-520:animKey==='attack'?-520:animKey==='hang'?-320:animKey==='climb'?-520:-624;
+    if(animKey==='swordRun' || animKey==='doubleJump' || animKey==='sleep' || animKey==='hang' || animKey==='climb'){
+      const count=animKey==='sleep'?6:animKey==='climb'?12:8, fw=activeSheet.width/count;
+      const inset=animKey==='sleep'?4:animKey==='hang'||animKey==='climb'?4:0;
+      const drawY=animKey==='sleep'?-520:animKey==='hang'?-320:animKey==='climb'?-520:-624;
       ctx.drawImage(activeSheet, frame*fw+inset, 0, fw-inset*2, fh, -fw/2+inset, drawY, fw-inset*2, fh);
     }else ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
     ctx.restore();
