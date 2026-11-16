@@ -377,12 +377,54 @@ function update(dt){
     if(wakeInput){ player.sleepTime=0; player.idleTime=0; player.snoreTime=0; }
     else { player.sleepTime+=dt; player.snoreTime+=dt; if(player.snoreTime>=2.4){player.snoreTime=0;playSnore();} return; }
   }
-  if(player.climbTime>0){ const previous=player.climbTime; player.climbTime+=dt; player.vx=0; player.vy=0; if(Math.floor(previous*4)!==Math.floor(player.climbTime*4))playStep('stone'); if(player.climbTime>1.05){ player.y=player.hangPlatform.y-player.h; player.onGround=true; player.climbTime=0; player.hangPlatform=null; } return; }
+  if(player.climbTime>0){
+    player.climbTime+=dt;
+    player.vx=0; player.vy=0;
+    if(player.climbTime>0.28){
+      player.y=player.hangPlatform.y-player.h;
+      player.onGround=true;
+      player.climbTime=0;
+      player.hangPlatform=null;
+    }
+    return;
+  }
   if(player.hangTime>0){
     const p=player.hangPlatform;
-    if(pressed('ArrowUp','KeyW')||runTapJump){ runTapJump=false; player.hangTime=0; player.climbTime=.001; }
-    else if(pressed('ArrowDown','KeyS') || pressed('KeyQ')){ player.hangTime=0; player.vy=80; }
-    else { player.hangTime=Math.min(player.hangTime+dt,.85); player.vx=0; player.vy=0; player.y=p.y-65; return; }
+    const jumpAction = pressed('Space','ArrowUp','KeyW','KeyC','c','C') || runTapJump;
+    const dropAction = pressed('ArrowDown','KeyS','s','S','KeyQ');
+    const moveAway = (player.x < p.x && pressed('ArrowLeft','KeyA','a')) || (player.x > p.x && pressed('ArrowRight','KeyD','d'));
+    const attackAction = pressed('KeyX','x','KeyZ','z');
+
+    if(jumpAction){
+      // Salto ágil para subir a la plataforma inmediatamente con Espacio o Arriba
+      runTapJump = false;
+      player.hangTime = 0;
+      player.climbTime = 0;
+      player.y = p.y - player.h - 6;
+      player.vy = -380;
+      player.onGround = true;
+      player.jumpCount = 1;
+      player.hangPlatform = null;
+      playStep('stone');
+      return;
+    } else if(dropAction || moveAway || attackAction){
+      // Soltarse al instante si presionas cualquier tecla de dirección contraria o agacharse
+      player.hangTime = 0;
+      player.climbTime = 0;
+      player.hangPlatform = null;
+      player.vy = 80;
+      return;
+    } else {
+      player.hangTime += dt;
+      player.vx = 0; player.vy = 0; player.y = p.y - 65;
+      // Auto-soltarse tras 1.2 segundos para que NUNCA se quede pegado
+      if(player.hangTime > 1.2){
+        player.hangTime = 0;
+        player.hangPlatform = null;
+        player.vy = 80;
+      }
+      return;
+    }
   }
   const attackPressed=pressed('KeyX','x','X','KeyZ','z','Z','KeyJ','j','J');
   if(attackPressed && !player.attackLatch && player.attackTime<=0 && player.swordTime<=0){
@@ -423,11 +465,17 @@ function update(dt){
   const oldX=player.x, oldY=player.y, wasGrounded=player.onGround; player.x=Math.max(0,Math.min(world.w-player.w,player.x+player.vx*dt)); player.vy+=1250*dt; player.y+=player.vy*dt; player.onGround=false;
   if(player.vy>0 && !player.onGround){
     for(const p of platforms){
-      const nearLeft=Math.abs((player.x+player.w)-p.x)<70 && player.x+player.w>=p.x-70 && player.x<p.x+18;
-      const nearRight=Math.abs(player.x-(p.x+p.w))<70 && player.x<=p.x+p.w+70 && player.x+player.w>p.x+p.w-18;
-      const crossingTop=oldY+player.h<p.y && player.y+player.h>=p.y-12;
-      if(crossingTop && (nearLeft||nearRight)){
-        player.hangPlatform=p; player.hangTime=.001; player.x=nearLeft?p.x-player.w+8:p.x+p.w-8; player.y=p.y-65; player.vy=0; break;
+      if(p.y >= 500) continue; // Nunca colgarse del suelo
+      const nearLeft = Math.abs((player.x + player.w) - p.x) < 14 && player.x < p.x;
+      const nearRight = Math.abs(player.x - (p.x + p.w)) < 14 && player.x + player.w > p.x + p.w;
+      const handsAtLedge = oldY < p.y - 35 && player.y >= p.y - 75 && player.y <= p.y - 20;
+      if(handsAtLedge && (nearLeft || nearRight)){
+        player.hangPlatform = p;
+        player.hangTime = 0.001;
+        player.x = nearLeft ? p.x - player.w + 6 : p.x + p.w - 6;
+        player.y = p.y - 65;
+        player.vy = 0;
+        break;
       }
     }
   }
