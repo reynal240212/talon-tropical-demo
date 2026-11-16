@@ -1222,39 +1222,40 @@ function render(){
     for(const enemy of enemies){
       if(enemy.state === 'hit' && enemy.deadTimer > 4.5) continue;
       const prof = COCO_PIRATA_PROFILES[enemy.type] || COCO_PIRATA_PROFILES[0];
-      const sc = enemy.h / 76;
+      const sc = enemy.h / 126;
       let col = 0;
-      let tilt = 0;
-      let bob = 0;
       if(enemy.state === 'hit'){
-        col = 2; // Pose K.O. mareado con estrellas
-        bob = Math.sin(enemy.deadTimer * 7) * 2;
+        // K.O. / Derrota (Cols 16: impacto, 17: tumbado, 18: mareado estrellas)
+        if(enemy.deadTimer < 0.25) col = 16;
+        else if(enemy.deadTimer < 0.75) col = 17;
+        else col = 18;
       } else if(enemy.state === 'attack'){
-        col = 1; // Ataque activo
-        tilt = enemy.face * 0.15;
+        // Atacar (Cols 12: carga, 13: estocada/tajo, 14: impacto con chispas, 15: recuperación)
+        const atkProg = 1 - Math.max(0, enemy.attackTimer / prof.attackDur);
+        col = 12 + Math.min(3, Math.floor(atkProg * 4));
       } else if(enemy.state === 'chase'){
-        col = Math.floor(enemy.anim * 1.5) % 2; // Alterna paso rápido
-        tilt = Math.sin(enemy.anim * 9) * 0.14;
-        bob = Math.abs(Math.sin(enemy.anim * 9)) * 5;
-        if(enemy.type === 3){
-          bob += Math.abs(Math.sin(enemy.anim * 11)) * 10; // Salto acrobático de Coco Saltarín
+        // Persecución veloz: correr o brincar acrobáticamente
+        if(enemy.type === 3 && (Math.floor(enemy.anim * 5) % 4 >= 1)){
+          // Saltar (Cols 8: agacho, 9: impulso, 10: cénit en el aire, 11: caída)
+          col = 8 + (Math.floor(enemy.anim * 6) % 4);
+        } else {
+          // Correr (Cols 4: zancada, 5: vuelo aéreo, 6: aterrizaje, 7: empuje)
+          col = 4 + (Math.floor(enemy.anim * 8) % 4);
         }
       } else {
-        col = 0; // Patrulla / caminata
-        tilt = Math.sin(enemy.anim * 6) * 0.08;
-        bob = Math.abs(Math.sin(enemy.anim * 6)) * 3;
+        // Caminar / Patrulla (Cols 0: paso izq, 1: contacto, 2: paso der, 3: elevación)
+        col = 0 + (Math.floor(enemy.anim * 5) % 4);
       }
 
       const ex = (enemy.x + enemy.w / 2 - cam) * s;
-      const ey = (enemy.y + enemy.h) * s - bob * s;
+      const ey = (enemy.y + enemy.h) * s;
       ctx.save();
       if(enemy.state === 'hit' && enemy.deadTimer > 3.0){
         ctx.globalAlpha = Math.max(0, 1 - (enemy.deadTimer - 3.0) / 1.5);
       }
       ctx.translate(ex, ey);
-      ctx.rotate(tilt);
       ctx.scale(enemy.face * s * sc, s * sc);
-      ctx.drawImage(cocoPiratasSheet, col * 140, prof.row * 160, 140, 160, -70, -152, 140, 160);
+      ctx.drawImage(cocoPiratasSheet, col * 140, prof.row * 160, 140, 160, -70, -150, 140, 160);
       ctx.restore();
 
       if(enemy.state === 'hit' && enemy.deadTimer <= 3.0){
