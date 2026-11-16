@@ -17,11 +17,11 @@ const platformTexture = new Image();
 const enemySheet = new Image();
 bg.src = 'assets/nivel_tropical_extendido_v2.png?v=1';
 sheet.src = 'assets/explorador_caminar_master_v1.webp';
-runSheet.src = 'assets/explorador_correr_master_v3.png';
+runSheet.src = 'assets/explorador_correr_master_v1.webp';
 swordRunSheet.src = 'assets/explorador_correr_espada_master_v2.webp';
 idleSheet.src = 'assets/explorador_idle_master_v1.webp';
 swordSheet.src = 'assets/explorador_espada_master_v2.webp';
-comboSheet.src = 'assets/explorador_ataque_master_v5.png';
+comboSheet.src = 'assets/explorador_ataque_master_v2.webp';
 crouchSheet.src = 'assets/explorador_agacharse_master_v1.png';
 jumpSheet.src = 'assets/explorador_salto_master_v1.webp';
 doubleJumpSheet.src = 'assets/explorador_doble_salto_master_v1.png?v=2';
@@ -474,8 +474,8 @@ const FRAMES = {
   idle:   { scale: 124/624, list: [{x:38,w:275,cx:142,fy:680},{x:399,w:277,cx:143,fy:680},{x:761,w:281,cx:145,fy:680},{x:1120,w:275,cx:142,fy:680},{x:1482,w:273,cx:142,fy:680},{x:1846,w:275,cx:140,fy:680}] },
   crouch: { scale: 124/369, list: [{x:27,w:187,cx:101,fy:577},{x:264,w:175,cx:92,fy:578},{x:487,w:170,cx:92,fy:577},{x:712,w:177,cx:91,fy:575},{x:943,w:175,cx:90,fy:576},{x:1166,w:176,cx:89,fy:576}] },
   walk:   { scale: 124/586, list: [{x:0,w:281,cx:135,fy:652},{x:278,w:235,cx:131,fy:652},{x:554,w:233,cx:127,fy:652},{x:825,w:267,cx:127,fy:652},{x:1089,w:287,cx:136,fy:652},{x:1372,w:245,cx:124,fy:652},{x:1640,w:239,cx:126,fy:652},{x:1912,w:260,cx:126,fy:652}] },
-  // Animación de correr atlética con movimiento fluido de ambos brazos.
-  run:    { scale: 124/560, list: [{x:10,w:446,cx:223,fy:660},{x:476,w:382,cx:191,fy:660},{x:878,w:454,cx:227,fy:660},{x:1352,w:428,cx:214,fy:660},{x:1800,w:454,cx:227,fy:660},{x:2274,w:445,cx:222,fy:660},{x:2739,w:470,cx:235,fy:660},{x:3229,w:453,cx:226,fy:660}] },
+  // Los anchos terminan antes del siguiente fotograma para evitar que se filtre su dibujo.
+  run:    { scale: 124/564, list: [{x:6,w:285,cx:139,fy:642},{x:295,w:232,cx:121,fy:642},{x:531,w:288,cx:154,fy:642},{x:823,w:283,cx:135,fy:642},{x:1110,w:264,cx:112,fy:642},{x:1378,w:234,cx:119,fy:642},{x:1616,w:286,cx:150,fy:642},{x:1906,w:258,cx:128,fy:642}] },
   jump:   { scale: 124/540, list: [{x:30,w:259,cx:130,fy:662},{x:312,w:225,cx:110,fy:662},{x:535,w:275,cx:145,fy:662},{x:826,w:269,cx:127,fy:662},{x:1097,w:259,cx:130,fy:662},{x:1382,w:233,cx:115,fy:662},{x:1646,w:241,cx:124,fy:662},{x:1910,w:231,cx:120,fy:662}] },
   doubleJump: { scale: 124/360 },
   sleep: { scale: 124/360 },
@@ -483,16 +483,16 @@ const FRAMES = {
   climbOnly: { scale: 124/470 },
   sword:  { scale: 124/550, list: [{x:6,w:247,cx:130,fy:640},{x:272,w:251,cx:131,fy:640},{x:541,w:251,cx:131,fy:640},{x:808,w:251,cx:131,fy:640},{x:1077,w:251,cx:127,fy:640},{x:1343,w:259,cx:128,fy:640},{x:1607,w:267,cx:131,fy:640},{x:1875,w:293,cx:130,fy:640}] },
   attack: {
-    scale: 124 / 560,
+    scale: 124 / 470,
     list: [
-      {x: 24, w: 403, cx: 201, fy: 650},
-      {x: 451, w: 367, cx: 183, fy: 650},
-      {x: 842, w: 365, cx: 182, fy: 650},
-      {x: 1231, w: 343, cx: 171, fy: 650},
-      {x: 1598, w: 343, cx: 171, fy: 650},
-      {x: 1965, w: 293, cx: 146, fy: 650},
-      {x: 2282, w: 362, cx: 181, fy: 650},
-      {x: 2668, w: 390, cx: 195, fy: 650}
+      {x: 16, w: 237, cx: 118, fy: 607},
+      {x: 277, w: 232, cx: 116, fy: 607},
+      {x: 551, w: 195, cx: 97, fy: 606},
+      {x: 785, w: 245, cx: 122, fy: 606},
+      {x: 1030, w: 300, cx: 150, fy: 607},
+      {x: 1330, w: 290, cx: 145, fy: 606},
+      {x: 1620, w: 253, cx: 126, fy: 607},
+      {x: 1915, w: 240, cx: 120, fy: 607}
     ]
   },
   hang:   { scale: 124/520 },
