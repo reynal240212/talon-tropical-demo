@@ -497,8 +497,16 @@ function update(dt){
   if(player.climbTime>0){
     player.climbTime+=dt;
     player.vx=0; player.vy=0;
-    if(player.climbTime>0.28){
-      player.y=player.hangPlatform.y-player.h;
+    const p=player.hangPlatform;
+    if(p){
+      player.y=p.y-player.h;
+    }
+    if(player.climbTime>=0.36){
+      if(p){
+        player.y=p.y-player.h;
+        if(player.x+player.w/2<p.x+p.w/2) player.x=Math.max(player.x, p.x+4);
+        else player.x=Math.min(player.x, p.x+p.w-player.w-4);
+      }
       player.onGround=true;
       player.climbTime=0;
       player.hangPlatform=null;
@@ -513,15 +521,15 @@ function update(dt){
     const attackAction = pressed('KeyX','x','KeyZ','z');
 
     if(jumpAction){
-      // Salto ágil para subir a la plataforma inmediatamente con Espacio o Arriba
+      // Inicia la animación de 12 fotogramas subiendo al borde de la plataforma
       runTapJump = false;
       player.hangTime = 0;
-      player.climbTime = 0;
-      player.y = p.y - player.h - 6;
-      player.vy = -380;
-      player.onGround = true;
-      player.jumpCount = 1;
-      player.hangPlatform = null;
+      player.climbTime = 0.001;
+      player.y = p.y - player.h;
+      player.vx = 0;
+      player.vy = 0;
+      player.onGround = false;
+      player.jumpCount = 0;
       playStep('stone');
       return;
     } else if(dropAction || moveAway || attackAction){
@@ -1188,12 +1196,24 @@ function drawResortera(ctx, isAiming, progress, isCrouching, aimAngle = 0){
 
 const FRAMES = {
   idle:   { scale: 124/624, list: [{x:38,w:275,cx:142,fy:680},{x:399,w:277,cx:143,fy:680},{x:761,w:281,cx:145,fy:680},{x:1120,w:275,cx:142,fy:680},{x:1482,w:273,cx:142,fy:680},{x:1846,w:275,cx:140,fy:680}] },
-  crouch: { scale: 124/369, list: [{x:27,w:187,cx:101,fy:577},{x:264,w:175,cx:92,fy:578},{x:487,w:170,cx:92,fy:577},{x:712,w:177,cx:91,fy:575},{x:943,w:175,cx:90,fy:576},{x:1166,w:176,cx:89,fy:576}] },
+  crouch: { scale: 124/380, list: [{x:27,w:187,cx:101,fy:577},{x:264,w:175,cx:92,fy:578},{x:487,w:170,cx:92,fy:577},{x:712,w:177,cx:91,fy:575},{x:943,w:175,cx:90,fy:576},{x:1166,w:176,cx:89,fy:576}] },
   walk:   { scale: 124/586, list: [{x:0,w:281,cx:135,fy:652},{x:278,w:235,cx:131,fy:652},{x:554,w:233,cx:127,fy:652},{x:825,w:267,cx:127,fy:652},{x:1089,w:287,cx:136,fy:652},{x:1372,w:245,cx:124,fy:652},{x:1640,w:239,cx:126,fy:652},{x:1912,w:260,cx:126,fy:652}] },
   // Los anchos terminan antes del siguiente fotograma para evitar que se filtre su dibujo.
   run:    { scale: 124/564, list: [{x:6,w:285,cx:139,fy:642},{x:295,w:232,cx:121,fy:642},{x:531,w:288,cx:154,fy:642},{x:823,w:283,cx:135,fy:642},{x:1110,w:264,cx:112,fy:642},{x:1378,w:234,cx:119,fy:642},{x:1616,w:286,cx:150,fy:642},{x:1906,w:258,cx:128,fy:642}] },
   jump:   { scale: 124/540, list: [{x:30,w:259,cx:130,fy:662},{x:312,w:225,cx:110,fy:662},{x:535,w:275,cx:145,fy:662},{x:826,w:269,cx:127,fy:662},{x:1097,w:259,cx:130,fy:662},{x:1382,w:233,cx:115,fy:662},{x:1646,w:241,cx:124,fy:662},{x:1910,w:231,cx:120,fy:662}] },
-  doubleJump: { scale: 124/360 },
+  doubleJump: {
+    scale: 124 / 459,
+    list: [
+      { x: 0,    w: 272, cx: 144, fy: 660 },
+      { x: 272,  w: 271, cx: 150, fy: 629 },
+      { x: 543,  w: 271, cx: 135, fy: 517 },
+      { x: 814,  w: 272, cx: 135, fy: 475 },
+      { x: 1086, w: 272, cx: 126, fy: 499 },
+      { x: 1358, w: 271, cx: 151, fy: 460 },
+      { x: 1629, w: 271, cx: 128, fy: 558 },
+      { x: 1900, w: 272, cx: 126, fy: 660 }
+    ]
+  },
   sleep: {
     scale: 124 / 624,
     list: [
@@ -1207,8 +1227,36 @@ const FRAMES = {
   },
   hangOnly: { scale: 124/420 },
   climbOnly: { scale: 124/470 },
-  hang:   { scale: 124/520 },
-  climb:  { scale: 124/300 },
+  hang: {
+    scale: 124 / 595,
+    list: [
+      { x: 0,    w: 272, cx: 148, fy: 355 },
+      { x: 272,  w: 271, cx: 135, fy: 355 },
+      { x: 543,  w: 271, cx: 127, fy: 342 },
+      { x: 814,  w: 272, cx: 140, fy: 342 },
+      { x: 1086, w: 272, cx: 135, fy: 342 },
+      { x: 1358, w: 271, cx: 121, fy: 342 },
+      { x: 1629, w: 271, cx: 123, fy: 342 },
+      { x: 1900, w: 272, cx: 121, fy: 342 }
+    ]
+  },
+  climb: {
+    scale: 124 / 292,
+    list: [
+      { x: 0,    w: 181, cx: 88, fy: 400 },
+      { x: 181,  w: 181, cx: 86, fy: 400 },
+      { x: 362,  w: 181, cx: 76, fy: 400 },
+      { x: 543,  w: 181, cx: 72, fy: 400 },
+      { x: 724,  w: 181, cx: 77, fy: 400 },
+      { x: 905,  w: 181, cx: 92, fy: 400 },
+      { x: 1086, w: 181, cx: 90, fy: 400 },
+      { x: 1267, w: 181, cx: 90, fy: 400 },
+      { x: 1448, w: 181, cx: 86, fy: 400 },
+      { x: 1629, w: 181, cx: 83, fy: 400 },
+      { x: 1810, w: 181, cx: 88, fy: 400 },
+      { x: 1991, w: 181, cx: 80, fy: 400 }
+    ]
+  },
   slingshot: { scale: 124/295 }
 };
 function render(){
@@ -1226,7 +1274,7 @@ function render(){
   drawWorld(bg); drawAtmosphere(performance.now()); drawPlatformVolume(); drawCollisionDebug();
   const s=scale(), cam=cameraX(), px=(player.x-cam)*s, py=player.y*s;
   const moving=Math.abs(player.vx)>0 && player.onGround;
-  const crouching=pressed('ArrowDown','KeyS');
+  const crouching=pressed('ArrowDown','KeyS','s','S') && player.onGround && player.hangTime<=0 && player.attackTime<=0;
   const jumping=!player.onGround;
 
   // Render enemigos Cocos Piratas (Kakamora)
@@ -1337,7 +1385,7 @@ function render(){
 
   let animKey='idle', activeSheet=idleSheet, frame=player.frame;
   if(player.sleepTime>0){ animKey='sleep'; activeSheet=sleepSheet; frame=player.sleepTime<1.2?Math.min(5,Math.floor(player.sleepTime/1.2*6)):2+Math.floor((player.sleepTime-1.2)*3)%4; }
-  else if(player.climbTime>0){ animKey='climb'; activeSheet=climbSheet; frame=Math.min(11,Math.floor(player.climbTime*11)); }
+  else if(player.climbTime>0){ animKey='climb'; activeSheet=climbSheet; frame=Math.min(11,Math.floor((player.climbTime/0.36)*12)); }
   else if(player.hangTime>0){ animKey='hang'; activeSheet=hangSheet; frame=Math.min(7,Math.floor(player.hangTime*9)); }
   else if(player.doubleJumpTime>0 && jumping){ animKey='doubleJump'; activeSheet=doubleJumpSheet; frame=Math.min(7,Math.floor(player.doubleJumpTime/.72*8)); }
   else if(jumping){ animKey='jump'; activeSheet=jumpSheet; frame=player.vy<-300?1:player.vy<-80?2:player.vy<120?3:player.vy<320?5:6; }
@@ -1358,15 +1406,12 @@ function render(){
     }
     ctx.translate(px+player.w*s/2, py+player.h*s);
     ctx.scale(player.face*s*sc, s*sc);
-    if(animKey==='doubleJump' || animKey==='hang' || animKey==='climb'){
-      const count=animKey==='climb'?12:8, fw=activeSheet.width/count;
-      const inset=animKey==='hang'||animKey==='climb'?4:0;
-      const drawY=animKey==='hang'?-320:animKey==='climb'?-520:-624;
-      ctx.drawImage(activeSheet, frame*fw+inset, 0, fw-inset*2, fh, -fw/2+inset, drawY, fw-inset*2, fh);
-    }else ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
+    if(f){
+      ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
+    }
 
-    // Dibuja la auténtica resortera de aventura en el personaje maestro apuntando a 360° (excepto dormido)
-    if(animKey !== 'sleep'){
+    // Dibuja la auténtica resortera solo en posturas compatibles (no dormido, pirueta, colgado o subiendo)
+    if(animKey !== 'sleep' && animKey !== 'doubleJump' && animKey !== 'hang' && animKey !== 'climb'){
       drawResortera(ctx, player.attackTime > 0, player.attackTime / 0.28, crouching, player.aimAngle || 0);
     }
     ctx.restore();
