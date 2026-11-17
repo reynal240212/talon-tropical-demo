@@ -1194,7 +1194,17 @@ const FRAMES = {
   run:    { scale: 124/564, list: [{x:6,w:285,cx:139,fy:642},{x:295,w:232,cx:121,fy:642},{x:531,w:288,cx:154,fy:642},{x:823,w:283,cx:135,fy:642},{x:1110,w:264,cx:112,fy:642},{x:1378,w:234,cx:119,fy:642},{x:1616,w:286,cx:150,fy:642},{x:1906,w:258,cx:128,fy:642}] },
   jump:   { scale: 124/540, list: [{x:30,w:259,cx:130,fy:662},{x:312,w:225,cx:110,fy:662},{x:535,w:275,cx:145,fy:662},{x:826,w:269,cx:127,fy:662},{x:1097,w:259,cx:130,fy:662},{x:1382,w:233,cx:115,fy:662},{x:1646,w:241,cx:124,fy:662},{x:1910,w:231,cx:120,fy:662}] },
   doubleJump: { scale: 124/360 },
-  sleep: { scale: 124/360 },
+  sleep: {
+    scale: 124 / 624,
+    list: [
+      { x: 0,    w: 362, cx: 184, fy: 503 },
+      { x: 362,  w: 362, cx: 190, fy: 503 },
+      { x: 724,  w: 362, cx: 180, fy: 503 },
+      { x: 1086, w: 362, cx: 180, fy: 503 },
+      { x: 1448, w: 362, cx: 180, fy: 503 },
+      { x: 1810, w: 362, cx: 164, fy: 503 }
+    ]
+  },
   hangOnly: { scale: 124/420 },
   climbOnly: { scale: 124/470 },
   hang:   { scale: 124/520 },
@@ -1348,15 +1358,17 @@ function render(){
     }
     ctx.translate(px+player.w*s/2, py+player.h*s);
     ctx.scale(player.face*s*sc, s*sc);
-    if(animKey==='doubleJump' || animKey==='sleep' || animKey==='hang' || animKey==='climb'){
-      const count=animKey==='sleep'?6:animKey==='climb'?12:8, fw=activeSheet.width/count;
-      const inset=animKey==='sleep'?4:animKey==='hang'||animKey==='climb'?4:0;
-      const drawY=animKey==='sleep'?-520:animKey==='hang'?-320:animKey==='climb'?-520:-624;
+    if(animKey==='doubleJump' || animKey==='hang' || animKey==='climb'){
+      const count=animKey==='climb'?12:8, fw=activeSheet.width/count;
+      const inset=animKey==='hang'||animKey==='climb'?4:0;
+      const drawY=animKey==='hang'?-320:animKey==='climb'?-520:-624;
       ctx.drawImage(activeSheet, frame*fw+inset, 0, fw-inset*2, fh, -fw/2+inset, drawY, fw-inset*2, fh);
     }else ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
 
-    // Dibuja la auténtica resortera de aventura en el personaje maestro apuntando a 360°
-    drawResortera(ctx, player.attackTime > 0, player.attackTime / 0.28, crouching, player.aimAngle || 0);
+    // Dibuja la auténtica resortera de aventura en el personaje maestro apuntando a 360° (excepto dormido)
+    if(animKey !== 'sleep'){
+      drawResortera(ctx, player.attackTime > 0, player.attackTime / 0.28, crouching, player.aimAngle || 0);
+    }
     ctx.restore();
   }
 
@@ -1419,7 +1431,21 @@ function render(){
   ctx.fillStyle='#ffb74d'; ctx.font='bold 14px system-ui';
   ctx.fillText('🎯 Resortera 360° (Piedras)', innerWidth - 235, 72);
   if(player.idleTime>0){ const remaining=Math.max(0,15-player.idleTime); ctx.fillStyle='#fff4c9e8'; ctx.font='bold 16px system-ui'; ctx.fillText(remaining>0?'Sueño en: '+remaining.toFixed(1)+' s':'Preparando sueño…',18,gameHeight()-42); }
-  if(player.sleepTime>0){ const bob=Math.sin(player.sleepTime*2)*2; ctx.save(); ctx.globalAlpha=.72+.2*Math.sin(player.sleepTime*3); ctx.fillStyle='#fff4c9'; ctx.font='bold 20px system-ui'; ctx.fillText('Z',px+player.w*s*.58,py+10*s-bob); ctx.font='bold 15px system-ui'; ctx.fillText('z',px+player.w*s*.78,py-5*s-bob); ctx.font='bold 12px system-ui'; ctx.fillText('z',px+player.w*s*.94,py-18*s-bob); ctx.restore(); }
+  if(player.sleepTime>0){
+    const bob = Math.sin(player.sleepTime * 2.5) * 2;
+    const headX = px + (player.w * 0.5 + (player.face >= 0 ? 14 : -14)) * s;
+    const headY = py + player.h * s - 38 * s;
+    ctx.save();
+    ctx.globalAlpha = 0.72 + 0.2 * Math.sin(player.sleepTime * 3);
+    ctx.fillStyle = '#fff4c9';
+    ctx.font = 'bold 18px system-ui';
+    ctx.fillText('Z', headX + 4 * s * player.face, headY - 8 * s - bob);
+    ctx.font = 'bold 14px system-ui';
+    ctx.fillText('z', headX + 12 * s * player.face, headY - 22 * s - bob * 1.3);
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillText('z', headX + 18 * s * player.face, headY - 34 * s - bob * 1.6);
+    ctx.restore();
+  }
   ctx.restore(); // Screen shake restore
 }
 function loop(now){ const dt=Math.min((now-last)/1000,.033); last=now; update(dt); render(); requestAnimationFrame(loop); }
