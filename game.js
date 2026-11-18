@@ -15,7 +15,7 @@ const enemySheet = new Image();
 const cocoSheet = new Image();
 const cocoPiratasSheet = new Image();
 const slingSheet = new Image();
-bg.src = 'assets/nivel_tropical_extendido_v2.png?v=1';
+bg.src = 'assets/nivel_tropical_extendido_v2.png?v=3';
 sheet.src = 'assets/explorador_caminar_master_v1.webp';
 runSheet.src = 'assets/explorador_correr_master_v1.webp';
 idleSheet.src = 'assets/explorador_idle_master_v1.webp';
@@ -548,19 +548,7 @@ function pointInPlatform(p,x,y){
   return inside;
 }
 function drawPlatformVolume(){
-  const s=scale(), cam=cameraX();
-  ctx.save(); ctx.scale(s,s); ctx.translate(-cam,0);
-  for(const p of platforms){
-    if(p.y>=700)continue;
-    const depth=Math.min(10,p.h*.16);
-    ctx.fillStyle='rgba(10,35,32,.16)';
-    ctx.beginPath(); ctx.moveTo(p.x+5,p.y+depth); ctx.lineTo(p.x+p.w+5,p.y+depth); ctx.lineTo(p.x+p.w+8,p.y+p.h+6); ctx.lineTo(p.x+8,p.y+p.h+6); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle='rgba(224,255,126,.38)'; ctx.lineWidth=3;
-    ctx.beginPath(); ctx.moveTo(p.x+2,p.y+1); ctx.lineTo(p.x+p.w-2,p.y+1); ctx.stroke();
-    ctx.strokeStyle='rgba(16,49,43,.32)'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.moveTo(p.x+4,p.y+p.h-2); ctx.lineTo(p.x+p.w-4,p.y+p.h-2); ctx.stroke();
-  }
-  ctx.restore();
+  // El fondo 3D pre-renderizado ya integra volumen, iluminación y oclusión ambiental en cada plataforma.
 }
 function update(dt){
   if(isInMenu) return;
