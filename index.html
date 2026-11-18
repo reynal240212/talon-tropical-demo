@@ -23,49 +23,105 @@
       </div>
     </div>
 
-    <!-- MENÚ PRINCIPAL TROPICAL -->
-    <div id="main-menu" class="main-menu" role="dialog" aria-modal="true" aria-label="Menú principal">
+    <!-- MENÚ PRINCIPAL ESTILO CRASH BANDICOOT (TALON TROPICAL) -->
+    <div id="main-menu" class="main-menu crash-theme" role="dialog" aria-modal="true" aria-label="Menú principal">
       <div class="menu-backdrop"></div>
       
-      <div class="menu-wrapper">
-        <!-- Personaje Explorador (Izquierda) -->
-        <div class="menu-character menu-char-hero" aria-hidden="true">
-          <img src="assets/menu_explorador_portrait.png" alt="Explorador" class="char-img hero-img" />
-          <div class="char-shadow"></div>
-        </div>
-
-        <!-- Panel Central -->
-        <div class="menu-center-panel">
-          <div class="menu-header">
-            <span class="tropical-subtitle">🌴 AVENTURA EN LA ISLA 🌴</span>
-            <h1 class="tropical-title">TALON TROPICAL</h1>
-            <p class="tropical-tagline">Explora las ruinas sagradas y derrota a los <strong>Cocos Piratas</strong></p>
-          </div>
-
-          <div class="menu-buttons">
-            <button id="btn-play" class="btn-play-tropical" type="button" aria-label="Iniciar aventura">
-              <span class="btn-flare"></span>
-              <span class="btn-play-icon">▶</span>
-              <span class="btn-play-text">¡JUGAR!</span>
-            </button>
-
-            <div class="menu-sub-row">
-              <button id="btn-music-toggle" class="btn-tropical-sub" type="button" title="Activar o silenciar música">
-                <span id="music-icon">🎵</span> <span id="music-text">Música: ON</span>
-              </button>
-              <button id="btn-open-controls" class="btn-tropical-sub" type="button" title="Ver guía de controles">
-                <span>🎮</span> <span>Controles</span>
-              </button>
+      <div class="crash-menu-layout">
+        <!-- Columna Izquierda: Logo y Opciones Principales -->
+        <div class="crash-left-col">
+          <!-- Logo 3D Estilo Crash Bandicoot -->
+          <div class="crash-logo-wrap">
+            <div class="crash-title-3d">
+              <span class="letter-t">T</span><span class="letter-a">A</span><span class="letter-l">L</span><span class="letter-o">O</span><span class="letter-n">N</span>
             </div>
+            <div class="crash-wood-plank">
+              <span class="plank-nail left-nail"></span>
+              <span class="wood-text">TROPICAL</span>
+              <span class="plank-nail right-nail"></span>
+            </div>
+            <div class="crash-tagline">ISLA DE LOS COCOS PIRATAS</div>
+          </div>
+
+          <!-- Lista de Opciones Crash Style -->
+          <div class="crash-nav-list">
+            <button id="btn-play" class="crash-nav-item active" type="button" aria-label="Iniciar aventura">
+              <span class="nav-pointer">►</span>
+              <span class="nav-text btn-play-text">NUEVA PARTIDA</span>
+            </button>
+            <button id="btn-open-controls" class="crash-nav-item" type="button" aria-label="Ver controles">
+              <span class="nav-pointer">►</span>
+              <span class="nav-text">CONTROLES</span>
+            </button>
+            <button id="btn-music-toggle" class="crash-nav-item" type="button" aria-label="Control de música">
+              <span class="nav-pointer">►</span>
+              <span id="music-icon">🎵</span> <span id="music-text" class="nav-text">MÚSICA: ON</span>
+            </button>
           </div>
         </div>
 
-        <!-- Personaje Coco Concha 3D (Derecha) -->
-        <div class="menu-character menu-char-enemy" aria-hidden="true">
-          <img src="assets/coco_concha_3d_preview.png" alt="Guerrero Concha" class="char-img coco-img" />
-          <div class="char-shadow"></div>
+        <!-- Centro: Trilogía de Mundos / Portales (Estilo Crash 1, 2, 3) -->
+        <div class="crash-worlds-hub">
+          <!-- Mundo 1 (Activo) -->
+          <div class="world-portal active" id="portal-world-1" tabindex="0" role="button" aria-label="Mundo 1: Cascada Esmeralda">
+            <div class="portal-badge badge-w1">
+              <div class="portal-num">1</div>
+              <div class="portal-title">TALON</div>
+              <div class="portal-sub">CASCADA ESMERALDA</div>
+            </div>
+            <div class="portal-status active-status">¡DISPONIBLE!</div>
+          </div>
+
+          <!-- Mundo 2 (Próximamente) -->
+          <div class="world-portal locked" id="portal-world-2" aria-label="Mundo 2: Templo Tiki">
+            <div class="portal-badge badge-w2">
+              <div class="portal-num">2</div>
+              <div class="portal-title">TALON 2</div>
+              <div class="portal-sub">TEMPLO TIKI</div>
+            </div>
+            <div class="portal-status locked-status">🔒 PRÓXIMAMENTE</div>
+          </div>
+
+          <!-- Mundo 3 (Próximamente) -->
+          <div class="world-portal locked" id="portal-world-3" aria-label="Mundo 3: Fortaleza Pirata">
+            <div class="portal-badge badge-w3">
+              <div class="portal-num">3</div>
+              <div class="portal-title">TALON 3</div>
+              <div class="portal-sub">FORTALEZA PIRATA</div>
+            </div>
+            <div class="portal-status locked-status">🔒 PRÓXIMAMENTE</div>
+          </div>
+        </div>
+
+        <!-- Personajes en escena (Explorador y Guerrero Concha 3D) -->
+        <div class="crash-characters-layer">
+          <div class="menu-character menu-char-hero" aria-hidden="true">
+            <img src="assets/menu_explorador_portrait.png" alt="Explorador" class="char-img hero-img" />
+            <div class="char-shadow"></div>
+          </div>
+          <div class="menu-character menu-char-enemy" aria-hidden="true">
+            <img src="assets/coco_concha_3d_preview.png" alt="Guerrero Concha" class="char-img coco-img" />
+            <div class="char-shadow"></div>
+          </div>
         </div>
       </div>
+
+      <!-- Barra Inferior estilo Consola (Como en Crash N. Sane Trilogy) -->
+      <div class="crash-bottom-bar">
+        <div class="console-prompt">
+          <span class="btn-bubble btn-green">A</span> <span class="prompt-text">SELECCIONAR / JUGAR</span>
+        </div>
+        <div class="console-prompt">
+          <span class="btn-bubble btn-blue">X</span> <span class="prompt-text">CONTROLES</span>
+        </div>
+        <div class="console-prompt">
+          <span class="btn-bubble btn-yellow">Y</span> <span class="prompt-text">MÚSICA</span>
+        </div>
+        <div class="console-prompt">
+          <span class="btn-bubble btn-red">B</span> <span class="prompt-text">SALIR / PAUSA</span>
+        </div>
+      </div>
+    </div>
 
       <!-- Tarjeta / Modal de Controles -->
       <div id="controls-modal" class="controls-modal" hidden>

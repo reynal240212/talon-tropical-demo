@@ -62,37 +62,173 @@
 #btn-in-game-menu.hidden{display:none!important}
 
 /* ============================================================
-   MENÚ PRINCIPAL TROPICAL
+   MENÚ PRINCIPAL ESTILO CRASH BANDICOOT (TALON TROPICAL)
    ============================================================ */
 .main-menu{
-  position:fixed;inset:0;z-index:20;display:grid;place-items:center;
+  position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;
+  justify-content:space-between;align-items:center;
   overflow:hidden;user-select:none;-webkit-user-select:none;
+  padding:max(14px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+  box-sizing:border-box;
   transition:opacity .35s ease,transform .35s ease,visibility .35s;
 }
 .main-menu.hidden{
   opacity:0;pointer-events:none;transform:scale(1.03);visibility:hidden;
 }
 .menu-backdrop{
-  position:absolute;inset:0;
-  background:radial-gradient(circle at center,rgba(16,59,57,.68) 0%,rgba(6,26,36,.92) 80%),
+  position:absolute;inset:0;z-index:1;
+  background:radial-gradient(circle at 40% 45%,rgba(16,59,57,.45) 0%,rgba(6,26,36,.88) 85%),
              url('assets/world1_background_full.png') center/cover no-repeat;
-  backdrop-filter:blur(4px);filter:brightness(.92);
-}
-.menu-wrapper{
-  position:relative;z-index:2;display:flex;align-items:flex-end;justify-content:center;
-  width:100%;max-width:1240px;height:100%;max-height:92vh;padding:12px 24px;
-  gap:clamp(12px,3.5vw,48px);box-sizing:border-box;
+  filter:brightness(.92);
 }
 
-/* Personajes decorativos laterales */
+.crash-menu-layout{
+  position:relative;z-index:3;width:100%;max-width:1280px;height:calc(100% - 46px);
+  display:grid;grid-template-columns:320px 1fr;grid-template-rows:1fr;
+  align-items:center;gap:clamp(12px,3vw,36px);
+}
+
+/* Columna Izquierda: Logo 3D y Opciones */
+.crash-left-col{
+  display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+  gap:clamp(14px,2.5vh,26px);z-index:5;
+}
+.crash-logo-wrap{
+  display:flex;flex-direction:column;align-items:flex-start;
+  filter:drop-shadow(0 10px 18px rgba(0,0,0,.75));
+}
+.crash-title-3d{
+  font-family:Impact,"Arial Black",system-ui,sans-serif;
+  font-size:clamp(46px,7.5vw,78px);font-weight:900;line-height:.88;
+  color:#ffea00;
+  text-shadow:
+    0 1px 0 #ffa000, 0 2px 0 #ff8f00, 0 3px 0 #ff6f00, 0 4px 0 #e65100,
+    0 5px 0 #bf360c, 0 6px 0 #871a00, 0 7px 0 #570f00,
+    0 9px 18px rgba(0,0,0,.85);
+  letter-spacing:-1px;display:flex;
+}
+.crash-title-3d .letter-t{transform:rotate(-4deg);display:inline-block}
+.crash-title-3d .letter-a{transform:rotate(2deg) translateY(-3px);display:inline-block}
+.crash-title-3d .letter-l{transform:rotate(-2deg);display:inline-block}
+.crash-title-3d .letter-o{transform:rotate(3deg) translateY(2px);display:inline-block}
+.crash-title-3d .letter-n{transform:rotate(-3deg);display:inline-block}
+
+.crash-wood-plank{
+  display:inline-flex;align-items:center;gap:12px;margin-top:4px;
+  padding:5px 20px;border-radius:8px;
+  background:linear-gradient(180deg,#7a3e14 0%,#542807 52%,#381703 100%);
+  border:3px solid #a36329;
+  box-shadow:0 6px 14px rgba(0,0,0,.65),inset 0 2px 3px rgba(255,255,255,.3);
+  transform:rotate(-1deg);
+}
+.crash-wood-plank .wood-text{
+  font-family:Impact,"Arial Black",system-ui,sans-serif;
+  font-size:clamp(16px,2.4vw,24px);font-weight:900;letter-spacing:5px;
+  color:#fff4cc;text-shadow:0 2px 0 #1f0d02,0 3px 6px rgba(0,0,0,.7);
+}
+.plank-nail{
+  width:8px;height:8px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#e0e0e0,#424242);
+  box-shadow:inset 0 1px 1px #fff,0 1px 2px #000;
+}
+.crash-tagline{
+  margin-top:6px;font-size:11px;font-weight:900;letter-spacing:2px;
+  color:#ffe082;text-shadow:0 2px 4px rgba(0,0,0,.9);
+}
+
+/* Lista de Navegación Crash Style */
+.crash-nav-list{display:flex;flex-direction:column;gap:10px;width:100%}
+.crash-nav-item{
+  display:inline-flex;align-items:center;gap:12px;padding:6px 14px;
+  background:transparent;border:none;cursor:pointer;text-align:left;
+  font-family:Impact,"Arial Black",system-ui,sans-serif;
+  font-size:clamp(20px,2.8vw,32px);color:#ffffff;
+  text-transform:uppercase;letter-spacing:1px;
+  text-shadow:0 3px 0 #132225,0 5px 12px rgba(0,0,0,.85);
+  transition:transform .14s,color .14s,text-shadow .14s;
+  touch-action:manipulation;
+}
+.crash-nav-item .nav-pointer{
+  color:#ffd54f;font-size:.75em;opacity:0;transform:translateX(-6px);
+  transition:opacity .14s,transform .14s;
+}
+.crash-nav-item:hover, .crash-nav-item.active, .crash-nav-item:focus-visible{
+  color:#ff9800;transform:translateX(8px);
+  text-shadow:0 3px 0 #7e2b00,0 0 16px rgba(255,152,0,.75),0 6px 14px rgba(0,0,0,.9);
+}
+.crash-nav-item:hover .nav-pointer, .crash-nav-item.active .nav-pointer{
+  opacity:1;transform:translateX(0);
+}
+.crash-nav-item:active{transform:translateX(4px) scale(.98)}
+
+/* Trilogía de Mundos / Portales en el Centro */
+.crash-worlds-hub{
+  display:flex;align-items:center;justify-content:center;
+  gap:clamp(12px,2vw,24px);z-index:4;
+}
+.world-portal{
+  position:relative;flex:0 1 190px;padding:16px 14px;border-radius:24px;
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  cursor:pointer;transition:transform .18s,box-shadow .18s,filter .18s;
+  touch-action:manipulation;box-sizing:border-box;
+}
+.world-portal.active{
+  background:radial-gradient(circle at 50% 20%,#276d63,#0f3032 82%);
+  border:3px solid #ffd54f;
+  box-shadow:0 12px 26px rgba(0,0,0,.7),0 0 24px rgba(76,175,80,.4),inset 0 1px 3px rgba(255,255,255,.5);
+  animation:portalPulse 3s ease-in-out infinite;
+}
+.world-portal.active:hover{
+  transform:translateY(-8px) scale(1.04);
+  box-shadow:0 18px 34px rgba(0,0,0,.8),0 0 32px rgba(255,213,79,.6);
+}
+.world-portal.locked{
+  background:radial-gradient(circle at 50% 20%,#1f2d33,#0d1519 82%);
+  border:2px solid #546e7a;opacity:.72;filter:grayscale(.4);cursor:not-allowed;
+}
+.portal-badge{display:flex;flex-direction:column;align-items:center}
+.portal-num{
+  font-family:Impact,"Arial Black",system-ui,sans-serif;
+  font-size:clamp(34px,5vw,52px);line-height:1;color:#ffe082;
+  text-shadow:0 3px 0 #5d2500,0 6px 12px rgba(0,0,0,.7);
+}
+.portal-title{
+  font-family:Impact,"Arial Black",system-ui,sans-serif;
+  font-size:clamp(14px,2vw,18px);color:#fff;letter-spacing:1px;margin-top:2px;
+  text-shadow:0 2px 4px rgba(0,0,0,.8);
+}
+.portal-sub{
+  font-size:10px;font-weight:900;color:#a5d6a7;letter-spacing:1px;margin-top:3px;
+  text-transform:uppercase;
+}
+.portal-status{
+  margin-top:12px;padding:4px 10px;border-radius:12px;
+  font-size:10px;font-weight:900;letter-spacing:.8px;text-transform:uppercase;
+}
+.active-status{
+  background:linear-gradient(180deg,#ffb300,#f57c00);color:#fff;
+  border:1px solid #ffe082;box-shadow:0 2px 6px rgba(0,0,0,.5);
+}
+.locked-status{background:#263238;color:#90a4ae;border:1px solid #37474f}
+
+@keyframes portalPulse{
+  0%,100%{box-shadow:0 12px 26px rgba(0,0,0,.7),0 0 20px rgba(76,175,80,.35)}
+  50%{box-shadow:0 12px 26px rgba(0,0,0,.7),0 0 30px rgba(255,213,79,.55)}
+}
+
+/* Personajes en Capa Flotante */
+.crash-characters-layer{
+  position:absolute;inset:0;display:flex;justify-content:space-between;
+  align-items:flex-end;pointer-events:none;z-index:2;
+}
 .menu-character{
-  flex:0 1 280px;height:100%;max-height:min(70vh,490px);
+  flex:0 1 260px;height:100%;max-height:min(72vh,480px);
   display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
-  position:relative;pointer-events:none;
+  position:relative;
 }
 .char-img{
   max-height:92%;width:auto;object-fit:contain;
-  filter:drop-shadow(0 14px 18px rgba(0,0,0,.65));
+  filter:drop-shadow(0 14px 20px rgba(0,0,0,.7));
 }
 .hero-img{animation:heroBreath 3.6s ease-in-out infinite}
 .coco-img{animation:cocoSway 3.2s ease-in-out infinite}
@@ -101,87 +237,43 @@
   background:radial-gradient(ellipse at center,rgba(0,0,0,.68) 0%,transparent 70%);
 }
 
-@keyframes heroBreath{
-  0%,100%{transform:translateY(0) rotate(0deg)}
-  50%{transform:translateY(-8px) rotate(.8deg)}
+/* Barra Inferior estilo Consola (Como en Crash N. Sane Trilogy) */
+.crash-bottom-bar{
+  position:relative;z-index:5;display:flex;align-items:center;justify-content:center;
+  gap:clamp(12px,2.8vw,32px);width:100%;padding-top:8px;
+  border-top:1px solid rgba(255,255,255,.12);
+  flex-wrap:wrap;
 }
-@keyframes cocoSway{
-  0%,100%{transform:translateY(0) rotate(-.8deg)}
-  50%{transform:translateY(-10px) rotate(1.2deg)}
+.console-prompt{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:clamp(10px,1.4vw,12px);font-weight:900;color:#f1f8e9;
+  letter-spacing:.5px;text-shadow:0 2px 4px rgba(0,0,0,.9);
 }
+.btn-bubble{
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:Impact,"Arial Black",sans-serif;font-size:12px;color:#fff;
+  box-shadow:0 2px 6px rgba(0,0,0,.6),inset 0 1px 1px rgba(255,255,255,.7);
+}
+.btn-green{background:radial-gradient(circle at 35% 30%,#4caf50,#1b5e20)}
+.btn-blue{background:radial-gradient(circle at 35% 30%,#29b6f6,#01579b)}
+.btn-yellow{background:radial-gradient(circle at 35% 30%,#ffca28,#e65100)}
+.btn-red{background:radial-gradient(circle at 35% 30%,#f44336,#b71c1c)}
 
-/* Panel central con Título y Botones */
-.menu-center-panel{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;z-index:3;max-width:560px;margin-bottom:4vh;
+/* Adaptabilidad para móviles y pantallas compactas */
+@media(max-width:920px){
+  .crash-menu-layout{grid-template-columns:1fr;justify-items:center;text-align:center}
+  .crash-left-col{align-items:center}
+  .crash-nav-list{align-items:center}
+  .crash-characters-layer{display:none}
+  .crash-worlds-hub{gap:10px}
+  .world-portal{flex:0 1 150px;padding:12px 8px}
 }
-.menu-header{margin-bottom:24px}
-.tropical-subtitle{
-  display:inline-block;padding:5px 16px;border-radius:20px;
-  background:linear-gradient(135deg,rgba(255,214,79,.22),rgba(76,175,80,.25));
-  border:1px solid #ffd54f99;color:#ffe57f;font-weight:900;
-  font-size:clamp(10px,1.5vw,13px);letter-spacing:2px;
-  text-shadow:0 2px 4px rgba(0,0,0,.8);box-shadow:0 4px 12px rgba(0,0,0,.35);
+@media(max-width:580px){
+  .crash-worlds-hub{display:none}
+  .crash-bottom-bar{gap:8px}
+  .console-prompt{font-size:10px}
 }
-.tropical-title{
-  margin:10px 0 6px 0;font-size:clamp(36px,6.8vw,70px);font-weight:900;line-height:1;
-  background:linear-gradient(180deg,#fffde7 0%,#ffca28 42%,#ff8f00 70%,#d84315 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  filter:drop-shadow(0 4px 0 #5d2500) drop-shadow(0 10px 20px rgba(0,0,0,.85));
-  text-transform:uppercase;letter-spacing:1.5px;
-}
-.tropical-tagline{
-  margin:0;font-size:clamp(13px,1.8vw,16px);color:#e0f2f1;
-  text-shadow:0 2px 5px rgba(0,0,0,.85);line-height:1.4;
-}
-.tropical-tagline strong{color:#ffd54f}
-
-/* Botón JUGAR */
-.menu-buttons{display:flex;flex-direction:column;align-items:center;gap:14px;width:100%}
-.btn-play-tropical{
-  position:relative;overflow:hidden;width:min(340px,85vw);padding:18px 28px;
-  border:3px solid #ffe082;border-radius:40px;
-  background:linear-gradient(180deg,#ffb300 0%,#f57c00 48%,#e65100 100%);
-  box-shadow:0 8px 0 #7e2b00,0 16px 26px rgba(0,0,0,.6),inset 0 2px 4px rgba(255,255,255,.75);
-  color:#fff;font-size:clamp(24px,4vw,34px);font-weight:900;letter-spacing:2px;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;
-  text-shadow:0 3px 6px rgba(70,20,0,.9);touch-action:manipulation;
-  transition:transform .12s,box-shadow .12s,filter .18s;
-  animation:pulsePlay 2.8s ease-in-out infinite;
-}
-.btn-play-tropical:hover{filter:brightness(1.12);transform:translateY(-2px)}
-.btn-play-tropical:active{transform:translateY(6px);box-shadow:0 2px 0 #7e2b00,0 6px 12px rgba(0,0,0,.5)}
-.btn-play-icon{font-size:.9em;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
-
-@keyframes pulsePlay{
-  0%,100%{box-shadow:0 8px 0 #7e2b00,0 16px 26px rgba(0,0,0,.6),0 0 0 0 rgba(255,193,7,.45)}
-  50%{box-shadow:0 8px 0 #7e2b00,0 16px 26px rgba(0,0,0,.6),0 0 0 12px rgba(255,193,7,0)}
-}
-
-.btn-flare{
-  position:absolute;top:0;left:-100%;width:60%;height:100%;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);
-  transform:skewX(-25deg);animation:flareSweep 4s infinite ease-in-out;
-  pointer-events:none;
-}
-@keyframes flareSweep{
-  0%,65%{left:-100%}
-  85%,100%{left:200%}
-}
-
-/* Fila de opciones secundarias */
-.menu-sub-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-.btn-tropical-sub{
-  padding:10px 18px;border-radius:24px;
-  background:radial-gradient(circle at 35% 25%,#2b6a63,#143e3c 78%);
-  border:2px solid #a7dfb899;color:#e8f5e9;font-weight:800;
-  font-size:clamp(12px,1.7vw,14px);letter-spacing:.3px;
-  box-shadow:0 5px 0 #0b2624,0 8px 14px rgba(0,0,0,.45),inset 0 1px 2px rgba(255,255,255,.4);
-  cursor:pointer;display:inline-flex;align-items:center;gap:8px;
-  touch-action:manipulation;transition:transform .12s,filter .18s;
-}
-.btn-tropical-sub:hover{filter:brightness(1.15);transform:translateY(-1px)}
-.btn-tropical-sub:active{transform:translateY(4px);box-shadow:0 1px 0 #0b2624,0 4px 8px rgba(0,0,0,.4)}
 
 /* Modal / Guía de Controles */
 .controls-modal{

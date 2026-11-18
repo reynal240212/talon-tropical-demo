@@ -32,7 +32,7 @@ cocoSheet.src = 'assets/coco_salvaje_master_v1.png';
 cocoPiratasSheet.src = 'assets/coco_piratas_master_v1.png';
 const cocoConchaWalkSheet = new Image();
 cocoConchaWalkSheet.src = 'assets/coco_concha_walk_16frames.png';
-slingSheet.src = 'assets/explorador_resortera_master_v1.png';
+slingSheet.src = 'assets/explorador_resortera_master_v2.png';
 
 const keyboardKeys = new Set();
 const touchKeys = new Set();
@@ -320,6 +320,7 @@ btnInGameMenu?.addEventListener('click', openMainMenu);
 btnMusicToggle?.addEventListener('click', toggleMusic);
 btnOpenControls?.addEventListener('click', () => { if(controlsModal) controlsModal.hidden = false; });
 btnCloseControls?.addEventListener('click', () => { if(controlsModal) controlsModal.hidden = true; });
+document.querySelector('#portal-world-1')?.addEventListener('click', startGame);
 
 let audioContext=null;
 let stepDistance=0;
@@ -662,8 +663,8 @@ function update(dt){
     // Permite ajustar el ángulo de tiro en tiempo real mientras apunta
     player.aimAngle = targetAngle;
 
-    // Disparo sincronizado al soltar la goma elástica (t = 0.09s)
-    if(player.attackTime >= 0.09 && !player.slingFired){
+    // Disparo sincronizado al soltar la goma elástica (t = 0.18s, fotograma de suelta)
+    if(player.attackTime >= 0.18 && !player.slingFired){
       player.slingFired = true;
       const angle = player.aimAngle;
       const worldAngle = player.face > 0 ? angle : (Math.PI - angle);
@@ -671,7 +672,7 @@ function update(dt){
       const pvx = Math.cos(worldAngle) * baseSpeed + (player.vx * 0.25);
       const pvy = Math.sin(worldAngle) * baseSpeed;
 
-      const spawnDist = 20;
+      const spawnDist = 24;
       const spawnX = player.x + player.w / 2 + Math.cos(worldAngle) * spawnDist;
       const spawnY = (crouching ? player.y + player.h * 0.65 : player.y + player.h * 0.42) + Math.sin(worldAngle) * spawnDist;
 
@@ -679,7 +680,7 @@ function update(dt){
       playSlingshotShoot();
       spawnSlashSparks(spawnX, spawnY, 8, '#ffe082');
     }
-    if(player.attackTime >= 0.28){
+    if(player.attackTime >= 0.36){
       player.attackTime = 0;
       player.slingFired = false;
     }
@@ -1331,7 +1332,19 @@ const FRAMES = {
       { x: 1991, w: 181, cx: 80, fy: 400 }
     ]
   },
-  slingshot: { scale: 124/295 }
+  slingshot: {
+    scale: 124 / 295,
+    list: [
+      { x: 0,    w: 240, cx: 110, fy: 310 },
+      { x: 240,  w: 240, cx: 110, fy: 310 },
+      { x: 480,  w: 240, cx: 110, fy: 310 },
+      { x: 720,  w: 240, cx: 110, fy: 310 },
+      { x: 960,  w: 240, cx: 110, fy: 310 },
+      { x: 1200, w: 240, cx: 110, fy: 310 },
+      { x: 1440, w: 240, cx: 110, fy: 310 },
+      { x: 1680, w: 240, cx: 110, fy: 310 }
+    ]
+  }
 };
 function render(){
   document.querySelector('.climb').hidden=player.hangTime<=0;
@@ -1467,7 +1480,16 @@ function render(){
   else if(crouching){ animKey='crouch'; activeSheet=crouchSheet; frame=Math.min(4,Math.floor(player.crouchTime*16)); }
   else if(player.running){ animKey='run'; activeSheet=runSheet; }
   else if(moving){ animKey='walk'; activeSheet=sheet; }
-  else if(player.attackTime>0){ animKey='walk'; activeSheet=sheet; frame=2; }
+  else if(player.attackTime>0){
+    if(slingSheet.complete && slingSheet.naturalWidth){
+      animKey = 'slingshot';
+      activeSheet = slingSheet;
+      const atkProg = Math.min(0.99, player.attackTime / 0.36);
+      frame = Math.min(7, Math.floor(atkProg * 8));
+    } else {
+      animKey = 'walk'; activeSheet = sheet; frame = 2;
+    }
+  }
 
   if(activeSheet.complete && activeSheet.width){
     const meta=FRAMES[animKey];
@@ -1484,9 +1506,9 @@ function render(){
       ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
     }
 
-    // Dibuja la auténtica resortera solo en posturas compatibles (no dormido, pirueta, colgado o subiendo)
-    if(animKey !== 'sleep' && animKey !== 'doubleJump' && animKey !== 'hang' && animKey !== 'climb'){
-      drawResortera(ctx, player.attackTime > 0, player.attackTime / 0.28, crouching, player.aimAngle || 0);
+    // Dibuja la mini resortera enfundada en el cinto solo si no está en medio del ataque con resortera activa
+    if(animKey !== 'sleep' && animKey !== 'doubleJump' && animKey !== 'hang' && animKey !== 'climb' && animKey !== 'slingshot'){
+      drawResortera(ctx, false, 0, crouching, 0);
     }
     ctx.restore();
   }
