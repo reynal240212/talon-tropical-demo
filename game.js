@@ -262,11 +262,77 @@ fullscreenButton.addEventListener('click',async()=>{ try { if(document.fullscree
 document.addEventListener('fullscreenchange',()=>{fullscreenButton.textContent=document.fullscreenElement?'⤢':'⛶';fullscreenButton.setAttribute('aria-label',document.fullscreenElement?'Salir de pantalla completa':'Activar pantalla completa');resize();});
 const music=document.querySelector('#music');
 music.volume=0.35;
+
+// Estado del menú principal y controles de audio
+let isInMenu = true;
+let isMusicMuted = false;
+
+const mainMenu = document.querySelector('#main-menu');
+const btnPlay = document.querySelector('#btn-play');
+const btnMusicToggle = document.querySelector('#btn-music-toggle');
+const musicIcon = document.querySelector('#music-icon');
+const musicText = document.querySelector('#music-text');
+const btnOpenControls = document.querySelector('#btn-open-controls');
+const controlsModal = document.querySelector('#controls-modal');
+const btnCloseControls = document.querySelector('#btn-close-controls');
+const btnModalStart = document.querySelector('#btn-modal-start');
+const btnInGameMenu = document.querySelector('#btn-in-game-menu');
+
+function startGame(){
+  ensureAudio();
+  playMenuConfirm();
+  if(!isMusicMuted) startMusic();
+  isInMenu = false;
+  mainMenu?.classList.add('hidden');
+  btnInGameMenu?.classList.remove('hidden');
+  if(controlsModal) controlsModal.hidden = true;
+  last = performance.now();
+}
+
+function openMainMenu(){
+  ensureAudio();
+  playMenuConfirm();
+  isInMenu = true;
+  mainMenu?.classList.remove('hidden');
+  btnInGameMenu?.classList.add('hidden');
+  const playText = btnPlay?.querySelector('.btn-play-text');
+  if(playText) playText.textContent = '¡CONTINUAR!';
+}
+
+function toggleMusic(){
+  ensureAudio();
+  if(music.paused){
+    isMusicMuted = false;
+    startMusic();
+    if(musicText) musicText.textContent = 'Música: ON';
+    if(musicIcon) musicIcon.textContent = '🎵';
+  } else {
+    isMusicMuted = true;
+    music.pause();
+    if(musicText) musicText.textContent = 'Música: OFF';
+    if(musicIcon) musicIcon.textContent = '🔇';
+  }
+}
+
+btnPlay?.addEventListener('click', startGame);
+btnModalStart?.addEventListener('click', startGame);
+btnInGameMenu?.addEventListener('click', openMainMenu);
+btnMusicToggle?.addEventListener('click', toggleMusic);
+btnOpenControls?.addEventListener('click', () => { if(controlsModal) controlsModal.hidden = false; });
+btnCloseControls?.addEventListener('click', () => { if(controlsModal) controlsModal.hidden = true; });
+
 let audioContext=null;
 let stepDistance=0;
 function ensureAudio(){
   if(!audioContext)audioContext=new(window.AudioContext||window.webkitAudioContext)();
   if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
+}
+function playMenuConfirm(){
+  if(!audioContext||audioContext.state!=='running')return;
+  const now=audioContext.currentTime, osc=audioContext.createOscillator(), gain=audioContext.createGain();
+  osc.type='triangle'; osc.frequency.setValueAtTime(320,now); osc.frequency.exponentialRampToValueAtTime(640,now+0.12);
+  gain.gain.setValueAtTime(0.001,now); gain.gain.exponentialRampToValueAtTime(0.08,now+0.02); gain.gain.exponentialRampToValueAtTime(0.0001,now+0.15);
+  osc.connect(gain); gain.connect(audioContext.destination); osc.start(now); osc.stop(now+0.16);
 }
 function playStep(surface='grass'){
   if(!audioContext||audioContext.state!=='running')return;
@@ -385,14 +451,21 @@ function playCoconutAlert(){
   osc.start(now); osc.stop(now+0.11);
 }
 async function startMusic(){
-  if(!music.paused)return;
+  if(isMusicMuted || !music.paused) return;
   try{await music.play();}catch{}
 }
-addEventListener('pointerdown',()=>{ensureAudio();startMusic()},{passive:true});
-addEventListener('keydown',()=>{ensureAudio();startMusic()});
-addEventListener('keydown',e=>{
-  if(e.code==='KeyM'){
-    if(music.paused) music.play().catch(()=>{}); else music.pause();
+addEventListener('pointerdown',()=>{ if(!isInMenu && !isMusicMuted){ ensureAudio(); startMusic(); } },{passive:true});
+addEventListener('keydown', e => {
+  if(!isInMenu && !isMusicMuted){ ensureAudio(); startMusic(); }
+  if(e.code==='KeyM'){ toggleMusic(); }
+  if(e.code==='Escape'){
+    if(controlsModal && !controlsModal.hidden){
+      controlsModal.hidden = true;
+    } else if(!isInMenu){
+      openMainMenu();
+    } else {
+      startGame();
+    }
   }
 });
 function pressed(...names){ return names.some(n=>keyboardKeys.has(n)||touchKeys.has(n)); }
@@ -489,6 +562,7 @@ function drawPlatformVolume(){
   ctx.restore();
 }
 function update(dt){
+  if(isInMenu) return;
   const wakeInput=pressed('ArrowLeft','ArrowRight','KeyA','KeyD','Space','ArrowUp','ArrowDown','KeyW','KeyS','KeyC','KeyE','KeyX','KeyZ','ControlLeft','ControlRight');
   if(player.sleepTime>0){
     if(wakeInput){ player.sleepTime=0; player.idleTime=0; player.snoreTime=0; }

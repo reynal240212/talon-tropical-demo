@@ -12,6 +12,7 @@
     <canvas id="game" aria-label="Prototipo jugable de Talon Tropical"></canvas>
     <audio id="music" src="assets/The_Emerald_Spires.mp3" loop preload="auto"></audio>
     <button id="fullscreen" type="button" aria-label="Activar pantalla completa" title="Pantalla completa">⛶</button>
+    <button id="btn-in-game-menu" class="hidden" type="button" aria-label="Abrir menú principal" title="Menú principal">🏠<small>Menú</small></button>
     <div class="hint">←/→ mover · Shift correr · Espacio saltar · Z/X resortera (+↑/↓ apuntar 360°) · ↓ agachar</div>
     <div class="touch-controls" aria-label="Controles táctiles">
       <div class="left-controls"><div class="dpad"><button data-key="ArrowLeft" aria-label="Izquierda">◀</button><button data-key="ArrowRight" aria-label="Derecha">▶</button></div><button class="run" data-key="ControlLeft" aria-label="Toque para saltar, mantener para correr">➤<small>Toque: salto<br>Mantén: corre</small></button></div>
@@ -19,6 +20,85 @@
         <div class="secondary"><button class="crouch" data-key="ArrowDown" aria-label="Agacharse">⌄<small>Agachar</small></button></div>
         <div class="primary"><button class="attack" data-key="KeyX" aria-label="Disparar resortera">🎯<small>Resortera</small></button><button class="jump" data-key="Space" aria-label="Saltar o subir">↑<small>Saltar</small></button></div>
         <button class="climb" data-key="ArrowUp" aria-label="Subir al borde" hidden>↑<small>Subir</small></button>
+      </div>
+    </div>
+
+    <!-- MENÚ PRINCIPAL TROPICAL -->
+    <div id="main-menu" class="main-menu" role="dialog" aria-modal="true" aria-label="Menú principal">
+      <div class="menu-backdrop"></div>
+      
+      <div class="menu-wrapper">
+        <!-- Personaje Explorador (Izquierda) -->
+        <div class="menu-character menu-char-hero" aria-hidden="true">
+          <img src="assets/menu_explorador_portrait.png" alt="Explorador" class="char-img hero-img" />
+          <div class="char-shadow"></div>
+        </div>
+
+        <!-- Panel Central -->
+        <div class="menu-center-panel">
+          <div class="menu-header">
+            <span class="tropical-subtitle">🌴 AVENTURA EN LA ISLA 🌴</span>
+            <h1 class="tropical-title">TALON TROPICAL</h1>
+            <p class="tropical-tagline">Explora las ruinas sagradas y derrota a los <strong>Cocos Piratas</strong></p>
+          </div>
+
+          <div class="menu-buttons">
+            <button id="btn-play" class="btn-play-tropical" type="button" aria-label="Iniciar aventura">
+              <span class="btn-flare"></span>
+              <span class="btn-play-icon">▶</span>
+              <span class="btn-play-text">¡JUGAR!</span>
+            </button>
+
+            <div class="menu-sub-row">
+              <button id="btn-music-toggle" class="btn-tropical-sub" type="button" title="Activar o silenciar música">
+                <span id="music-icon">🎵</span> <span id="music-text">Música: ON</span>
+              </button>
+              <button id="btn-open-controls" class="btn-tropical-sub" type="button" title="Ver guía de controles">
+                <span>🎮</span> <span>Controles</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personaje Coco Concha 3D (Derecha) -->
+        <div class="menu-character menu-char-enemy" aria-hidden="true">
+          <img src="assets/coco_concha_3d_preview.png" alt="Guerrero Concha" class="char-img coco-img" />
+          <div class="char-shadow"></div>
+        </div>
+      </div>
+
+      <!-- Tarjeta / Modal de Controles -->
+      <div id="controls-modal" class="controls-modal" hidden>
+        <div class="modal-card">
+          <div class="modal-header">
+            <h2>📜 Guía de Aventura</h2>
+            <button id="btn-close-controls" class="modal-close" type="button" aria-label="Cerrar guía">✕</button>
+          </div>
+          <div class="modal-content">
+            <div class="ctrl-col">
+              <h3>⌨️ Teclado (PC)</h3>
+              <div class="ctrl-item"><span class="key-pill">← / →</span> o <span class="key-pill">A / D</span> <span>Moverse a los lados</span></div>
+              <div class="ctrl-item"><span class="key-pill">Shift</span> <span>Mantener para correr</span></div>
+              <div class="ctrl-item"><span class="key-pill">Espacio</span> o <span class="key-pill">W</span> <span>Saltar (¡Doble salto en el aire!)</span></div>
+              <div class="ctrl-item"><span class="key-pill">X</span> o <span class="key-pill">Z</span> <span>Disparar resortera de piedras</span></div>
+              <div class="ctrl-item"><span class="key-pill">↑ / ↓</span> <span>Apuntar resortera en 360°</span></div>
+              <div class="ctrl-item"><span class="key-pill">↓ / S</span> <span>Agacharse</span></div>
+              <div class="ctrl-item"><span class="key-pill">M</span> <span>Activar / Silenciar música</span></div>
+            </div>
+            <div class="ctrl-col">
+              <h3>📱 Pantalla Táctil (Móvil)</h3>
+              <div class="ctrl-item"><span class="key-pill">D-Pad</span> <span>Moverse a los lados</span></div>
+              <div class="ctrl-item"><span class="key-pill">➤</span> <span>Toque: salto corto · Mantén: correr</span></div>
+              <div class="ctrl-item"><span class="key-pill">↑ Saltar</span> <span>Salto y doble salto acrobático</span></div>
+              <div class="ctrl-item"><span class="key-pill">🎯 Resortera</span> <span>Lanzar piedras a cocos</span></div>
+              <div class="ctrl-item"><span class="key-pill">⌄ Agachar</span> <span>Evitar proyectiles</span></div>
+              <div class="ctrl-item"><span class="key-pill">Tocar pantalla</span> <span>Puntería libre 360°</span></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="btn-modal-start" class="btn-modal-go" type="button">¡Comenzar Aventura!</button>
+          </div>
+        </div>
       </div>
     </div>
   </main>
