@@ -211,12 +211,12 @@ const COCO_PIRATA_PROFILES = [
 ];
 
 const enemies = [
-  { id: 1, type: 0, x: 620, y: 467, minX: 470, maxX: 880, vx: 90, face: 1, state: 'patrol', anim: 0, w: 56, h: 66, deadTimer: 0, attackTimer: 0 },
-  { id: 2, type: 1, x: 500, y: 226, minX: 450, maxX: 710, vx: 75, face: 1, state: 'patrol', anim: 0, w: 62, h: 72, deadTimer: 0, attackTimer: 0 },
-  { id: 3, type: 2, x: 1100, y: 302, minX: 1060, maxX: 1260, vx: 110, face: 1, state: 'patrol', anim: 0, w: 52, h: 64, deadTimer: 0, attackTimer: 0 },
-  { id: 4, type: 3, x: 1450, y: 473, minX: 1380, maxX: 1750, vx: 125, face: 1, state: 'patrol', anim: 0, w: 48, h: 60, deadTimer: 0, attackTimer: 0 },
-  { id: 5, type: 0, x: 1650, y: 292, minX: 1600, maxX: 1770, vx: 90, face: 1, state: 'patrol', anim: 0, w: 56, h: 66, deadTimer: 0, attackTimer: 0 },
-  { id: 6, type: 1, x: 2020, y: 176, minX: 1980, maxX: 2130, vx: 75, face: 1, state: 'patrol', anim: 0, w: 62, h: 72, deadTimer: 0, attackTimer: 0 }
+  { id: 1, type: 0, x: 620, y: 455, minX: 450, maxX: 880, vx: 90, face: 1, state: 'patrol', anim: 0, w: 56, h: 66, deadTimer: 0, attackTimer: 0 },
+  { id: 2, type: 1, x: 480, y: 250, minX: 420, maxX: 700, vx: 75, face: 1, state: 'patrol', anim: 0, w: 62, h: 72, deadTimer: 0, attackTimer: 0 },
+  { id: 3, type: 2, x: 1100, y: 268, minX: 1055, maxX: 1260, vx: 110, face: 1, state: 'patrol', anim: 0, w: 52, h: 64, deadTimer: 0, attackTimer: 0 },
+  { id: 4, type: 3, x: 1450, y: 461, minX: 1360, maxX: 1750, vx: 125, face: 1, state: 'patrol', anim: 0, w: 48, h: 60, deadTimer: 0, attackTimer: 0 },
+  { id: 5, type: 0, x: 1600, y: 256, minX: 1560, maxX: 1740, vx: 90, face: 1, state: 'patrol', anim: 0, w: 56, h: 66, deadTimer: 0, attackTimer: 0 },
+  { id: 6, type: 1, x: 2020, y: 126, minX: 1960, maxX: 2140, vx: 75, face: 1, state: 'patrol', anim: 0, w: 62, h: 72, deadTimer: 0, attackTimer: 0 }
 ];
 
 // Cocos Salvajes agresivos que caen de las copas de las palmeras
@@ -227,6 +227,97 @@ const cocos = [
   { id: 4, palmX: 1515, palmY: 175, x: 1515, y: 175, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: -1, rot: 0, anim: 0, w: 34, h: 34 },
   { id: 5, palmX: 2040, palmY: 150, x: 2040, y: 150, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: -1, rot: 0, anim: 0, w: 34, h: 34 }
 ];
+
+// =========================================================
+// OBJETIVO DEL JUEGO: EL SANTUARIO MAYA DEL TOTEM DORADO
+// =========================================================
+const relics = [
+  { id: 1, name: 'Esmeralda de la Cascada', x: 75,   y: 340, collected: false, color: '#00e676', icon: '💎' },
+  { id: 2, name: 'Corona del Viento Maya',  x: 295,  y: 130, collected: false, color: '#ffd700', icon: '👑' },
+  { id: 3, name: 'Ojo de Jade Ancestral',   x: 560,  y: 280, collected: false, color: '#00e5ff', icon: '🔮' },
+  { id: 4, name: 'Cáliz Sagrado Solar',     x: 855,  y: 125, collected: false, color: '#ff9100', icon: '🏆' },
+  { id: 5, name: 'Gema del Gran Guardián',  x: 1445, y: 240, collected: false, color: '#ff1744', icon: '💠' }
+];
+
+const sanctuary = {
+  x: 2060,
+  y: 198,
+  w: 70,
+  h: 90,
+  unlocked: false,
+  cleared: false,
+  fanfareTimer: 0
+};
+
+function checkRelicCollection(){
+  const px = player.x + player.w / 2;
+  const py = player.y + player.h / 2;
+
+  for(const r of relics){
+    if(r.collected) continue;
+    const dist = Math.hypot(px - r.x, py - r.y);
+    if(dist < 38){
+      r.collected = true;
+      spawnSlashSparks(r.x, r.y, 22, r.color);
+      playGemCollectSound();
+    }
+  }
+
+  // Verifica si todas las reliquias fueron reunidas
+  const allRelics = relics.every(r => r.collected);
+  if(allRelics && !sanctuary.unlocked){
+    sanctuary.unlocked = true;
+    spawnSlashSparks(sanctuary.x, sanctuary.y - 20, 35, '#ffd700');
+  }
+
+  // Si llega al santuario con todas las reliquias
+  if(sanctuary.unlocked && !sanctuary.cleared){
+    const distSanctuary = Math.hypot(px - sanctuary.x, (player.y + player.h) - sanctuary.y);
+    if(distSanctuary < 55){
+      sanctuary.cleared = true;
+      sanctuary.fanfareTimer = 4.0;
+      spawnSlashSparks(sanctuary.x, sanctuary.y - 40, 50, '#ffd700');
+      spawnSlashSparks(sanctuary.x - 20, sanctuary.y - 20, 30, '#00e5ff');
+      spawnSlashSparks(sanctuary.x + 20, sanctuary.y - 20, 30, '#ff1744');
+      playVictorySound();
+    }
+  }
+}
+
+function playGemCollectSound(){
+  if(!audioContext || audioContext.state !== 'running') return;
+  const now = audioContext.currentTime;
+  const osc = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(587.33, now); // D5
+  osc.frequency.setValueAtTime(880.00, now + 0.08); // A5
+  osc.frequency.setValueAtTime(1174.66, now + 0.16); // D6
+  gain.gain.setValueAtTime(0.18, now);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
+  osc.connect(gain);
+  gain.connect(audioContext.destination);
+  osc.start(now);
+  osc.stop(now + 0.32);
+}
+
+function playVictorySound(){
+  if(!audioContext || audioContext.state !== 'running') return;
+  const now = audioContext.currentTime;
+  const notes = [523.25, 659.25, 783.99, 1046.50]; // C E G C
+  notes.forEach((freq, i) => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, now + i * 0.12);
+    gain.gain.setValueAtTime(0.2, now + i * 0.12);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.12 + 0.45);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(now + i * 0.12);
+    osc.stop(now + i * 0.12 + 0.45);
+  });
+}
 
 function spawnCoconutShatter(x, y){
   for(let i=0; i<8; i++){
@@ -721,7 +812,7 @@ function update(dt){
       return;
     } else {
       player.hangTime += dt;
-      player.vx = 0; player.vy = 0; player.y = p.y - 65;
+      player.vx = 0; player.vy = 0; player.y = p.y - 32;
       // Auto-soltarse tras 1.2 segundos para que NUNCA se quede pegado
       if(player.hangTime > 1.2){
         player.hangTime = 0;
@@ -816,17 +907,21 @@ function update(dt){
   runTapJump=false;
   const oldX=player.x, oldY=player.y, wasGrounded=player.onGround; player.x=Math.max(0,Math.min(world.w-player.w,player.x+player.vx*dt)); player.vy+=1250*dt; player.y+=player.vy*dt; player.onGround=false;
   if(player.vy>0 && !player.onGround){
+    const wantsHang = pressed('ArrowUp','KeyW','w','W','Space','KeyE','e');
     for(const p of platforms){
       if(p.y >= 500) continue; // Nunca colgarse del suelo
-      const nearLeft = Math.abs((player.x + player.w) - p.x) < 14 && player.x < p.x;
-      const nearRight = Math.abs(player.x - (p.x + p.w)) < 14 && player.x + player.w > p.x + p.w;
-      const handsAtLedge = oldY < p.y - 35 && player.y >= p.y - 75 && player.y <= p.y - 20;
+      const nearLeft = Math.abs((player.x + player.w) - p.x) < 12 && player.x < p.x && (player.vx > 0 || wantsHang);
+      const nearRight = Math.abs(player.x - (p.x + p.w)) < 12 && player.x + player.w > p.x + p.w && (player.vx < 0 || wantsHang);
+      // Solo agarrarse si las manos están exactamente a nivel del borde
+      const handsAtLedge = oldY < p.y - 28 && player.y >= p.y - 52 && player.y <= p.y - 20;
       if(handsAtLedge && (nearLeft || nearRight)){
         player.hangPlatform = p;
         player.hangTime = 0.001;
-        player.x = nearLeft ? p.x - player.w + 6 : p.x + p.w - 6;
-        player.y = p.y - 65;
+        player.face = nearLeft ? 1 : -1;
+        player.x = nearLeft ? p.x - player.w * 0.75 : p.x + p.w - player.w * 0.25;
+        player.y = p.y - 32;
         player.vy = 0;
+        player.vx = 0;
         break;
       }
     }
@@ -866,6 +961,10 @@ function update(dt){
   if(player.landTime>0) player.landTime-=dt;
   if(player.hurtTime>0) player.hurtTime-=dt;
   if(player.y>world.h+80){player.x=110;player.y=397;player.vy=0;}
+  if(sanctuary.fanfareTimer > 0) sanctuary.fanfareTimer -= dt;
+
+  // Verificación de recolección de reliquias y llegada al santuario
+  checkRelicCollection();
 
   // Actualización de proyectiles de piedra de la resortera
   for(let i = stones.length - 1; i >= 0; i--){
@@ -1491,6 +1590,88 @@ function render(){
 
   drawWorld(bg); drawAtmosphere(performance.now()); drawPlatformVolume(); drawCollisionDebug();
   const s=scale(), cam=cameraX(), px=(player.x-cam)*s, py=player.y*s;
+
+  // =========================================================
+  // RENDER DE RELIQUIAS ANCESTRALES Y SANTUARIO MAYA
+  // =========================================================
+  const tTime = performance.now() * 0.001;
+
+  // 1. Reliquias místicas flotando sobre las plataformas
+  for(const r of relics){
+    if(r.collected) continue;
+    const rx = (r.x - cam) * s;
+    const bobY = Math.sin(tTime * 3.2 + r.id) * 6;
+    const ry = (r.y + bobY) * s;
+
+    ctx.save();
+    // Halo resplandeciente
+    const gradGlow = ctx.createRadialGradient(rx, ry, 2, rx, ry, 22 * s);
+    gradGlow.addColorStop(0, r.color);
+    gradGlow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gradGlow;
+    ctx.beginPath();
+    ctx.arc(rx, ry, 22 * s, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Icono místico
+    ctx.font = `${Math.round(20 * s)}px system-ui`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(r.icon, rx, ry);
+
+    // Partículas de destellos dorados
+    const sparkleAngle = tTime * 2.5 + r.id;
+    const spX = rx + Math.cos(sparkleAngle) * 14 * s;
+    const spY = ry + Math.sin(sparkleAngle) * 14 * s;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(spX, spY, 1.8 * s, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  // 2. Santuario Maya del Tótem Dorado (Terraza superior derecha x: 2060, y: 198)
+  const sancX = (sanctuary.x - cam) * s;
+  const sancY = sanctuary.y * s;
+  ctx.save();
+  // Altar de piedra y columna de luz
+  if(sanctuary.unlocked){
+    const beaconGrad = ctx.createLinearGradient(sancX, sancY, sancX, sancY - 140 * s);
+    beaconGrad.addColorStop(0, 'rgba(255, 215, 0, 0.55)');
+    beaconGrad.addColorStop(0.5, 'rgba(255, 235, 120, 0.28)');
+    beaconGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = beaconGrad;
+    ctx.beginPath();
+    ctx.moveTo(sancX - 25 * s, sancY);
+    ctx.lineTo(sancX + 25 * s, sancY);
+    ctx.lineTo(sancX + 45 * s, sancY - 140 * s);
+    ctx.lineTo(sancX - 45 * s, sancY - 140 * s);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Base del pedestal sagrado
+  ctx.fillStyle = '#37474f';
+  ctx.strokeStyle = '#b0bec5';
+  ctx.lineWidth = 1.5 * s;
+  ctx.beginPath();
+  if(ctx.roundRect) ctx.roundRect(sancX - 22 * s, sancY - 14 * s, 44 * s, 14 * s, 4 * s);
+  else ctx.rect(sancX - 22 * s, sancY - 14 * s, 44 * s, 14 * s);
+  ctx.fill(); ctx.stroke();
+
+  // Tótem Sagrado Maya
+  ctx.font = `${Math.round(28 * s)}px system-ui`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  const totemBob = sanctuary.unlocked ? Math.sin(tTime * 4) * 4 * s : 0;
+  ctx.fillText(sanctuary.cleared ? '🏆' : (sanctuary.unlocked ? '🗿' : '🔒'), sancX, sancY - 14 * s + totemBob);
+
+  // Cartel / Indicador flotante sobre el santuario
+  ctx.font = `bold ${Math.round(11 * s)}px system-ui`;
+  ctx.fillStyle = sanctuary.cleared ? '#ffd700' : (sanctuary.unlocked ? '#00e5ff' : '#cfd8dc');
+  ctx.fillText(sanctuary.cleared ? '¡SANTUARIO RESTAURADO!' : (sanctuary.unlocked ? '¡COLOCA LAS RELIQUIAS!' : 'SANTUARIO SAGRADO'), sancX, sancY - 54 * s);
+  ctx.restore();
   const moving=Math.abs(player.vx)>0 && player.onGround;
   const crouching=pressed('ArrowDown','KeyS','s','S') && player.onGround && player.hangTime<=0 && player.attackTime<=0;
   const jumping=!player.onGround;
@@ -1715,26 +1896,56 @@ function render(){
   ctx.fillStyle='#ffffffcc'; ctx.font='bold 15px system-ui'; ctx.fillText('Movimiento: '+stateTxt,18,gameHeight()-18);
   const defeatedPiratas = enemies.filter(e => e.state === 'hit').length;
   const defeatedCocos = cocos.filter(e => e.state === 'hit' || e.state === 'respawning').length;
+  const collectedRelics = relics.filter(r => r.collected).length;
+
   // Panel elegante de estadísticas HUD (alineado limpiamente bajo el botón de pantalla completa)
-  const hudW = 180, hudH = 68;
+  const hudW = 195, hudH = 88;
   const hudX = Math.max(12, innerWidth - hudW - 14);
   const hudY = 62;
   ctx.save();
-  ctx.fillStyle = 'rgba(16, 46, 61, 0.76)';
-  ctx.strokeStyle = 'rgba(233, 226, 187, 0.38)';
+  ctx.fillStyle = 'rgba(16, 46, 61, 0.82)';
+  ctx.strokeStyle = 'rgba(233, 226, 187, 0.45)';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
   if(ctx.roundRect) ctx.roundRect(hudX - 10, hudY - 17, hudW, hudH, 12);
   else ctx.rect(hudX - 10, hudY - 17, hudW, hudH);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = '#ffe066'; ctx.font = 'bold 12.5px system-ui';
-  ctx.fillText('🏴‍☠️ Piratas K.O.: ' + defeatedPiratas + ' / ' + enemies.length, hudX, hudY);
-  ctx.fillStyle = '#80cbc4'; ctx.font = 'bold 12px system-ui';
-  ctx.fillText('🥥 Cocos salvajes: ' + defeatedCocos, hudX, hudY + 19);
-  ctx.fillStyle = '#ffb74d'; ctx.font = 'bold 11.5px system-ui';
-  ctx.fillText('🎯 Resortera 360°', hudX, hudY + 38);
+
+  ctx.fillStyle = '#ffd700'; ctx.font = 'bold 13px system-ui';
+  ctx.fillText(`✨ Reliquias: ${collectedRelics} / ${relics.length}`, hudX, hudY);
+  ctx.fillStyle = '#ffe066'; ctx.font = 'bold 12px system-ui';
+  ctx.fillText('🏴‍☠️ Piratas K.O.: ' + defeatedPiratas + ' / ' + enemies.length, hudX, hudY + 20);
+  ctx.fillStyle = '#80cbc4'; ctx.font = 'bold 11.5px system-ui';
+  ctx.fillText('🥥 Cocos salvajes: ' + defeatedCocos, hudX, hudY + 38);
+  ctx.fillStyle = '#ffb74d'; ctx.font = 'bold 11px system-ui';
+  ctx.fillText('🎯 Resortera 360° (Piedras)', hudX, hudY + 56);
   ctx.restore();
+
+  // Banner de victoria cuando se restaura el santuario
+  if(sanctuary.cleared){
+    ctx.save();
+    const bannerW = Math.min(520, innerWidth - 40);
+    const bannerH = 90;
+    const bx = (innerWidth - bannerW) / 2;
+    const by = 80;
+    ctx.fillStyle = 'rgba(20, 50, 40, 0.92)';
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(bx, by, bannerW, bannerH, 16);
+    else ctx.rect(bx, by, bannerW, bannerH);
+    ctx.fill(); ctx.stroke();
+
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 22px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('🎉 ¡EL SANTUARIO HA SIDO RESTAURADO! 🎉', innerWidth / 2, by + 36);
+    ctx.fillStyle = '#e0f2f1';
+    ctx.font = 'bold 14px system-ui';
+    ctx.fillText('¡Talon reunió todas las reliquias y salvó la selva!', innerWidth / 2, by + 64);
+    ctx.restore();
+  }
   if(player.idleTime>0){ const remaining=Math.max(0,15-player.idleTime); ctx.fillStyle='#fff4c9e8'; ctx.font='bold 16px system-ui'; ctx.fillText(remaining>0?'Sueño en: '+remaining.toFixed(1)+' s':'Preparando sueño…',18,gameHeight()-42); }
   if(player.sleepTime>0){
     const bob = Math.sin(player.sleepTime * 2.5) * 2;
