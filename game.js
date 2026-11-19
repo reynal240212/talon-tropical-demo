@@ -20,9 +20,9 @@ sheet.src = 'assets/explorador_correr_master_v1.webp?v=4';
 runSheet.src = 'assets/explorador_correr_master_v1.webp?v=4';
 idleSheet.src = 'assets/explorador_idle_master_v1.webp?v=4';
 crouchSheet.src = 'assets/explorador_agacharse_master_v1.webp?v=14';
-jumpSheet.src = 'assets/explorador_salto_master_v1.webp?v=4';
-doubleJumpSheet.src = 'assets/explorador_doble_salto_master_v1.png?v=4';
-doubleJumpSheet.onerror = () => { doubleJumpSheet.src = 'assets/explorador_salto_master_v1.webp?v=4'; };
+jumpSheet.src = 'assets/explorador_salto_master_v1.webp?v=16';
+doubleJumpSheet.src = 'assets/explorador_salto_master_v1.webp?v=16';
+doubleJumpSheet.onerror = () => { doubleJumpSheet.src = 'assets/explorador_salto_master_v1.webp?v=16'; };
 sleepSheet.src = 'assets/explorador_dormir_master_v1.png?v=4';
 hangSheet.src = 'assets/explorador_colgado_personaje_v3.png?v=4';
 climbSheet.src = 'assets/explorador_subir_personaje_v2.png?v=4';
@@ -79,27 +79,27 @@ const VIEW_BASE = { w: 1668, h: 724 };
 const MASTER_CHARACTER = { w: 62, h: 124 };
 const world = { w: 2172, h: 724 };
 const platforms = [
-  {x:0, y:533, w:2172, h:191},       // Suelo principal continuo
-  {x:140, y:368, w:190, h:65},       // P1: Izquierda baja (cascada)
-  {x:226, y:206, w:160, h:60},       // P2: Izquierda alta
-  {x:442, y:298, w:286, h:65},       // P3: Izquierda media (grande)
-  {x:742, y:369, w:193, h:65},       // P4: Central baja
-  {x:766, y:205, w:196, h:60},       // P5: Central alta
-  {x:1055, y:366, w:235, h:170},     // P6: Plataforma de la palmera central
-  {x:1378, y:254, w:174, h:60},      // P7: Derecha alta (palmera)
-  {x:1600, y:358, w:180, h:65},      // P8: Derecha baja
-  {x:1695, y:212, w:155, h:60},      // P9: Derecha alta
-  {x:1968, y:248, w:204, h:285}      // P10: Terraza del arco maya derecho
+  {x:0, y:521, w:2172, h:203},       // Suelo principal continuo
+  {x:0, y:380, w:240, h:55},         // P1: Izquierda baja (cascada)
+  {x:220, y:170, w:180, h:55},       // P2: Izquierda alta
+  {x:415, y:322, w:310, h:60},       // P3: Izquierda media (grande)
+  {x:710, y:318, w:210, h:55},       // P4: Central baja
+  {x:755, y:168, w:210, h:55},       // P5: Central alta
+  {x:1050, y:332, w:240, h:190},     // P6: Plataforma de la palmera central
+  {x:1350, y:280, w:200, h:55},      // P7: Derecha alta (palmera)
+  {x:1555, y:322, w:205, h:55},      // P8: Derecha baja
+  {x:1695, y:196, w:175, h:55},      // P9: Derecha alta
+  {x:1950, y:198, w:222, h:330}      // P10: Terraza del arco maya derecho
 ];
 const stairSteps=[
-  // Escalera central (sube a palmera)
-  {x:902, y:498, w:30, h:35}, {x:932, y:466, w:30, h:67}, {x:962, y:434, w:32, h:99}, {x:994, y:402, w:30, h:131}, {x:1024, y:370, w:32, h:163},
-  // Escalera derecha (sube al arco)
-  {x:1860, y:485, w:25, h:48}, {x:1885, y:440, w:25, h:93}, {x:1910, y:395, w:25, h:138}, {x:1935, y:345, w:25, h:188}, {x:1960, y:295, w:25, h:238}
+  // Escalera central (sube de y:521 a y:332 hacia la palmera central)
+  {x:895, y:485, w:32, h:40}, {x:927, y:450, w:32, h:75}, {x:959, y:415, w:32, h:110}, {x:991, y:380, w:32, h:145}, {x:1023, y:345, w:32, h:180},
+  // Escalera derecha (sube de y:521 a y:198 hacia el arco maya)
+  {x:1840, y:465, w:24, h:60}, {x:1864, y:415, w:24, h:110}, {x:1888, y:365, w:24, h:160}, {x:1912, y:310, w:24, h:215}, {x:1936, y:255, w:24, h:270}
 ];
-const savedStairs=localStorage.getItem('talon-stair-collisions-v2');
+const savedStairs=localStorage.getItem('talon-stair-collisions-v3');
 if(savedStairs){try{const saved=JSON.parse(savedStairs);if(Array.isArray(saved)&&saved.length===stairSteps.length)saved.forEach((p,i)=>Object.assign(stairSteps[i],p));}catch{}}
-const savedPlatforms=localStorage.getItem('talon-platform-collisions-v2');
+const savedPlatforms=localStorage.getItem('talon-platform-collisions-v3');
 if(savedPlatforms){
   try{
     const saved=JSON.parse(savedPlatforms);
@@ -831,30 +831,41 @@ function update(dt){
       }
     }
   }
-  const stairY=stairHeight(player.x+player.w/2);
-  if(stairY!==null && player.vy>=0 && (wasGrounded?Math.abs(oldY+player.h-stairY)<=50:oldY+player.h<=stairY) && player.y+player.h>=stairY-50){
-    player.y=stairY-player.h; player.vy=0; player.onGround=true;
+  // 1. Colisión con escaleras de piedra (rampas escalonadas)
+  const stairY = stairHeight(player.x + player.w / 2);
+  if(stairY !== null && player.vy >= 0 && (wasGrounded ? Math.abs(oldY + player.h - stairY) <= 45 : oldY + player.h <= stairY + 16) && player.y + player.h >= stairY - 35){
+    player.y = stairY - player.h;
+    player.vy = 0;
+    player.onGround = true;
   }
   const wasAir = !wasGrounded && player.vy > 100;
-  for(const p of platforms){
-    const overlapsX=player.x+player.w>p.x && player.x<p.x+p.w;
-    if(player.vy<0 && overlapsX && oldY>=p.y+p.h && player.y<=p.y+p.h){
-      player.y=p.y+p.h; player.vy=0;
-    }
-  }
-  if(player.hangTime<=0){
+
+  // 2. Aterrizaje en plataformas (one-way suave con tolerancia anti-túnel)
+  if(player.vy >= 0 && !player.onGround){
     for(const p of platforms){
-      const overlapsY=pointInPlatform(p,player.x+player.w/2,player.y+player.h*.25)||pointInPlatform(p,player.x+player.w/2,player.y+player.h*.75);
-      if(!overlapsY)continue;
-      if(player.vx>0 && oldX+player.w<=p.x && player.x+player.w>p.x){ player.x=p.x-player.w; player.vx=0; }
-      if(player.vx<0 && oldX>=p.x+p.w && player.x<p.x+p.w){ player.x=p.x+p.w; player.vx=0; }
+      const overlapsX = (player.x + player.w * 0.82 > p.x) && (player.x + player.w * 0.18 < p.x + p.w);
+      if(!overlapsX) continue;
+      const fallStep = Math.max(22, player.vy * dt + 10);
+      const canLand = (oldY + player.h <= p.y + 14) && (player.y + player.h >= p.y - 4) && (player.y + player.h <= p.y + fallStep);
+      if(canLand){
+        player.y = p.y - player.h;
+        player.vy = 0;
+        player.onGround = true;
+        break;
+      }
     }
   }
-  for(const p of platforms){ if(player.vy>=0 && oldY+player.h<=p.y && player.y+player.h>=p.y && player.x+player.w>p.x && player.x<p.x+p.w){ player.y=p.y-player.h; player.vy=0; player.onGround=true; } }
-  if(wasAir && player.onGround){ player.landTime=0.12; player.jumpCount=0; player.doubleJumpTime=0; }
+
+  // 3. Suelo de seguridad (nunca caer por debajo del camino empedrado y = 521)
+  if(!player.onGround && player.y + player.h >= 521){
+    player.y = 521 - player.h;
+    player.vy = 0;
+    player.onGround = true;
+  }
+  if(wasAir && player.onGround){ player.landTime=0.14; player.jumpCount=0; player.doubleJumpTime=0; }
   if(player.landTime>0) player.landTime-=dt;
   if(player.hurtTime>0) player.hurtTime-=dt;
-  if(player.y>world.h+80){player.x=110;player.y=409;player.vy=0;}
+  if(player.y>world.h+80){player.x=110;player.y=397;player.vy=0;}
 
   // Actualización de proyectiles de piedra de la resortera
   for(let i = stones.length - 1; i >= 0; i--){
@@ -1389,18 +1400,26 @@ const FRAMES = {
   },
   walk:   { scale: 128/545, list: [{"x": 51, "w": 261, "cx": 130, "fy": 660}, {"x": 401, "w": 284, "cx": 142, "fy": 660}, {"x": 765, "w": 280, "cx": 140, "fy": 660}, {"x": 1154, "w": 227, "cx": 113, "fy": 660}, {"x": 1510, "w": 238, "cx": 119, "fy": 660}, {"x": 1854, "w": 275, "cx": 137, "fy": 660}] },
   run:    { scale: 128/545, list: [{"x": 51, "w": 261, "cx": 130, "fy": 660}, {"x": 401, "w": 284, "cx": 142, "fy": 660}, {"x": 765, "w": 280, "cx": 140, "fy": 660}, {"x": 1154, "w": 227, "cx": 113, "fy": 660}, {"x": 1510, "w": 238, "cx": 119, "fy": 660}, {"x": 1854, "w": 275, "cx": 137, "fy": 660}] },
-  jump:   { scale: 128/540, list: [{x:30,w:259,cx:130,fy:662},{x:312,w:225,cx:110,fy:662},{x:535,w:275,cx:145,fy:662},{x:826,w:269,cx:127,fy:662},{x:1097,w:259,cx:130,fy:662},{x:1382,w:233,cx:115,fy:662},{x:1646,w:241,cx:124,fy:662},{x:1910,w:231,cx:120,fy:662}] },
-  doubleJump: {
-    scale: 128 / 459,
+  jump: {
+    scale: 128 / 540,
     list: [
-      { x: 0,    w: 272, cx: 144, fy: 660 },
-      { x: 272,  w: 271, cx: 150, fy: 629 },
-      { x: 543,  w: 271, cx: 135, fy: 517 },
-      { x: 814,  w: 272, cx: 135, fy: 475 },
-      { x: 1086, w: 272, cx: 126, fy: 499 },
-      { x: 1358, w: 271, cx: 151, fy: 460 },
-      { x: 1629, w: 271, cx: 128, fy: 558 },
-      { x: 1900, w: 272, cx: 126, fy: 660 }
+      { x: 0,    w: 1000, cx: 500, fy: 660 },
+      { x: 1000, w: 1000, cx: 500, fy: 660 },
+      { x: 2000, w: 1000, cx: 500, fy: 660 },
+      { x: 3000, w: 1000, cx: 500, fy: 660 },
+      { x: 4000, w: 1000, cx: 500, fy: 660 },
+      { x: 5000, w: 1000, cx: 500, fy: 660 }
+    ]
+  },
+  doubleJump: {
+    scale: 128 / 540,
+    list: [
+      { x: 1000, w: 1000, cx: 500, fy: 660 },
+      { x: 2000, w: 1000, cx: 500, fy: 660 },
+      { x: 3000, w: 1000, cx: 500, fy: 660 },
+      { x: 1000, w: 1000, cx: 500, fy: 660 },
+      { x: 2000, w: 1000, cx: 500, fy: 660 },
+      { x: 3000, w: 1000, cx: 500, fy: 660 }
     ]
   },
   sleep: {
@@ -1597,9 +1616,16 @@ function render(){
   if(player.sleepTime>0){ animKey='sleep'; activeSheet=sleepSheet; frame=player.sleepTime<1.2?Math.min(5,Math.floor(player.sleepTime/1.2*6)):2+Math.floor((player.sleepTime-1.2)*3)%4; }
   else if(player.climbTime>0){ animKey='climb'; activeSheet=climbSheet; frame=Math.min(11,Math.floor((player.climbTime/0.36)*12)); }
   else if(player.hangTime>0){ animKey='hang'; activeSheet=hangSheet; frame=Math.min(7,Math.floor(player.hangTime*9)); }
-  else if(player.doubleJumpTime>0 && jumping){ animKey='doubleJump'; activeSheet=doubleJumpSheet; frame=Math.min(7,Math.floor(player.doubleJumpTime/.72*8)); }
-  else if(jumping){ animKey='jump'; activeSheet=jumpSheet; frame=player.vy<-300?1:player.vy<-80?2:player.vy<120?3:player.vy<320?5:6; }
-  else if(player.landTime>0){ animKey='jump'; activeSheet=jumpSheet; frame=7; }
+  else if(player.doubleJumpTime>0 && jumping){ animKey='doubleJump'; activeSheet=jumpSheet; frame=Math.min(5, Math.floor(player.doubleJumpTime/0.45*6)); }
+  else if(jumping){
+    animKey='jump'; activeSheet=jumpSheet;
+    frame = player.vy < -200 ? 1
+          : player.vy < -50 ? 1
+          : player.vy < 120 ? 2
+          : player.vy < 300 ? 3
+          : 4;
+  }
+  else if(player.landTime>0){ animKey='jump'; activeSheet=jumpSheet; frame=5; }
   else if(player.attackTime>0){
     if(slingSheet.complete && slingSheet.naturalWidth){
       animKey = 'slingshot';
