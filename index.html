@@ -13,7 +13,7 @@
     <audio id="music" src="assets/The_Emerald_Spires.mp3" loop preload="auto"></audio>
     <button id="fullscreen" type="button" aria-label="Activar pantalla completa" title="Pantalla completa">⛶</button>
     <button id="btn-in-game-menu" class="hidden" type="button" aria-label="Abrir menú principal" title="Menú principal">🏠<small>Menú</small></button>
-    <div class="hint">🏃 ¡CORREDOR DE ACCIÓN TROPICAL! Espacio: Saltar · ↓: Deslizarse bajo obstáculos · Z/X: Disparar resortera · ¡Derrota a los cocos y bate tu récord!</div>
+    <div class="hint">☀️ MISIÓN SAGRADA: ¡Recupera los 4 Fragmentos del Tótem Solar y salva la Isla Tropical! · Espacio: Saltar · ↓: Deslizarse · Z/X: Disparar resortera</div>
     <div class="touch-controls" aria-label="Controles táctiles">
       <div class="left-controls"><div class="dpad"><button data-key="ArrowLeft" aria-label="Izquierda">◀</button><button data-key="ArrowRight" aria-label="Derecha">▶</button></div><button class="run" data-key="ControlLeft" aria-label="Toque para saltar, mantener para correr">➤<small>Toque: salto<br>Mantén: corre</small></button></div>
       <div class="actions">
@@ -49,6 +49,10 @@
               <span class="nav-pointer">►</span>
               <span class="nav-text btn-play-text">NUEVA PARTIDA</span>
             </button>
+            <button id="btn-open-story" class="crash-nav-item" type="button" aria-label="Ver historia del juego">
+              <span class="nav-pointer">►</span>
+              <span class="nav-text">📜 HISTORIA</span>
+            </button>
             <button id="btn-open-controls" class="crash-nav-item" type="button" aria-label="Ver controles">
               <span class="nav-pointer">►</span>
               <span class="nav-text">CONTROLES</span>
@@ -60,36 +64,46 @@
           </div>
         </div>
 
-        <!-- Centro: Trilogía de Mundos / Portales (Estilo Crash 1, 2, 3) -->
+        <!-- Centro: Trilogía y Cuatro Biomas de la Isla Tropical -->
         <div class="crash-worlds-hub">
-          <!-- Mundo 1 (Activo) -->
-          <div class="world-portal active" id="portal-world-1" tabindex="0" role="button" aria-label="Mundo 1: Cascada Esmeralda">
+          <!-- Zona 1 -->
+          <div class="world-portal active" id="portal-world-1" tabindex="0" role="button" aria-label="Zona 1: Cascada Esmeralda">
             <div class="portal-badge badge-w1">
               <div class="portal-num">1</div>
-              <div class="portal-title">TALON</div>
-              <div class="portal-sub">CASCADA ESMERALDA</div>
+              <div class="portal-title">ZONA 1</div>
+              <div class="portal-sub">SELVA ESMERALDA</div>
             </div>
-            <div class="portal-status active-status">¡DISPONIBLE!</div>
+            <div class="portal-status active-status">0m · INICIO</div>
           </div>
 
-          <!-- Mundo 2 (Próximamente) -->
-          <div class="world-portal locked" id="portal-world-2" aria-label="Mundo 2: Templo Tiki">
+          <!-- Zona 2 -->
+          <div class="world-portal" id="portal-world-2" tabindex="0" role="button" aria-label="Zona 2: Templo del Jaguar">
             <div class="portal-badge badge-w2">
               <div class="portal-num">2</div>
-              <div class="portal-title">TALON 2</div>
-              <div class="portal-sub">TEMPLO TIKI</div>
+              <div class="portal-title">ZONA 2</div>
+              <div class="portal-sub">TEMPLO JAGUAR</div>
             </div>
-            <div class="portal-status locked-status">🔒 PRÓXIMAMENTE</div>
+            <div class="portal-status active-status" id="portal-status-2">600m · ATARDECER</div>
           </div>
 
-          <!-- Mundo 3 (Próximamente) -->
-          <div class="world-portal locked" id="portal-world-3" aria-label="Mundo 3: Fortaleza Pirata">
+          <!-- Zona 3 -->
+          <div class="world-portal" id="portal-world-3" tabindex="0" role="button" aria-label="Zona 3: Cenote de Cristal">
             <div class="portal-badge badge-w3">
               <div class="portal-num">3</div>
-              <div class="portal-title">TALON 3</div>
-              <div class="portal-sub">FORTALEZA PIRATA</div>
+              <div class="portal-title">ZONA 3</div>
+              <div class="portal-sub">CENOTE CRISTAL</div>
             </div>
-            <div class="portal-status locked-status">🔒 PRÓXIMAMENTE</div>
+            <div class="portal-status active-status" id="portal-status-3">1400m · MÍSTICO</div>
+          </div>
+
+          <!-- Zona 4 -->
+          <div class="world-portal" id="portal-world-4" tabindex="0" role="button" aria-label="Zona 4: Fortaleza Volcánica">
+            <div class="portal-badge badge-w4">
+              <div class="portal-num">4</div>
+              <div class="portal-title">ZONA 4</div>
+              <div class="portal-sub">FORTALEZA VOLCÁN</div>
+            </div>
+            <div class="portal-status active-status" id="portal-status-4">2200m · JEFE FINAL</div>
           </div>
         </div>
       </div>
@@ -110,6 +124,61 @@
         </div>
       </div>
     </div>
+
+      <!-- Modal de Historia y Misión Sagrada -->
+      <div id="story-modal" class="controls-modal" hidden>
+        <div class="modal-card story-card">
+          <div class="modal-header">
+            <h2>☀️ La Leyenda del Corazón Solar</h2>
+            <button id="btn-close-story" class="modal-close" type="button" aria-label="Cerrar historia">✕</button>
+          </div>
+          <div class="story-body">
+            <div class="story-prologue">
+              <p>🌊 Durante milenios, el <strong>Tótem Dorado del Sol</strong> bendijo las aguas cristalinas y mantuvo la paz en la Isla Tropical. Pero en una noche de tormenta, la temible armada de los <strong>Cocos Piratas (Kakamora)</strong> asaltó la Gran Pirámide y partió el Corazón Solar en <strong>4 Fragmentos Místicos</strong>, desatando la furia del Volcán Prohibido.</p>
+              <p>🏹 <strong>Talon</strong>, el intrépido explorador de la tribu, ha tomado su resortera sagrada y se lanza en una carrera contra el tiempo para derrotar a los 4 Generales Coco y salvar la isla.</p>
+            </div>
+            
+            <h3 class="story-subtitle">🗺️ Las 4 Zonas de la Expedición:</h3>
+            <div class="biomes-grid">
+              <div class="biome-card b-green">
+                <div class="b-icon">🌿</div>
+                <div class="b-info">
+                  <strong>Zona 1: Selva Esmeralda (0 - 600m)</strong>
+                  <span>Cascadas y lagunas turquesas. Jefe: <em>Capitán Coco Concha</em>.</span>
+                  <span class="fragment-tag">🟢 Fragmento 1: Esmeralda del Río</span>
+                </div>
+              </div>
+              <div class="biome-card b-amber">
+                <div class="b-icon">🏛️</div>
+                <div class="b-info">
+                  <strong>Zona 2: Templo del Jaguar (600 - 1400m)</strong>
+                  <span>Ruinas sagradas al atardecer. Jefe: <em>Chamán Tiki Solar</em>.</span>
+                  <span class="fragment-tag">🟡 Fragmento 2: Ojo del Dios Jaguar</span>
+                </div>
+              </div>
+              <div class="biome-card b-blue">
+                <div class="b-icon">💎</div>
+                <div class="b-info">
+                  <strong>Zona 3: Cenote de Cristal (1400 - 2200m)</strong>
+                  <span>Cavernas místicas bioluminiscentes. Jefe: <em>Gran Bruto Acorazado</em>.</span>
+                  <span class="fragment-tag">🟣 Fragmento 3: Zafiro de los Cenotes</span>
+                </div>
+              </div>
+              <div class="biome-card b-red">
+                <div class="b-icon">🌋</div>
+                <div class="b-info">
+                  <strong>Zona 4: Fortaleza Volcánica (2200m+)</strong>
+                  <span>Cielo rojo y ríos de magma. Jefe Final: <em>Almirante Barba-Coco</em>.</span>
+                  <span class="fragment-tag">🔴 Fragmento 4: Corazón del Volcán</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="btn-story-start" class="btn-modal-go" type="button">¡Aceptar la Misión y Correr!</button>
+          </div>
+        </div>
+      </div>
 
       <!-- Tarjeta / Modal de Controles -->
       <div id="controls-modal" class="controls-modal" hidden>
@@ -146,6 +215,6 @@
       </div>
     </div>
   </main>
-  <script src="game.js?v=runner_v20"></script>
+  <script src="game.js?v=story_biomes_v25"></script>
 </body>
 </html>

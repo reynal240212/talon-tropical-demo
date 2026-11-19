@@ -1,12 +1,23 @@
 // ============================================================================
-// TALON TROPICAL — ENDLESS ACTION RUNNER (TIPO SUBWAY SURFERS CON COMBATE 3D)
+// TALON TROPICAL — CORREDOR DE ACCIÓN TROPICAL: LA LEYENDA DEL CORAZÓN SOLAR
+// 4 Zonas Biomas Extendidos · 4 Jefes Generales Coco · 4 Fragmentos del Tótem
 // ============================================================================
 
 const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');
 
-// IMÁGENES Y SPRITESHEETS MAESTROS EN ALTA RESOLUCIÓN
-const bg = new Image();
+// IMÁGENES Y FONDOS DE LOS 4 BIOMAS DE LA ISLA
+const bgJungle = new Image();
+const bgTemple = new Image();
+const bgCenote = new Image();
+const bgVolcano = new Image();
+
+bgJungle.src = 'assets/nivel_tropical_runner_clean.png?v=25';
+bgTemple.src = 'assets/nivel_bioma_templo_atardecer.png?v=25';
+bgCenote.src = 'assets/nivel_bioma_cenote_mistico.png?v=25';
+bgVolcano.src = 'assets/nivel_bioma_volcanico.png?v=25';
+
+// SPRITESHEETS 3D CGI DE TALON Y ENEMIGOS
 const runSheet = new Image();
 const idleSheet = new Image();
 const crouchSheet = new Image();
@@ -17,7 +28,6 @@ const cocoPiratasSheet = new Image();
 const cocoSheet = new Image();
 const enemySheet = new Image();
 
-bg.src = 'assets/nivel_tropical_runner_clean.png?v=22';
 runSheet.src = 'assets/explorador_correr_master_v1.webp?v=4';
 idleSheet.src = 'assets/explorador_idle_master_v1.webp?v=4';
 crouchSheet.src = 'assets/explorador_agacharse_master_v1.webp?v=18';
@@ -34,7 +44,7 @@ const BG_WIDTH = 2172;
 const GROUND_Y = 521; // Altura exacta calibrada del suelo continuo de piedra
 const MASTER_CHARACTER = { w: 62, h: 124 };
 
-// DEFINICIÓN DE FOTOGRAMAS Y ESCALAS 3D
+// FOTOGRAMAS Y ESCALAS 3D ARMONIZADAS
 const FRAMES = {
   idle:   { scale: 138/560, list: [{"x": 70, "w": 223, "cx": 111, "fy": 660}, {"x": 442, "w": 203, "cx": 101, "fy": 660}, {"x": 811, "w": 189, "cx": 94, "fy": 660}, {"x": 1172, "w": 190, "cx": 95, "fy": 660}, {"x": 1531, "w": 197, "cx": 98, "fy": 660}, {"x": 1887, "w": 209, "cx": 104, "fy": 660}] },
   crouch: {
@@ -73,13 +83,83 @@ const FRAMES = {
   }
 };
 
-// ESTADO DEL JUGADOR Y PROPIEDADES DE CORREDOR
+// ============================================================================
+// DEFINICIÓN DE LOS 4 BIOMAS DEL MUNDO EXTENDIDO
+// ============================================================================
+const BIOMES = [
+  {
+    id: 0,
+    name: 'Selva Esmeralda',
+    title: '🌿 Selva y Cascadas Esmeralda',
+    startMeters: 0,
+    endMeters: 600,
+    bg: bgJungle,
+    banner: '🌿 ZONA 1: SELVA ESMERALDA',
+    color: '#00e676',
+    ambientColor: 'rgba(76, 175, 80, 0.12)'
+  },
+  {
+    id: 1,
+    name: 'Templo del Jaguar',
+    title: '🏛️ Templo Ancestral del Jaguar',
+    startMeters: 600,
+    endMeters: 1400,
+    bg: bgTemple,
+    banner: '🏛️ ZONA 2: TEMPLO DEL JAGUAR (ATARDECER)',
+    color: '#ff9800',
+    ambientColor: 'rgba(255, 152, 0, 0.15)'
+  },
+  {
+    id: 2,
+    name: 'Cenote de Cristal',
+    title: '💎 Cenote Sagrado y Cavernas',
+    startMeters: 1400,
+    endMeters: 2200,
+    bg: bgCenote,
+    banner: '💎 ZONA 3: CENOTE SAGRADO DE CRISTAL',
+    color: '#00e5ff',
+    ambientColor: 'rgba(0, 229, 255, 0.14)'
+  },
+  {
+    id: 3,
+    name: 'Fortaleza Volcánica',
+    title: '🌋 Fortaleza Volcánica Pirata',
+    startMeters: 2200,
+    endMeters: 99999,
+    bg: bgVolcano,
+    banner: '🌋 ZONA 4: FORTALEZA VOLCÁNICA PIRATA',
+    color: '#ff1744',
+    ambientColor: 'rgba(244, 67, 54, 0.18)'
+  }
+];
+
+// ============================================================================
+// HISTORIA Y LOS 4 FRAGMENTOS SAGRADOS DEL TÓTEM SOLAR
+// ============================================================================
+const storyFragments = [
+  { id: 0, name: 'Esmeralda del Río',   icon: '🟢', color: '#00e676', bossMeters: 500,  bossName: 'Capitán Coco Concha',  bossTitle: 'Guardián del Río',      collected: false },
+  { id: 1, name: 'Ojo del Dios Jaguar', icon: '🟡', color: '#ffd700', bossMeters: 1200, bossName: 'Chamán Tiki Solar',    bossTitle: 'Sacerdote del Fuego',   collected: false },
+  { id: 2, name: 'Zafiro de los Cenotes',icon: '🟣', color: '#b388ff', bossMeters: 2000, bossName: 'Gran Bruto Acorazado',bossTitle: 'Terror de las Cuevas', collected: false },
+  { id: 3, name: 'Corazón del Volcán',  icon: '🔴', color: '#ff1744', bossMeters: 2800, bossName: 'Almirante Barba-Coco', bossTitle: 'Gran Señor Pirata',    collected: false }
+];
+
+// Carga de fragmentos guardados
+try {
+  const savedFrags = JSON.parse(localStorage.getItem('talon_story_fragments') || '[]');
+  if(Array.isArray(savedFrags)){
+    savedFrags.forEach(id => {
+      if(storyFragments[id]) storyFragments[id].collected = true;
+    });
+  }
+} catch {}
+
+// ESTADO DEL JUGADOR
 const player = {
   x: 120,
   y: GROUND_Y - MASTER_CHARACTER.h,
   w: MASTER_CHARACTER.w,
   h: MASTER_CHARACTER.h,
-  vx: 320,
+  vx: 330,
   vy: 0,
   onGround: true,
   face: 1,
@@ -92,8 +172,6 @@ const player = {
   attackTime: 0,
   slingFired: false,
   aimAngle: 0,
-  crouching: false,
-  crouchTime: 0,
   sliding: false,
   slideTime: 0,
   hurtTime: 0,
@@ -104,9 +182,10 @@ const player = {
   magnetTime: 0
 };
 
-// ESTADÍSTICAS DEL JUEGO / CORREDOR INFINITO
-let gameDistance = 0; // en metros (player.x / 18)
+// ESTADÍSTICAS GLOBALES DEL JUEGO
+let gameDistance = 0; // en metros
 let highRecord = parseInt(localStorage.getItem('talon_runner_best_meters') || '0', 10);
+let unlockedZone = parseInt(localStorage.getItem('talon_unlocked_zone') || '0', 10);
 let coinsCollected = 0;
 let cocosDefeated = 0;
 let comboStreak = 0;
@@ -117,19 +196,29 @@ let isNewRecord = false;
 let screenShake = 0;
 let stepDistance = 0;
 
-// COLECCIONES DINÁMICAS PROCEDURALES
-const obstacles = [];  // { id, type: 'low_stump'|'high_barrier', x, y, w, h, broken: false }
-const enemies = [];    // { id, type: 'coco_concha'|'coco_rodante'|'jefe_coco', x, y, w, h, vx, vy, hp, maxHp, state: 'run'|'hit', anim: 0, deadTimer: 0 }
-const coins = [];      // { id, x, y, collected: false, rot: 0 }
-const relics = [];     // { id, type: 'shield'|'gem'|'magnet', x, y, collected: false, color: '#ffd700', icon: '💎' }
-const stones = [];     // Proyectiles de la resortera
-const particles = [];  // Partículas y chispas
-const floatingTexts = []; // Popups de texto estilo arcade: "+50", "COMBO x2!"
+// SISTEMA DE JEFES DE HISTORIA
+let currentBoss = null;
+let bossWarningTimer = 0;
+let zoneBannerText = '';
+let zoneBannerTimer = 0;
+let lastAnnouncedBiome = -1;
+let isStoryVictory = false;
+let storyVictoryTimer = 0;
+
+// COLECCIONES PROCEDURALES DINÁMICAS
+const obstacles = [];
+const enemies = [];
+const coins = [];
+const relics = [];
+const stones = [];
+const bossProjectiles = [];
+const particles = [];
+const floatingTexts = [];
 
 let nextSpawnX = 900;
 let entityIdCounter = 1;
 
-// SISTEMA DE ENTRADA Y CONTROLES
+// ENTRADA Y CONTROLES
 const keyboardKeys = new Set();
 const touchKeys = new Set();
 let runTapJump = false;
@@ -140,8 +229,8 @@ addEventListener('keydown', e => {
   }
   if(e.code) keyboardKeys.add(e.code);
 
-  if(isGameOver && gameOverTime > 0.6 && (e.code === 'Space' || e.code === 'Enter' || e.code === 'KeyZ' || e.code === 'KeyX')){
-    restartRunner();
+  if((isGameOver || isStoryVictory) && (gameOverTime > 0.6 || storyVictoryTimer > 0.6) && (e.code === 'Space' || e.code === 'Enter' || e.code === 'KeyZ' || e.code === 'KeyX')){
+    restartRunner(0);
   }
 });
 addEventListener('keyup', e => {
@@ -176,7 +265,7 @@ document.querySelectorAll('[data-key]').forEach(btn => {
   btn.addEventListener('lostpointercapture', up);
 });
 
-// ESCALA Y TAMAÑO RESPONSIVO
+// ESCALADO RESPONSIVO
 function gameHeight() { return canvas.clientHeight || innerHeight; }
 function scale() { return Math.max(innerWidth / VIEW_BASE.w, gameHeight() / VIEW_BASE.h); }
 function cameraX() { return player.x - 260; }
@@ -203,13 +292,11 @@ fullscreenButton?.addEventListener('click', async () => {
   } catch {}
 });
 document.addEventListener('fullscreenchange', () => {
-  if(fullscreenButton){
-    fullscreenButton.textContent = document.fullscreenElement ? '⤢' : '⛶';
-  }
+  if(fullscreenButton) fullscreenButton.textContent = document.fullscreenElement ? '⤢' : '⛶';
   resize();
 });
 
-// MENÚ Y MÚSICA
+// MENÚ, MÚSICA Y MODALES
 const music = document.querySelector('#music');
 if(music) music.volume = 0.35;
 let isInMenu = true;
@@ -226,7 +313,12 @@ const btnCloseControls = document.querySelector('#btn-close-controls');
 const btnModalStart = document.querySelector('#btn-modal-start');
 const btnInGameMenu = document.querySelector('#btn-in-game-menu');
 
-function startGame(){
+const btnOpenStory = document.querySelector('#btn-open-story');
+const storyModal = document.querySelector('#story-modal');
+const btnCloseStory = document.querySelector('#btn-close-story');
+const btnStoryStart = document.querySelector('#btn-story-start');
+
+function startGame(startZoneMeters = 0){
   ensureAudio();
   playMenuConfirm();
   if(!isMusicMuted) startMusic();
@@ -234,6 +326,8 @@ function startGame(){
   mainMenu?.classList.add('hidden');
   btnInGameMenu?.classList.remove('hidden');
   if(controlsModal) controlsModal.hidden = true;
+  if(storyModal) storyModal.hidden = true;
+  if(startZoneMeters > 0) restartRunner(startZoneMeters);
   last = performance.now();
 }
 
@@ -263,21 +357,31 @@ function toggleMusic(){
   }
 }
 
-btnPlay?.addEventListener('click', startGame);
-btnModalStart?.addEventListener('click', startGame);
+btnPlay?.addEventListener('click', () => startGame(0));
+btnModalStart?.addEventListener('click', () => startGame(0));
+btnStoryStart?.addEventListener('click', () => startGame(0));
 btnInGameMenu?.addEventListener('click', openMainMenu);
 btnMusicToggle?.addEventListener('click', toggleMusic);
+
 btnOpenControls?.addEventListener('click', () => { if(controlsModal) controlsModal.hidden = false; });
 btnCloseControls?.addEventListener('click', () => { if(controlsModal) controlsModal.hidden = true; });
-document.querySelector('#portal-world-1')?.addEventListener('click', startGame);
+
+btnOpenStory?.addEventListener('click', () => { if(storyModal) storyModal.hidden = false; });
+btnCloseStory?.addEventListener('click', () => { if(storyModal) storyModal.hidden = true; });
+
+// Selección de Biomas en los Portales del Menú Principal
+document.querySelector('#portal-world-1')?.addEventListener('click', () => startGame(0));
+document.querySelector('#portal-world-2')?.addEventListener('click', () => startGame(600));
+document.querySelector('#portal-world-3')?.addEventListener('click', () => startGame(1400));
+document.querySelector('#portal-world-4')?.addEventListener('click', () => startGame(2200));
 
 canvas.addEventListener('pointerdown', e => {
-  if(isGameOver && gameOverTime > 0.5){
-    restartRunner();
+  if((isGameOver || isStoryVictory) && (gameOverTime > 0.5 || storyVictoryTimer > 0.5)){
+    restartRunner(0);
   }
 });
 
-// SINTETIZADOR DE AUDIO PROCEDURAL DE ALTO IMPACTO
+// SINTETIZADOR DE EFECTOS SONOROS
 let audioContext = null;
 function ensureAudio(){
   if(!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -359,8 +463,8 @@ function playHollowThud(){
 function playCoinSound(){
   if(!audioContext || audioContext.state !== 'running') return;
   const now = audioContext.currentTime, osc = audioContext.createOscillator(), gain = audioContext.createGain();
-  osc.type = 'triangle'; osc.frequency.setValueAtTime(987.77, now); // B5
-  osc.frequency.setValueAtTime(1318.51, now + 0.06); // E6
+  osc.type = 'triangle'; osc.frequency.setValueAtTime(987.77, now);
+  osc.frequency.setValueAtTime(1318.51, now + 0.06);
   gain.gain.setValueAtTime(0.12, now); gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
   osc.connect(gain); gain.connect(audioContext.destination); osc.start(now); osc.stop(now + 0.22);
 }
@@ -373,6 +477,27 @@ function playRelicSound(){
     osc.type = 'sine'; osc.frequency.setValueAtTime(freq, now + idx * 0.06);
     gain.gain.setValueAtTime(0.15, now + idx * 0.06); gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.06 + 0.3);
     osc.connect(gain); gain.connect(audioContext.destination); osc.start(now + idx * 0.06); osc.stop(now + idx * 0.06 + 0.3);
+  });
+}
+
+function playBossWarningSound(){
+  if(!audioContext || audioContext.state !== 'running') return;
+  const now = audioContext.currentTime;
+  const osc = audioContext.createOscillator(), gain = audioContext.createGain();
+  osc.type = 'sawtooth'; osc.frequency.setValueAtTime(160, now); osc.frequency.linearRampToValueAtTime(260, now + 0.35);
+  gain.gain.setValueAtTime(0.22, now); gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+  osc.connect(gain); gain.connect(audioContext.destination); osc.start(now); osc.stop(now + 0.45);
+}
+
+function playVictoryFanfare(){
+  if(!audioContext || audioContext.state !== 'running') return;
+  const now = audioContext.currentTime;
+  const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+  notes.forEach((freq, i) => {
+    const osc = audioContext.createOscillator(), gain = audioContext.createGain();
+    osc.type = 'sine'; osc.frequency.setValueAtTime(freq, now + i * 0.10);
+    gain.gain.setValueAtTime(0.18, now + i * 0.10); gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.10 + 0.4);
+    osc.connect(gain); gain.connect(audioContext.destination); osc.start(now + i * 0.10); osc.stop(now + i * 0.10 + 0.4);
   });
 }
 
@@ -395,13 +520,9 @@ function spawnSlashSparks(x, y, count = 12, color = '#ffd152'){
     const angle = (Math.PI * 2 * i / count) + (Math.random() - 0.5) * 0.9;
     const speed = 140 + Math.random() * 260;
     particles.push({
-      x, y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 60,
-      size: 2.5 + Math.random() * 3.5,
-      color: i % 2 === 0 ? '#ffffff' : color,
-      life: 0.26 + Math.random() * 0.16,
-      maxLife: 0.42
+      x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 60,
+      size: 2.5 + Math.random() * 3.5, color: i % 2 === 0 ? '#ffffff' : color,
+      life: 0.26 + Math.random() * 0.16, maxLife: 0.42
     });
   }
 }
@@ -411,26 +532,18 @@ function spawnCoconutShatter(x, y){
     const angle = (Math.PI * 2 * i / 9) + (Math.random() - 0.5) * 0.6;
     const speed = 120 + Math.random() * 240;
     particles.push({
-      x, y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 130,
-      size: 4 + Math.random() * 5,
-      color: i % 2 === 0 ? '#4e342e' : '#795548',
-      life: 0.45 + Math.random() * 0.2,
-      maxLife: 0.65
+      x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 130,
+      size: 4 + Math.random() * 5, color: i % 2 === 0 ? '#4e342e' : '#795548',
+      life: 0.45 + Math.random() * 0.2, maxLife: 0.65
     });
   }
   for(let i = 0; i < 14; i++){
     const angle = Math.random() * Math.PI * 2;
     const speed = 70 + Math.random() * 200;
     particles.push({
-      x, y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 70,
-      size: 2.5 + Math.random() * 3.5,
-      color: '#ffffff',
-      life: 0.35 + Math.random() * 0.2,
-      maxLife: 0.55
+      x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 70,
+      size: 2.5 + Math.random() * 3.5, color: '#ffffff',
+      life: 0.35 + Math.random() * 0.2, maxLife: 0.55
     });
   }
 }
@@ -438,14 +551,10 @@ function spawnCoconutShatter(x, y){
 function spawnSlideDust(x, y){
   for(let i = 0; i < 3; i++){
     particles.push({
-      x: x + (Math.random() - 0.5) * 20,
-      y: y - 4,
-      vx: -180 - Math.random() * 120,
-      vy: -20 - Math.random() * 60,
-      size: 3 + Math.random() * 4,
-      color: 'rgba(215, 204, 180, 0.7)',
-      life: 0.22 + Math.random() * 0.15,
-      maxLife: 0.37
+      x: x + (Math.random() - 0.5) * 20, y: y - 4,
+      vx: -180 - Math.random() * 120, vy: -20 - Math.random() * 60,
+      size: 3 + Math.random() * 4, color: 'rgba(215, 204, 180, 0.7)',
+      life: 0.22 + Math.random() * 0.15, maxLife: 0.37
     });
   }
 }
@@ -453,65 +562,121 @@ function spawnSlideDust(x, y){
 function spawnFloatingText(text, x, y, color = '#ffd700', fontSize = 16){
   floatingTexts.push({
     text, x, y, color, fontSize,
-    vy: -75,
-    life: 0.85,
-    maxLife: 0.85
+    vy: -75, life: 0.95, maxLife: 0.95
   });
 }
 
 function spawnStone(x, y, vx, vy){
   stones.push({
     x, y, prevX: x, prevY: y,
-    vx, vy, rot: 0,
-    r: 6.5, life: 2.2, trail: []
+    vx, vy, rot: 0, r: 6.5, life: 2.2, trail: []
   });
 }
 
-// GENERADOR PROCEDURAL INFINITO DE OBSTÁCULOS, ENEMIGOS Y MONEDAS
+// DETERMINAR EL BIOMA ACTUAL SEGÚN LA DISTANCIA
+function getCurrentBiome(distMeters){
+  for(let i = BIOMES.length - 1; i >= 0; i--){
+    if(distMeters >= BIOMES[i].startMeters) return BIOMES[i];
+  }
+  return BIOMES[0];
+}
+
+// GENERADOR PROCEDURAL ADAPTATIVO POR BIOMA
 function spawnChunkAhead(targetX){
+  if(currentBoss) return; // Mientras pelea con un jefe, no satura de obstáculos
   const distM = Math.floor(targetX / 18);
-  const patterns = ['stump', 'high_barrier', 'coco_runner', 'coco_rolling', 'double_jump', 'slide_and_foe'];
-  // Si la distancia es mayor, aparecen combinaciones más intensas
+  const curBiome = getCurrentBiome(distM);
+
+  const patterns = ['stump', 'high_barrier', 'coco_runner', 'coco_rolling', 'double_threat'];
   const pattern = patterns[Math.floor(Math.random() * patterns.length)];
 
   if(pattern === 'stump'){
-    // Obstáculo bajo: Tótem de piedra / tocón. Se salta o se rompe con la resortera
+    // Obstáculo bajo contextual al bioma
     obstacles.push({
       id: entityIdCounter++,
       type: 'low_stump',
+      biomeId: curBiome.id,
       x: targetX,
       y: GROUND_Y - 48,
       w: 48,
       h: 48,
       broken: false
     });
-    // Arco de 3 monedas doradas sobre el obstáculo para premiar el salto
+    // Arco de 3 monedas doradas
     for(let i = 0; i < 3; i++){
       const cx = targetX - 45 + i * 45;
       const cy = GROUND_Y - 95 - Math.sin((i / 2) * Math.PI) * 55;
       coins.push({ id: entityIdCounter++, x: cx, y: cy, collected: false, rot: 0 });
     }
   } else if(pattern === 'high_barrier'){
-    // Obstáculo alto: Tronco de bambú / arco colgante. OBLIGATORIO DESLIZARSE (AGANCHARSE) POR DEBAJO
+    // Barrera alta (obligatorio agacharse/deslizarse)
     obstacles.push({
       id: entityIdCounter++,
       type: 'high_barrier',
+      biomeId: curBiome.id,
       x: targetX,
       y: GROUND_Y - 110,
-      w: 88,
-      h: 52, // Deja un espacio libre de 58px abajo
+      w: 90,
+      h: 52,
       broken: false
     });
-    // 3 monedas en el suelo premiando el deslizamiento
     for(let i = 0; i < 3; i++){
       coins.push({ id: entityIdCounter++, x: targetX - 35 + i * 35, y: GROUND_Y - 22, collected: false, rot: 0 });
     }
   } else if(pattern === 'coco_runner'){
-    // Coco Concha Pirata cargando con lanza hacia Talon
+    // Coco guerrero corriendo hacia Talon
     enemies.push({
       id: entityIdCounter++,
       type: 'coco_concha',
+      biomeId: curBiome.id,
       x: targetX + 120,
+      y: GROUND_Y - 66,
+      w: 56,
+      h: 66,
+      vx: -135,
+      vy: 0,
+      hp: 1,
+      maxHp: 1,
+      state: 'run',
+      anim: 0,
+      deadTimer: 0
+    });
+  } else if(pattern === 'coco_rolling'){
+    // Coco salvaje rebotando
+    enemies.push({
+      id: entityIdCounter++,
+      type: 'coco_rodante',
+      biomeId: curBiome.id,
+      x: targetX + 90,
+      y: GROUND_Y - 38,
+      w: 36,
+      h: 36,
+      vx: -210,
+      vy: -130,
+      hp: 1,
+      maxHp: 1,
+      state: 'run',
+      anim: 0,
+      deadTimer: 0
+    });
+    coins.push({ id: entityIdCounter++, x: targetX + 90, y: GROUND_Y - 105, collected: false, rot: 0 });
+  } else if(pattern === 'double_threat'){
+    // Obstáculo alto seguido de coco o doble salto
+    obstacles.push({
+      id: entityIdCounter++,
+      type: 'high_barrier',
+      biomeId: curBiome.id,
+      x: targetX,
+      y: GROUND_Y - 110,
+      w: 86,
+      h: 52,
+      broken: false
+    });
+    enemies.push({
+      id: entityIdCounter++,
+      type: 'coco_concha',
+      biomeId: curBiome.id,
+      x: targetX + 180,
       y: GROUND_Y - 66,
       w: 56,
       h: 66,
@@ -523,80 +688,10 @@ function spawnChunkAhead(targetX){
       anim: 0,
       deadTimer: 0
     });
-  } else if(pattern === 'coco_rolling'){
-    // Coco salvaje rodando y rebotando a gran velocidad
-    enemies.push({
-      id: entityIdCounter++,
-      type: 'coco_rodante',
-      x: targetX + 80,
-      y: GROUND_Y - 38,
-      w: 36,
-      h: 36,
-      vx: -210,
-      vy: -120,
-      hp: 1,
-      maxHp: 1,
-      state: 'run',
-      anim: 0,
-      deadTimer: 0
-    });
-    // Moneda en el aire sobre el coco
-    coins.push({ id: entityIdCounter++, x: targetX + 80, y: GROUND_Y - 105, collected: false, rot: 0 });
-  } else if(pattern === 'double_jump'){
-    // Dos obstáculos bajos seguidos con monedas
-    obstacles.push({
-      id: entityIdCounter++,
-      type: 'low_stump',
-      x: targetX,
-      y: GROUND_Y - 48,
-      w: 48,
-      h: 48,
-      broken: false
-    });
-    obstacles.push({
-      id: entityIdCounter++,
-      type: 'low_stump',
-      x: targetX + 170,
-      y: GROUND_Y - 48,
-      w: 48,
-      h: 48,
-      broken: false
-    });
-    for(let i = 0; i < 5; i++){
-      const cx = targetX - 30 + i * 55;
-      const cy = GROUND_Y - 110 - Math.sin((i / 4) * Math.PI) * 45;
-      coins.push({ id: entityIdCounter++, x: cx, y: cy, collected: false, rot: 0 });
-    }
-  } else if(pattern === 'slide_and_foe'){
-    // Barrera alta (deslizarse) seguida inmediatamente por un coco
-    obstacles.push({
-      id: entityIdCounter++,
-      type: 'high_barrier',
-      x: targetX,
-      y: GROUND_Y - 110,
-      w: 85,
-      h: 52,
-      broken: false
-    });
-    enemies.push({
-      id: entityIdCounter++,
-      type: 'coco_concha',
-      x: targetX + 190,
-      y: GROUND_Y - 66,
-      w: 56,
-      h: 66,
-      vx: -120,
-      vy: 0,
-      hp: 1,
-      maxHp: 1,
-      state: 'run',
-      anim: 0,
-      deadTimer: 0
-    });
   }
 
-  // Cada ~250 metros aparece una Reliquia Sagrada de Poder
-  if(Math.random() < 0.22 && targetX > 1400){
+  // Reliquias de poder aleatorias
+  if(Math.random() < 0.20 && targetX > 1200){
     const rTypes = [
       { type: 'shield', color: '#00e5ff', icon: '🛡️', text: '¡ESCUDO TIKI!' },
       { type: 'magnet', color: '#ff9100', icon: '🧲', text: '¡IMÁN DE ORO!' },
@@ -607,8 +702,8 @@ function spawnChunkAhead(targetX){
       id: entityIdCounter++,
       type: chosen.type,
       text: chosen.text,
-      x: targetX + 280,
-      y: GROUND_Y - 115,
+      x: targetX + 260,
+      y: GROUND_Y - 110,
       color: chosen.color,
       icon: chosen.icon,
       collected: false
@@ -616,27 +711,54 @@ function spawnChunkAhead(targetX){
   }
 }
 
-function updateProceduralSpawning(){
-  const cam = cameraX();
-  while(nextSpawnX < cam + 1900){
-    spawnChunkAhead(nextSpawnX);
-    nextSpawnX += 360 + Math.random() * 220;
-  }
+// COMPROBACIÓN DE EVENTOS DE JEFES DE HISTORIA
+function checkStoryBossEvents(){
+  if(currentBoss || isStoryVictory) return;
 
-  // Limpieza de entidades que quedaron atrás de la cámara
-  const cullX = cam - 300;
-  for(let i = obstacles.length - 1; i >= 0; i--){ if(obstacles[i].x < cullX) obstacles.splice(i, 1); }
-  for(let i = enemies.length - 1; i >= 0; i--){ if(enemies[i].x < cullX) enemies.splice(i, 1); }
-  for(let i = coins.length - 1; i >= 0; i--){ if(coins[i].x < cullX) coins.splice(i, 1); }
-  for(let i = relics.length - 1; i >= 0; i--){ if(relics[i].x < cullX) relics.splice(i, 1); }
-  for(let i = stones.length - 1; i >= 0; i--){ if(stones[i].x < cullX || stones[i].x > cam + 2000) stones.splice(i, 1); }
+  for(let i = 0; i < storyFragments.length; i++){
+    const frag = storyFragments[i];
+    // Si aún no está recolectado y el jugador llegó a la distancia del jefe
+    if(!frag.collected && gameDistance >= frag.bossMeters && gameDistance <= frag.bossMeters + 120){
+      triggerBossEncounter(frag);
+      break;
+    }
+  }
 }
 
-// REINICIO DE EXPEDICIÓN TRAS GAME OVER
-function restartRunner(){
-  player.x = 120;
+function triggerBossEncounter(frag){
+  playBossWarningSound();
+  screenShake = 0.45;
+  bossWarningTimer = 3.2;
+
+  const hpTable = [3, 4, 5, 6];
+  currentBoss = {
+    fragmentId: frag.id,
+    name: frag.bossName,
+    title: frag.bossTitle,
+    icon: frag.icon,
+    color: frag.color,
+    hp: hpTable[frag.id] || 4,
+    maxHp: hpTable[frag.id] || 4,
+    x: player.x + 950,
+    y: GROUND_Y - 82,
+    w: 78,
+    h: 82,
+    vx: -95,
+    attackTimer: 0,
+    hurtTimer: 0,
+    state: 'fight',
+    deadTimer: 0
+  };
+
+  spawnFloatingText(`⚠️ ¡ALERTA DE JEFE! ${frag.bossName}`, player.x + 350, GROUND_Y - 180, '#ff1744', 22);
+}
+
+// REINICIO DE EXPEDICIÓN CON POSIBILIDAD DE CHECKPOINT DE BIOMA
+function restartRunner(startMeters = 0){
+  const startX = startMeters * 18 + 120;
+  player.x = startX;
   player.y = GROUND_Y - MASTER_CHARACTER.h;
-  player.vx = 320;
+  player.vx = 330;
   player.vy = 0;
   player.onGround = true;
   player.hearts = 3;
@@ -646,25 +768,25 @@ function restartRunner(){
   player.magnetTime = 0;
   player.sliding = false;
 
-  gameDistance = 0;
-  coinsCollected = 0;
-  cocosDefeated = 0;
-  comboStreak = 0;
-  comboTimer = 0;
+  gameDistance = startMeters;
   isGameOver = false;
   gameOverTime = 0;
-  isNewRecord = false;
+  isStoryVictory = false;
+  storyVictoryTimer = 0;
+  currentBoss = null;
+  bossWarningTimer = 0;
 
   obstacles.length = 0;
   enemies.length = 0;
   coins.length = 0;
   relics.length = 0;
   stones.length = 0;
+  bossProjectiles.length = 0;
   particles.length = 0;
   floatingTexts.length = 0;
 
-  nextSpawnX = 900;
-  entityIdCounter = 1;
+  nextSpawnX = startX + 800;
+  lastAnnouncedBiome = -1;
 }
 
 // BUCLE DE FÍSICA Y ACTUALIZACIÓN
@@ -676,8 +798,12 @@ function update(dt){
     gameOverTime += dt;
     return;
   }
+  if(isStoryVictory){
+    storyVictoryTimer += dt;
+    return;
+  }
 
-  // Cálculo de distancia recorrida
+  // Distancia recorrida
   gameDistance = Math.floor(player.x / 18);
   if(gameDistance > highRecord){
     highRecord = gameDistance;
@@ -685,41 +811,59 @@ function update(dt){
     localStorage.setItem('talon_runner_best_meters', highRecord.toString());
   }
 
+  // Notificador de entrada de Bioma
+  const curBiome = getCurrentBiome(gameDistance);
+  if(curBiome.id !== lastAnnouncedBiome){
+    lastAnnouncedBiome = curBiome.id;
+    zoneBannerText = curBiome.banner;
+    zoneBannerTimer = 3.5;
+    playVictoryFanfare();
+    // Desbloqueo permanente de zona para portales
+    if(curBiome.id > unlockedZone){
+      unlockedZone = curBiome.id;
+      localStorage.setItem('talon_unlocked_zone', unlockedZone.toString());
+    }
+  }
+  if(zoneBannerTimer > 0) zoneBannerTimer -= dt;
+  if(bossWarningTimer > 0) bossWarningTimer -= dt;
+
+  // Comprobar eventos de jefes
+  checkStoryBossEvents();
+
   // Combo decay
   if(comboTimer > 0){
     comboTimer -= dt;
     if(comboTimer <= 0) comboStreak = 0;
   }
 
-  // Controles del jugador
+  // Controles
   const upKey = pressed('ArrowUp', 'w', 'KeyW', 'Space', 'KeyC', 'c', 'C') || runTapJump;
   const downKey = pressed('ArrowDown', 's', 'KeyS');
   const leftKey = pressed('ArrowLeft', 'a', 'KeyA');
   const rightKey = pressed('ArrowRight', 'd', 'KeyD', 'ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight');
   const attackPressed = pressed('KeyX', 'x', 'X', 'KeyZ', 'z', 'Z', 'KeyJ');
 
-  // Velocidad hacia adelante estilo Action Runner
-  const baseSpeed = 330 + Math.min(150, gameDistance * 0.2);
+  // Velocidad de avance
+  const baseSpeed = 330 + Math.min(140, gameDistance * 0.15);
   let moveVx = baseSpeed;
-  if(rightKey) moveVx += 120; // Turbo / acelerón
-  if(leftKey) moveVx -= 140;  // Freno táctico
-
+  if(rightKey) moveVx += 120;
+  if(leftKey) moveVx -= 140;
   player.vx = moveVx;
 
-  // Mecánica de Deslizamiento (Slide / Agacharse)
+  // Mecánica de Deslizamiento (Slide)
   const wantsSlide = downKey && player.onGround;
   if(wantsSlide){
     player.sliding = true;
     player.slideTime += dt;
-    player.h = 56; // Hitbox baja: pasa perfectamente bajo barreras altas
+    player.h = 56; // Hitbox baja
     spawnSlideDust(player.x + 20, GROUND_Y);
   } else {
     player.sliding = false;
     player.slideTime = 0;
-    player.h = MASTER_CHARACTER.h; // 124px altura normal
+    player.h = MASTER_CHARACTER.h;
   }
 
-  // Mecánica de Salto y Doble Salto
+  // Salto y Doble Salto
   if(upKey && !player.jumpLatch){
     if(player.onGround){
       player.vy = -540;
@@ -730,19 +874,16 @@ function update(dt){
       player.vy = -480;
       player.jumpCount = 2;
       player.doubleJumpTime = 0.001;
-      spawnSlashSparks(player.x + player.w/2, player.y + player.h, 10, '#00e5ff');
+      spawnSlashSparks(player.x + player.w/2, player.y + player.h, 10, curBiome.color);
     }
   }
   player.jumpLatch = upKey;
   runTapJump = false;
 
-  // Mecánica de Ataque con Resortera 360°
+  // Ataque de Resortera 360°
   let targetAim = 0;
-  if(pressed('ArrowUp', 'KeyW', 'w')){
-    targetAim = -Math.PI / 3; // Diagonal arriba
-  } else {
-    targetAim = 0; // Horizontal al frente
-  }
+  if(pressed('ArrowUp', 'KeyW', 'w')) targetAim = -Math.PI / 3;
+  else targetAim = 0;
 
   if(attackPressed && !player.attackLatch && player.attackTime <= 0){
     player.attackTime = 0.001;
@@ -755,11 +896,10 @@ function update(dt){
   if(player.attackTime > 0){
     player.attackTime += dt;
     player.aimAngle = targetAim;
-
     if(player.attackTime >= 0.16 && !player.slingFired){
       player.slingFired = true;
       const angle = player.aimAngle;
-      const stoneSpeed = 820;
+      const stoneSpeed = 850;
       const pvx = Math.cos(angle) * stoneSpeed + player.vx;
       const pvy = Math.sin(angle) * stoneSpeed;
 
@@ -775,12 +915,12 @@ function update(dt){
     }
   }
 
-  // Integración física de Talon
+  // Físicas del jugador
   player.x += player.vx * dt;
-  player.vy += 1350 * dt; // Gravedad
+  player.vy += 1350 * dt;
   player.y += player.vy * dt;
 
-  // Suelo continuo de piedra calibrado
+  // Contacto con el suelo continuo de piedra
   if(player.y + player.h >= GROUND_Y){
     player.y = GROUND_Y - player.h;
     player.vy = 0;
@@ -793,7 +933,6 @@ function update(dt){
     player.doubleJumpTime = 0;
   }
 
-  // Efectos de pasos rítmicos
   if(player.onGround && !player.sliding){
     stepDistance += player.vx * dt;
     if(stepDistance >= 85){
@@ -802,7 +941,6 @@ function update(dt){
     }
   }
 
-  // Actualización de animaciones de Talon
   if(player.onGround){
     player.anim += dt * (player.vx > 360 ? 14 : 9);
     player.frame = Math.floor(player.anim) % 6;
@@ -810,16 +948,13 @@ function update(dt){
   if(player.doubleJumpTime > 0) player.doubleJumpTime += dt;
   if(player.hurtTime > 0) player.hurtTime -= dt;
 
-  // Powerups temporales
   if(player.shieldTime > 0){
     player.shieldTime -= dt;
     if(player.shieldTime <= 0) player.shield = false;
   }
-  if(player.magnetTime > 0){
-    player.magnetTime -= dt;
-  }
+  if(player.magnetTime > 0) player.magnetTime -= dt;
 
-  // ACTUALIZACIÓN DE PROYECTILES DE LA RESORTERA
+  // ACTUALIZACIÓN DE PROYECTILES DE RESORTERA
   for(let sIdx = stones.length - 1; sIdx >= 0; sIdx--){
     const st = stones[sIdx];
     st.life -= dt;
@@ -831,17 +966,16 @@ function update(dt){
 
     st.x += st.vx * dt;
     st.y += st.vy * dt;
-    st.vy += 220 * dt; // Gravedad ligera de la piedra
+    st.vy += 220 * dt;
     st.rot += 12 * dt;
 
-    // Colisión de la piedra con el suelo
     if(st.y >= GROUND_Y - 4){
       spawnSlashSparks(st.x, GROUND_Y - 4, 6, '#b0bec5');
       stones.splice(sIdx, 1);
       continue;
     }
 
-    // Colisión de la piedra con obstáculos rompibles
+    // Impacto con obstáculos rompibles
     let stoneHit = false;
     for(const ob of obstacles){
       if(ob.broken) continue;
@@ -856,7 +990,26 @@ function update(dt){
     }
     if(stoneHit){ stones.splice(sIdx, 1); continue; }
 
-    // Colisión de la piedra con enemigos Cocos
+    // Impacto contra el Jefe de Historia
+    if(currentBoss && currentBoss.state === 'fight'){
+      if(st.x >= currentBoss.x && st.x <= currentBoss.x + currentBoss.w && st.y >= currentBoss.y && st.y <= currentBoss.y + currentBoss.h){
+        currentBoss.hp--;
+        currentBoss.hurtTimer = 0.28;
+        stoneHit = true;
+        screenShake = 0.25;
+        playCoconutCrack();
+        spawnSlashSparks(st.x, st.y, 16, currentBoss.color);
+        spawnFloatingText('-1 HP!', currentBoss.x + currentBoss.w/2, currentBoss.y - 15, '#ff1744', 18);
+
+        if(currentBoss.hp <= 0){
+          defeatStoryBoss();
+        }
+        stones.splice(sIdx, 1);
+        continue;
+      }
+    }
+
+    // Impacto contra enemigos normales
     for(const en of enemies){
       if(en.state === 'hit') continue;
       if(st.x >= en.x && st.x <= en.x + en.w && st.y >= en.y && st.y <= en.y + en.h){
@@ -883,13 +1036,83 @@ function update(dt){
     if(stoneHit){ stones.splice(sIdx, 1); continue; }
   }
 
-  // ACTUALIZACIÓN DE ENEMIGOS COCOS
-  for(const en of enemies){
-    if(en.state === 'hit'){
-      en.deadTimer += dt;
-      continue;
-    }
+  // ACTUALIZACIÓN DEL JEFE DE HISTORIA
+  if(currentBoss){
+    if(currentBoss.state === 'fight'){
+      currentBoss.x += currentBoss.vx * dt;
+      currentBoss.attackTimer += dt;
+      if(currentBoss.hurtTimer > 0) currentBoss.hurtTimer -= dt;
 
+      // Ataques especiales del Jefe (orbes de fuego o proyectiles piratas)
+      if(currentBoss.attackTimer >= 2.2){
+        currentBoss.attackTimer = 0;
+        const bpx = currentBoss.x - 10;
+        const bpy = (Math.random() < 0.5) ? (GROUND_Y - 95) : (GROUND_Y - 35); // Alto o bajo
+        bossProjectiles.push({
+          x: bpx, y: bpy, vx: -380, r: 12,
+          color: currentBoss.color, life: 3.0
+        });
+        playSlingshotShoot();
+      }
+
+      // Evita alejarse demasiado de Talon
+      if(currentBoss.x < player.x + 380) currentBoss.vx = 40;
+      else if(currentBoss.x > player.x + 650) currentBoss.vx = -120;
+
+      // PISOTÓN contra el Jefe (Jump Stomp)
+      const bossStomp = player.vy > 50 && (player.y + player.h <= currentBoss.y + 35) && (player.y + player.h >= currentBoss.y - 15) &&
+                        (player.x + player.w * 0.8 > currentBoss.x) && (player.x + player.w * 0.2 < currentBoss.x + currentBoss.w);
+
+      if(bossStomp){
+        currentBoss.hp--;
+        currentBoss.hurtTimer = 0.28;
+        player.vy = -540; // Gran rebote
+        screenShake = 0.35;
+        playCoconutCrack();
+        spawnSlashSparks(currentBoss.x + currentBoss.w/2, currentBoss.y, 22, currentBoss.color);
+        spawnFloatingText('¡PISOTÓN ÉPICO! -1 HP', currentBoss.x + currentBoss.w/2, currentBoss.y - 25, '#00e676', 19);
+
+        if(currentBoss.hp <= 0){
+          defeatStoryBoss();
+        }
+      }
+
+      // Colisión cuerpo a cuerpo con el Jefe
+      const bHitBox = { x: player.x + 8, y: player.y + 10, w: player.w - 16, h: player.h - 10 };
+      const bBossBox = { x: currentBoss.x, y: currentBoss.y, w: currentBoss.w, h: currentBoss.h };
+      if(bHitBox.x < bBossBox.x + bBossBox.w && bHitBox.x + bHitBox.w > bBossBox.x &&
+         bHitBox.y < bBossBox.y + bBossBox.h && bHitBox.y + bHitBox.h > bBossBox.y){
+        if(player.hurtTime <= 0) handlePlayerDamage();
+      }
+    } else if(currentBoss.state === 'dead'){
+      currentBoss.deadTimer += dt;
+      if(currentBoss.deadTimer > 2.0){
+        currentBoss = null;
+      }
+    }
+  }
+
+  // ACTUALIZACIÓN DE PROYECTILES DEL JEFE
+  for(let pIdx = bossProjectiles.length - 1; pIdx >= 0; pIdx--){
+    const bp = bossProjectiles[pIdx];
+    bp.life -= dt;
+    if(bp.life <= 0){ bossProjectiles.splice(pIdx, 1); continue; }
+    bp.x += bp.vx * dt;
+
+    // Colisión de proyectil del jefe con Talon
+    const bpHit = (player.x + player.w > bp.x - bp.r && player.x < bp.x + bp.r &&
+                   player.y + player.h > bp.y - bp.r && player.y < bp.y + bp.r);
+
+    if(bpHit){
+      bossProjectiles.splice(pIdx, 1);
+      spawnSlashSparks(bp.x, bp.y, 14, bp.color);
+      if(player.hurtTime <= 0) handlePlayerDamage();
+    }
+  }
+
+  // ACTUALIZACIÓN DE ENEMIGOS COCOS NORMALES
+  for(const en of enemies){
+    if(en.state === 'hit'){ en.deadTimer += dt; continue; }
     en.anim += dt * 10;
     en.x += en.vx * dt;
 
@@ -898,18 +1121,18 @@ function update(dt){
       en.vy += 980 * dt;
       if(en.y + en.h >= GROUND_Y){
         en.y = GROUND_Y - en.h;
-        en.vy = -180; // Rebote continuo
+        en.vy = -180;
       }
     }
 
-    // Comprobación de PISOTÓN (Jump Stomp de Talon sobre la cabeza del coco)
+    // Pisotón normal
     const stompCondition = player.vy > 50 && (player.y + player.h <= en.y + 32) && (player.y + player.h >= en.y - 12) &&
                            (player.x + player.w * 0.8 > en.x) && (player.x + player.w * 0.2 < en.x + en.w);
 
     if(stompCondition){
       en.state = 'hit';
       en.deadTimer = 0.001;
-      player.vy = -530; // Rebote acrobático hacia arriba
+      player.vy = -530;
       player.jumpCount = 1;
       cocosDefeated++;
       comboStreak++;
@@ -920,39 +1143,21 @@ function update(dt){
       continue;
     }
 
-    // Colisión cuerpo a cuerpo de Talon contra el coco
-    const hitBox = {
-      x: player.x + 8,
-      y: player.y + 10,
-      w: player.w - 16,
-      h: player.h - 10
-    };
+    const hitBox = { x: player.x + 8, y: player.y + 10, w: player.w - 16, h: player.h - 10 };
     const enBox = { x: en.x, y: en.y, w: en.w, h: en.h };
-
-    const collides = (hitBox.x < enBox.x + enBox.w && hitBox.x + hitBox.w > enBox.x &&
-                      hitBox.y < enBox.y + enBox.h && hitBox.y + hitBox.h > enBox.y);
-
-    if(collides && player.hurtTime <= 0){
-      handlePlayerDamage();
+    if(hitBox.x < enBox.x + enBox.w && hitBox.x + hitBox.w > enBox.x &&
+       hitBox.y < enBox.y + enBox.h && hitBox.y + hitBox.h > enBox.y){
+      if(player.hurtTime <= 0) handlePlayerDamage();
     }
   }
 
-  // ACTUALIZACIÓN DE OBSTÁCULOS Y COLISIONES
+  // ACTUALIZACIÓN DE OBSTÁCULOS
   for(const ob of obstacles){
     if(ob.broken) continue;
-
-    const hitBox = {
-      x: player.x + 8,
-      y: player.y + 6,
-      w: player.w - 16,
-      h: player.h - 6
-    };
-
-    const collides = (hitBox.x < ob.x + ob.w && hitBox.x + hitBox.w > ob.x &&
-                      hitBox.y < ob.y + ob.h && hitBox.y + hitBox.h > ob.y);
-
-    if(collides && player.hurtTime <= 0){
-      handlePlayerDamage();
+    const hitBox = { x: player.x + 8, y: player.y + 6, w: player.w - 16, h: player.h - 6 };
+    if(hitBox.x < ob.x + ob.w && hitBox.x + hitBox.w > ob.x &&
+       hitBox.y < ob.y + ob.h && hitBox.y + hitBox.h > ob.y){
+      if(player.hurtTime <= 0) handlePlayerDamage();
     }
   }
 
@@ -961,7 +1166,6 @@ function update(dt){
     if(c.collected) continue;
     c.rot += dt * 5;
 
-    // Efecto de Imán de Monedas
     if(player.magnetTime > 0){
       const dx = (player.x + player.w/2) - c.x;
       const dy = (player.y + player.h/2) - c.y;
@@ -981,7 +1185,7 @@ function update(dt){
     }
   }
 
-  // ACTUALIZACIÓN DE RELIQUIAS DE PODER
+  // ACTUALIZACIÓN DE RELIQUIAS
   for(const r of relics){
     if(r.collected) continue;
     const distPlayer = Math.hypot((player.x + player.w/2) - r.x, (player.y + player.h/2) - r.y);
@@ -991,14 +1195,9 @@ function update(dt){
       spawnSlashSparks(r.x, r.y, 25, r.color);
       spawnFloatingText(r.text, r.x, r.y - 25, r.color, 19);
 
-      if(r.type === 'shield'){
-        player.shield = true;
-        player.shieldTime = 12.0;
-      } else if(r.type === 'magnet'){
-        player.magnetTime = 10.0;
-      } else if(r.type === 'gem'){
-        coinsCollected += 25;
-      }
+      if(r.type === 'shield'){ player.shield = true; player.shieldTime = 12.0; }
+      else if(r.type === 'magnet'){ player.magnetTime = 10.0; }
+      else if(r.type === 'gem'){ coinsCollected += 25; }
     }
   }
 
@@ -1019,8 +1218,58 @@ function update(dt){
     ft.y += ft.vy * dt;
   }
 
-  // Generación procedural continúa
-  updateProceduralSpawning();
+  // Spawner procedural infinito
+  const cam = cameraX();
+  while(nextSpawnX < cam + 1900){
+    spawnChunkAhead(nextSpawnX);
+    nextSpawnX += 360 + Math.random() * 220;
+  }
+
+  // Limpieza de memoria
+  const cullX = cam - 320;
+  for(let i = obstacles.length - 1; i >= 0; i--){ if(obstacles[i].x < cullX) obstacles.splice(i, 1); }
+  for(let i = enemies.length - 1; i >= 0; i--){ if(enemies[i].x < cullX) enemies.splice(i, 1); }
+  for(let i = coins.length - 1; i >= 0; i--){ if(coins[i].x < cullX) coins.splice(i, 1); }
+  for(let i = relics.length - 1; i >= 0; i--){ if(relics[i].x < cullX) relics.splice(i, 1); }
+  for(let i = stones.length - 1; i >= 0; i--){ if(stones[i].x < cullX || stones[i].x > cam + 2000) stones.splice(i, 1); }
+  for(let i = bossProjectiles.length - 1; i >= 0; i--){ if(bossProjectiles[i].x < cullX) bossProjectiles.splice(i, 1); }
+}
+
+// DERROTA DEL JEFE DE HISTORIA Y OBTENCIÓN DEL FRAGMENTO DEL TÓTEM
+function defeatStoryBoss(){
+  if(!currentBoss) return;
+  currentBoss.state = 'dead';
+  currentBoss.deadTimer = 0.001;
+  screenShake = 0.65;
+  playVictoryFanfare();
+
+  // Explosión cinematográfica
+  spawnCoconutShatter(currentBoss.x + currentBoss.w/2, currentBoss.y + currentBoss.h/2);
+  spawnSlashSparks(currentBoss.x + currentBoss.w/2, currentBoss.y + currentBoss.h/2, 40, '#ffd700');
+  spawnSlashSparks(currentBoss.x + currentBoss.w/2, currentBoss.y + currentBoss.h/2, 30, currentBoss.color);
+
+  // Otorgar Fragmento del Tótem
+  const frag = storyFragments[currentBoss.fragmentId];
+  if(frag){
+    frag.collected = true;
+    // Guardar progreso en localStorage
+    const collectedIds = storyFragments.filter(f => f.collected).map(f => f.id);
+    localStorage.setItem('talon_story_fragments', JSON.stringify(collectedIds));
+
+    spawnFloatingText(`✨ ¡${frag.name.toUpperCase()} RECUPERADO! ✨`, player.x + 200, GROUND_Y - 160, frag.color, 24);
+    coinsCollected += 100;
+    cocosDefeated += 5;
+  }
+
+  // Comprobar si los 4 fragmentos fueron reunidos -> ¡VICTORIA DE LA HISTORIA!
+  const allCollected = storyFragments.every(f => f.collected);
+  if(allCollected){
+    setTimeout(() => {
+      isStoryVictory = true;
+      storyVictoryTimer = 0.001;
+      playVictoryFanfare();
+    }, 1200);
+  }
 }
 
 function handlePlayerDamage(){
@@ -1037,7 +1286,7 @@ function handlePlayerDamage(){
 
   player.hearts--;
   player.hurtTime = 1.5;
-  screenShake = 0.32;
+  screenShake = 0.35;
   playHollowThud();
   spawnSlashSparks(player.x + player.w/2, player.y + player.h/2, 16, '#ff1744');
 
@@ -1049,48 +1298,93 @@ function handlePlayerDamage(){
 }
 
 // ============================================================================
-// SISTEMA DE RENDERIZADO VISUAL
+// RENDERIZADO VISUAL DEL MUNDO EXTENDIDO Y BIOMAS
 // ============================================================================
-function drawWorld(image){
+function drawWorld(){
   const s = scale();
   const cam = cameraX();
   const relCam = ((cam % BG_WIDTH) + BG_WIDTH) % BG_WIDTH;
+  const distM = gameDistance;
 
-  // Fondo continuo infinito: se dibujan dos instancias empalmadas perfectamente
-  ctx.drawImage(image, -relCam * s, 0, BG_WIDTH * s, VIEW_BASE.h * s);
-  ctx.drawImage(image, (BG_WIDTH - relCam) * s, 0, BG_WIDTH * s, VIEW_BASE.h * s);
+  // Determinar bioma activo y bioma previo/siguiente para transición suave
+  let activeBiomeIdx = 0;
+  for(let i = BIOMES.length - 1; i >= 0; i--){
+    if(distM >= BIOMES[i].startMeters){
+      activeBiomeIdx = i;
+      break;
+    }
+  }
+
+  const curB = BIOMES[activeBiomeIdx];
+  const nextB = BIOMES[Math.min(BIOMES.length - 1, activeBiomeIdx + 1)];
+
+  // Cálculo de mezcla de transición (fade de 60 metros antes de llegar al cambio)
+  let blendAlpha = 0;
+  if(activeBiomeIdx < BIOMES.length - 1){
+    const transitionStart = nextB.startMeters - 50;
+    if(distM >= transitionStart){
+      blendAlpha = Math.min(1, Math.max(0, (distM - transitionStart) / 50));
+    }
+  }
+
+  // 1. Dibujar Bioma Base
+  ctx.save();
+  ctx.drawImage(curB.bg, -relCam * s, 0, BG_WIDTH * s, VIEW_BASE.h * s);
+  ctx.drawImage(curB.bg, (BG_WIDTH - relCam) * s, 0, BG_WIDTH * s, VIEW_BASE.h * s);
+
+  // 2. Transición suave al siguiente Bioma si está en la zona de cambio
+  if(blendAlpha > 0 && nextB){
+    ctx.globalAlpha = blendAlpha;
+    ctx.drawImage(nextB.bg, -relCam * s, 0, BG_WIDTH * s, VIEW_BASE.h * s);
+    ctx.drawImage(nextB.bg, (BG_WIDTH - relCam) * s, 0, BG_WIDTH * s, VIEW_BASE.h * s);
+  }
+  ctx.restore();
 }
 
 function drawAtmosphere(now){
   const s = scale(), cam = cameraX(), t = now * 0.001;
+  const curBiome = getCurrentBiome(gameDistance);
   ctx.save();
   ctx.scale(s, s);
 
-  // Rayos de sol dinámicos
-  for(let r = 0; r < 4; r++){
-    const rx = ((r * 600 - cam * 0.2) % (innerWidth / s + 400)) - 100;
-    const rayGrad = ctx.createLinearGradient(rx, 0, rx + 140, 600);
-    const alpha = 0.05 + 0.03 * Math.sin(t * 1.5 + r);
-    rayGrad.addColorStop(0, `rgba(255, 245, 180, ${alpha * 1.6})`);
-    rayGrad.addColorStop(0.5, `rgba(255, 230, 150, ${alpha})`);
-    rayGrad.addColorStop(1, 'rgba(255, 220, 140, 0)');
-
-    ctx.fillStyle = rayGrad;
-    ctx.beginPath();
-    ctx.moveTo(rx - 20, 0); ctx.lineTo(rx + 40, 0); ctx.lineTo(rx + 240, 650); ctx.lineTo(rx + 160, 650);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  // Motes dorados de polvo solar en el aire
-  for(let m = 0; m < 22; m++){
-    const mx = (((m * 97 + t * 25) - cam * 0.5) % (innerWidth / s + 200)) - 50;
-    const my = 120 + (m * 31) % 400 + Math.sin(t * 2 + m) * 12;
-    const alpha = 0.3 + 0.25 * Math.sin(t * 3 + m);
-    ctx.fillStyle = `rgba(255, 240, 170, ${alpha})`;
-    ctx.beginPath();
-    ctx.arc(mx, my, 1.8, 0, Math.PI * 2);
-    ctx.fill();
+  if(curBiome.id === 0){
+    // Selva Esmeralda: Rayos de sol y motes dorados
+    for(let r = 0; r < 4; r++){
+      const rx = ((r * 600 - cam * 0.2) % (innerWidth / s + 400)) - 100;
+      const rayGrad = ctx.createLinearGradient(rx, 0, rx + 140, 600);
+      const alpha = 0.05 + 0.03 * Math.sin(t * 1.5 + r);
+      rayGrad.addColorStop(0, `rgba(255, 245, 180, ${alpha * 1.6})`);
+      rayGrad.addColorStop(0.5, `rgba(255, 230, 150, ${alpha})`);
+      rayGrad.addColorStop(1, 'rgba(255, 220, 140, 0)');
+      ctx.fillStyle = rayGrad;
+      ctx.beginPath();
+      ctx.moveTo(rx - 20, 0); ctx.lineTo(rx + 40, 0); ctx.lineTo(rx + 240, 650); ctx.lineTo(rx + 160, 650);
+      ctx.closePath(); ctx.fill();
+    }
+  } else if(curBiome.id === 1){
+    // Templo del Jaguar (Atardecer): Chispas de fuego y calidez dorada
+    for(let m = 0; m < 25; m++){
+      const mx = (((m * 85 + t * 45) - cam * 0.4) % (innerWidth / s + 200)) - 50;
+      const my = 150 + (m * 29) % 380 - (t * 20) % 50;
+      ctx.fillStyle = `rgba(255, 179, 0, ${0.4 + 0.3 * Math.sin(t * 4 + m)})`;
+      ctx.beginPath(); ctx.arc(mx, my, 2.2, 0, Math.PI * 2); ctx.fill();
+    }
+  } else if(curBiome.id === 2){
+    // Cenote Sagrado: Esporas bioluminiscentes turquesas
+    for(let c = 0; c < 30; c++){
+      const cx = (((c * 73 + t * 20) - cam * 0.3) % (innerWidth / s + 200)) - 50;
+      const cy = 100 + (c * 27) % 440 + Math.sin(t * 2 + c) * 14;
+      ctx.fillStyle = `rgba(0, 229, 255, ${0.35 + 0.3 * Math.sin(t * 3 + c)})`;
+      ctx.beginPath(); ctx.arc(cx, cy, 2.0, 0, Math.PI * 2); ctx.fill();
+    }
+  } else if(curBiome.id === 3){
+    // Fortaleza Volcánica: Cenizas incandescentes y humo
+    for(let v = 0; v < 35; v++){
+      const vx = (((v * 64 - t * 40) - cam * 0.5) % (innerWidth / s + 200)) - 50;
+      const vy = 120 + (v * 33) % 420 - (t * 35) % 60;
+      ctx.fillStyle = (v % 2 === 0) ? `rgba(255, 87, 34, ${0.5 + 0.3 * Math.sin(t * 5 + v)})` : 'rgba(255, 23, 68, 0.6)';
+      ctx.beginPath(); ctx.arc(vx, vy, 2.5, 0, Math.PI * 2); ctx.fill();
+    }
   }
   ctx.restore();
 }
@@ -1100,13 +1394,13 @@ function render(){
 
   let shakeX = 0, shakeY = 0;
   if(screenShake > 0){
-    shakeX = (Math.random() - 0.5) * 10 * (screenShake / 0.32);
-    shakeY = (Math.random() - 0.5) * 8 * (screenShake / 0.32);
+    shakeX = (Math.random() - 0.5) * 12 * (screenShake / 0.35);
+    shakeY = (Math.random() - 0.5) * 10 * (screenShake / 0.35);
   }
   ctx.save();
   ctx.translate(shakeX, shakeY);
 
-  drawWorld(bg);
+  drawWorld();
   drawAtmosphere(performance.now());
 
   const s = scale(), cam = cameraX();
@@ -1115,105 +1409,62 @@ function render(){
   for(const ob of obstacles){
     if(ob.broken) continue;
     const ox = (ob.x - cam) * s, oy = ob.y * s, ow = ob.w * s, oh = ob.h * s;
+    const biomeColor = BIOMES[ob.biomeId]?.color || '#ffd700';
 
     if(ob.type === 'low_stump'){
-      // Tótem de piedra ancestral tallada
       ctx.save();
       ctx.fillStyle = '#4e342e';
-      ctx.strokeStyle = '#8d6e63';
+      ctx.strokeStyle = biomeColor;
       ctx.lineWidth = 2.5 * s;
       ctx.beginPath();
       if(ctx.roundRect) ctx.roundRect(ox, oy, ow, oh, 6 * s);
       else ctx.rect(ox, oy, ow, oh);
       ctx.fill(); ctx.stroke();
 
-      // Detalles tallados de tiki / grietas
-      ctx.strokeStyle = '#271711';
-      ctx.lineWidth = 2 * s;
-      ctx.beginPath();
-      ctx.moveTo(ox + ow * 0.25, oy + oh * 0.3); ctx.lineTo(ox + ow * 0.75, oy + oh * 0.3);
-      ctx.moveTo(ox + ow * 0.3, oy + oh * 0.65); ctx.lineTo(ox + ow * 0.7, oy + oh * 0.65);
-      ctx.stroke();
-
-      // Ojos brillantes amarillos
-      ctx.fillStyle = '#ffd54f';
+      // Ojos tiki luminosos
+      ctx.fillStyle = biomeColor;
       ctx.beginPath();
       ctx.arc(ox + ow * 0.35, oy + oh * 0.45, 3.5 * s, 0, Math.PI * 2);
       ctx.arc(ox + ow * 0.65, oy + oh * 0.45, 3.5 * s, 0, Math.PI * 2);
       ctx.fill();
-
-      // Hierba sobre el tocón
-      ctx.fillStyle = '#43a047';
-      ctx.fillRect(ox + 2 * s, oy - 3 * s, ow - 4 * s, 4 * s);
       ctx.restore();
     } else if(ob.type === 'high_barrier'){
-      // Tronco de bambú y lianas colgantes elevadas (para deslizarse por debajo)
       ctx.save();
-      // Postes laterales de soporte
       ctx.fillStyle = '#3e2723';
       ctx.fillRect(ox + 4 * s, oy, 8 * s, (GROUND_Y - ob.y) * s);
       ctx.fillRect(ox + ow - 12 * s, oy, 8 * s, (GROUND_Y - ob.y) * s);
 
-      // Travesaño superior de bambú
       const gradBamboo = ctx.createLinearGradient(ox, oy, ox, oy + oh);
-      gradBamboo.addColorStop(0, '#8bc34a');
-      gradBamboo.addColorStop(0.5, '#558b2f');
-      gradBamboo.addColorStop(1, '#33691e');
+      gradBamboo.addColorStop(0, '#558b2f');
+      gradBamboo.addColorStop(1, '#2e7d32');
       ctx.fillStyle = gradBamboo;
-      ctx.strokeStyle = '#1b5e20';
+      ctx.strokeStyle = biomeColor;
       ctx.lineWidth = 2 * s;
       ctx.beginPath();
       if(ctx.roundRect) ctx.roundRect(ox, oy, ow, oh, 8 * s);
       else ctx.rect(ox, oy, ow, oh);
       ctx.fill(); ctx.stroke();
 
-      // Cartel indicativo de peligro / agacharse
       ctx.fillStyle = '#ffeb3b';
       ctx.font = `bold ${Math.round(11 * s)}px system-ui`;
       ctx.textAlign = 'center';
       ctx.fillText('⌄ DESLIZAR ⌄', ox + ow/2, oy + oh * 0.65);
-
-      // Lianas colgando hacia abajo
-      ctx.strokeStyle = '#2e7d32';
-      ctx.lineWidth = 2.5 * s;
-      ctx.beginPath();
-      ctx.moveTo(ox + 16 * s, oy + oh); ctx.lineTo(ox + 14 * s, oy + oh + 16 * s);
-      ctx.moveTo(ox + ow - 20 * s, oy + oh); ctx.lineTo(ox + ow - 18 * s, oy + oh + 22 * s);
-      ctx.stroke();
       ctx.restore();
     }
   }
 
-  // 2. RENDERIZADO DE MONEDAS DORADAS GIRATORIAS
+  // 2. RENDERIZADO DE MONEDAS
   for(const c of coins){
     if(c.collected) continue;
     const cx = (c.x - cam) * s, cy = c.y * s;
     const rotScale = Math.cos(c.rot);
-
     ctx.save();
     ctx.translate(cx, cy);
     ctx.scale(rotScale, 1);
-
-    // Resplandor
-    const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, 16 * s);
-    glow.addColorStop(0, 'rgba(255, 215, 0, 0.45)');
-    glow.addColorStop(1, 'rgba(255, 215, 0, 0)');
-    ctx.fillStyle = glow;
-    ctx.beginPath();
-    ctx.arc(0, 0, 16 * s, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Moneda de oro maya
     ctx.fillStyle = '#ffd700';
     ctx.strokeStyle = '#ff8f00';
     ctx.lineWidth = 2 * s;
-    ctx.beginPath();
-    ctx.arc(0, 0, 10 * s, 0, Math.PI * 2);
-    ctx.fill(); ctx.stroke();
-
-    // Símbolo central
-    ctx.fillStyle = '#ff8f00';
-    ctx.fillRect(-2 * s, -5 * s, 4 * s, 10 * s);
+    ctx.beginPath(); ctx.arc(0, 0, 10 * s, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     ctx.restore();
   }
 
@@ -1223,43 +1474,38 @@ function render(){
     const rx = (r.x - cam) * s;
     const bob = Math.sin(performance.now() * 0.004 + r.id) * 6 * s;
     const ry = r.y * s + bob;
-
     ctx.save();
-    const gradGlow = ctx.createRadialGradient(rx, ry, 2, rx, ry, 24 * s);
-    gradGlow.addColorStop(0, r.color);
-    gradGlow.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = gradGlow;
-    ctx.beginPath();
-    ctx.arc(rx, ry, 24 * s, 0, Math.PI * 2);
-    ctx.fill();
-
     ctx.font = `${Math.round(24 * s)}px system-ui`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(r.icon, rx, ry);
     ctx.restore();
   }
 
-  // 4. RENDERIZADO DE ENEMIGOS COCOS
-  for(const en of enemies){
-    const ex = (en.x + en.w / 2 - cam) * s;
-    const ey = (en.y + en.h) * s;
+  // 4. RENDERIZADO DE PROYECTILES DEL JEFE
+  for(const bp of bossProjectiles){
+    const bpx = (bp.x - cam) * s, bpy = bp.y * s;
+    ctx.save();
+    ctx.fillStyle = bp.color;
+    ctx.beginPath(); ctx.arc(bpx, bpy, bp.r * s, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
 
+  // 5. RENDERIZADO DE ENEMIGOS COCOS
+  for(const en of enemies){
+    const ex = (en.x + en.w / 2 - cam) * s, ey = (en.y + en.h) * s;
     if(en.type === 'coco_concha'){
       if(cocoConchaWalkSheet.complete && cocoConchaWalkSheet.naturalWidth){
         const psc = (en.h / 193) * s;
         ctx.save();
         if(en.state === 'hit'){
-          const wobble = Math.sin(en.deadTimer * 12) * 0.15;
           ctx.translate(ex, ey - 12 * s);
-          ctx.rotate(1.42 + wobble);
+          ctx.rotate(1.42);
           ctx.globalAlpha = Math.max(0, 1 - en.deadTimer / 0.8);
           ctx.scale(psc, psc);
           ctx.drawImage(cocoConchaWalkSheet, 0, 0, 180, 240, -83, -218, 180, 240);
         } else {
           const f = Math.floor(en.anim * 18) % 16;
-          ctx.translate(ex, ey);
-          ctx.scale(-psc, psc); // Mira hacia la izquierda (hacia Talon)
+          ctx.translate(ex, ey); ctx.scale(-psc, psc);
           ctx.drawImage(cocoConchaWalkSheet, f * 180, 0, 180, 240, -83, -218, 180, 240);
         }
         ctx.restore();
@@ -1268,11 +1514,8 @@ function render(){
       if(cocoSheet.complete && cocoSheet.naturalWidth){
         ctx.save();
         ctx.translate(ex, ey - en.h * s / 2);
-        if(en.state === 'hit'){
-          ctx.globalAlpha = Math.max(0, 1 - en.deadTimer / 0.6);
-        } else {
-          ctx.rotate(-en.anim * 8);
-        }
+        if(en.state === 'hit') ctx.globalAlpha = Math.max(0, 1 - en.deadTimer / 0.6);
+        else ctx.rotate(-en.anim * 8);
         const sc = (en.w / 44) * s;
         ctx.scale(sc, sc);
         ctx.drawImage(cocoSheet, 0, 0, 64, 64, -32, -32, 64, 64);
@@ -1281,34 +1524,51 @@ function render(){
     }
   }
 
-  // 5. RENDERIZADO DEL JUGADOR (TALON 3D MASTER)
-  const px = (player.x - cam) * s;
-  const py = player.y * s;
+  // 6. RENDERIZADO DEL JEFE DE HISTORIA
+  if(currentBoss){
+    const bx = (currentBoss.x + currentBoss.w / 2 - cam) * s;
+    const by = (currentBoss.y + currentBoss.h) * s;
+    ctx.save();
+    ctx.translate(bx, by);
 
-  let animKey = 'run';
-  let activeSheet = runSheet;
-  let frame = player.frame;
+    // Si recibió daño, parpadea en blanco
+    if(currentBoss.hurtTimer > 0){
+      ctx.filter = 'brightness(2.2)';
+    }
+
+    // Dibujar figura colosal del Jefe
+    const bossScale = (currentBoss.h / 140) * s;
+    ctx.scale(-bossScale, bossScale); // Mirando hacia Talon
+
+    if(cocoPiratasSheet.complete && cocoPiratasSheet.naturalWidth){
+      const row = Math.min(3, currentBoss.fragmentId);
+      const col = Math.floor(performance.now() * 0.008) % 4;
+      ctx.drawImage(cocoPiratasSheet, col * 140, row * 160, 140, 160, -70, -155, 140, 160);
+    }
+    ctx.restore();
+
+    // Corona / Corona sagrada sobre el Jefe
+    ctx.save();
+    ctx.font = `${Math.round(22 * s)}px system-ui`;
+    ctx.textAlign = 'center';
+    ctx.fillText('👑', bx, by - currentBoss.h * s - 12 * s);
+    ctx.restore();
+  }
+
+  // 7. RENDERIZADO DEL JUGADOR (TALON 3D)
+  const px = (player.x - cam) * s, py = player.y * s;
+  let animKey = 'run', activeSheet = runSheet, frame = player.frame;
 
   if(player.attackTime > 0){
-    animKey = 'slingshot';
-    activeSheet = slingSheet;
-    const nFrames = FRAMES.slingshot.list.length;
-    frame = Math.min(nFrames - 1, Math.floor((player.attackTime / 0.34) * nFrames));
+    animKey = 'slingshot'; activeSheet = slingSheet;
+    frame = Math.min(FRAMES.slingshot.list.length - 1, Math.floor((player.attackTime / 0.34) * FRAMES.slingshot.list.length));
   } else if(!player.onGround){
-    animKey = 'jump';
-    activeSheet = jumpSheet;
-    frame = player.vy < -200 ? 1
-          : player.vy < -50 ? 1
-          : player.vy < 120 ? 2
-          : player.vy < 300 ? 3
-          : 4;
+    animKey = 'jump'; activeSheet = jumpSheet;
+    frame = player.vy < -200 ? 1 : player.vy < 120 ? 2 : 3;
   } else if(player.sliding){
-    animKey = 'crouch';
-    activeSheet = crouchSheet;
-    frame = 4; // Pose de deslizamiento pegado al suelo
+    animKey = 'crouch'; activeSheet = crouchSheet; frame = 4;
   } else {
-    animKey = 'run';
-    activeSheet = runSheet;
+    animKey = 'run'; activeSheet = runSheet;
   }
 
   if(activeSheet.complete && activeSheet.width){
@@ -1318,117 +1578,80 @@ function render(){
     const fh = activeSheet.height;
 
     ctx.save();
-    // Parpadeo de invulnerabilidad
     if(player.hurtTime > 0 && Math.floor(player.hurtTime * 24) % 2 === 0){
       ctx.globalAlpha = 0.35;
     }
-
-    // Escudo Tiki visual
     if(player.shield){
       ctx.save();
-      const shieldGlow = ctx.createRadialGradient(px + player.w*s/2, py + player.h*s/2, 10, px + player.w*s/2, py + player.h*s/2, 45 * s);
-      shieldGlow.addColorStop(0, 'rgba(0, 229, 255, 0.4)');
-      shieldGlow.addColorStop(1, 'rgba(0, 229, 255, 0)');
-      ctx.fillStyle = shieldGlow;
-      ctx.beginPath();
-      ctx.arc(px + player.w*s/2, py + player.h*s/2, 45 * s, 0, Math.PI * 2);
-      ctx.fill();
+      const sGlow = ctx.createRadialGradient(px + player.w*s/2, py + player.h*s/2, 10, px + player.w*s/2, py + player.h*s/2, 45 * s);
+      sGlow.addColorStop(0, 'rgba(0, 229, 255, 0.45)');
+      sGlow.addColorStop(1, 'rgba(0, 229, 255, 0)');
+      ctx.fillStyle = sGlow;
+      ctx.beginPath(); ctx.arc(px + player.w*s/2, py + player.h*s/2, 45 * s, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     }
 
     ctx.translate(px + player.w * s / 2, py + player.h * s);
     ctx.scale(player.face * s * sc, s * sc);
-    if(f){
-      ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
-    }
+    if(f) ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
     ctx.restore();
   }
 
-  // 6. RENDERIZADO DE PROYECTILES DE RESORTERA
+  // 8. PROYECTILES DE RESORTERA
   for(const st of stones){
     const sx = (st.x - cam) * s, sy = st.y * s;
-    for(let t = 0; t < st.trail.length; t++){
-      const pt = st.trail[t];
-      const tx = (pt.x - cam) * s, ty = pt.y * s;
-      const prog = (t + 1) / st.trail.length;
-      ctx.save();
-      ctx.fillStyle = `rgba(176, 190, 197, ${prog * 0.45})`;
-      ctx.beginPath();
-      ctx.arc(tx, ty, st.r * s * prog * 0.7, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-
     ctx.save();
-    ctx.translate(sx, sy);
-    ctx.rotate(st.rot);
-    const grad = ctx.createRadialGradient(-st.r * s * 0.35, -st.r * s * 0.35, 1, 0, 0, st.r * s);
-    grad.addColorStop(0, '#eceff1');
-    grad.addColorStop(0.45, '#90a4ae');
-    grad.addColorStop(1, '#37474f');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(0, 0, st.r * s, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#263238';
-    ctx.lineWidth = 1.2 * s;
-    ctx.stroke();
+    ctx.fillStyle = '#eceff1';
+    ctx.beginPath(); ctx.arc(sx, sy, st.r * s, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
 
-  // 7. RENDERIZADO DE PARTÍCULAS
+  // 9. PARTÍCULAS Y TEXTOS FLOTANTES
   for(const p of particles){
     const alpha = Math.max(0, p.life / p.maxLife);
     ctx.save();
-    ctx.fillStyle = p.color;
-    ctx.globalAlpha = alpha;
-    const sx = (p.x - cam) * s, sy = p.y * s;
-    ctx.fillRect(sx - (p.size * s) / 2, sy - (p.size * s) / 2, p.size * s, p.size * s);
+    ctx.fillStyle = p.color; ctx.globalAlpha = alpha;
+    ctx.fillRect((p.x - cam) * s - (p.size * s)/2, p.y * s - (p.size * s)/2, p.size * s, p.size * s);
     ctx.restore();
   }
 
-  // 8. RENDERIZADO DE TEXTOS FLOTANTES ARCADE
   for(const ft of floatingTexts){
     const alpha = Math.max(0, ft.life / ft.maxLife);
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = ft.color;
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 3;
+    ctx.fillStyle = ft.color; ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
     ctx.font = `bold ${Math.round(ft.fontSize * s)}px system-ui`;
     ctx.textAlign = 'center';
-    const tx = (ft.x - cam) * s, ty = ft.y * s;
-    ctx.strokeText(ft.text, tx, ty);
-    ctx.fillText(ft.text, tx, ty);
+    ctx.strokeText(ft.text, (ft.x - cam) * s, ft.y * s);
+    ctx.fillText(ft.text, (ft.x - cam) * s, ft.y * s);
     ctx.restore();
   }
 
-  // 9. HUD ARCADE EN PANTALLA (CORREDOR INFINITO)
-  // Panel Superior Izquierdo: Vidas y Distancia
-  const hudTopX = 18, hudTopY = 22;
+  // ==========================================================================
+  // 10. HUD DE HISTORIA Y ESTADO EN PANTALLA
+  // ==========================================================================
+  const curBiomeInfo = getCurrentBiome(gameDistance);
+  const hudTopX = 18, hudTopY = 20;
+
   ctx.save();
-  // Vidas (Corazones)
+  // Vidas
   let heartStr = '';
-  for(let h = 0; h < player.maxHearts; h++){
-    heartStr += (h < player.hearts) ? '❤️ ' : '🖤 ';
-  }
+  for(let h = 0; h < player.maxHearts; h++) heartStr += (h < player.hearts) ? '❤️ ' : '🖤 ';
   ctx.font = `bold ${Math.round(20 * s)}px system-ui`;
   ctx.fillText(heartStr, hudTopX, hudTopY + 16 * s);
 
-  // Distancia actual y Récord
+  // Distancia y Zona Activa
   ctx.font = `bold ${Math.round(18 * s)}px system-ui`;
-  ctx.fillStyle = '#ffffff';
-  ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 3.5;
-  ctx.strokeText(`🏃 ${gameDistance} m`, hudTopX, hudTopY + 44 * s);
-  ctx.fillText(`🏃 ${gameDistance} m`, hudTopX, hudTopY + 44 * s);
+  ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#000000'; ctx.lineWidth = 3.5;
+  ctx.strokeText(`🏃 ${gameDistance} m  ·  ${curBiomeInfo.name}`, hudTopX, hudTopY + 44 * s);
+  ctx.fillText(`🏃 ${gameDistance} m  ·  ${curBiomeInfo.name}`, hudTopX, hudTopY + 44 * s);
 
   ctx.font = `bold ${Math.round(13 * s)}px system-ui`;
   ctx.fillStyle = '#ffd700';
   ctx.strokeText(`🏆 Récord: ${highRecord} m`, hudTopX, hudTopY + 65 * s);
   ctx.fillText(`🏆 Récord: ${highRecord} m`, hudTopX, hudTopY + 65 * s);
 
-  // Panel Superior Derecho: Monedas y Cocos K.O.
+  // MONEDAS Y COCOS (DERECHA)
   const rightHUDX = innerWidth - 190 * s;
   ctx.font = `bold ${Math.round(16 * s)}px system-ui`;
   ctx.fillStyle = '#ffd700';
@@ -1439,29 +1662,120 @@ function render(){
   ctx.strokeText(`💥 Cocos K.O.: ${cocosDefeated}`, rightHUDX, hudTopY + 44 * s);
   ctx.fillText(`💥 Cocos K.O.: ${cocosDefeated}`, rightHUDX, hudTopY + 44 * s);
 
-  // Notificador de Combo Activo
-  if(comboStreak > 1){
-    ctx.font = `bold ${Math.round(18 * s)}px system-ui`;
-    ctx.fillStyle = '#00e5ff';
-    ctx.textAlign = 'center';
-    ctx.strokeText(`🔥 COMBO x${comboStreak}!`, innerWidth / 2, 42 * s);
-    ctx.fillText(`🔥 COMBO x${comboStreak}!`, innerWidth / 2, 42 * s);
+  // ALTAR DE LOS 4 FRAGMENTOS DEL TÓTEM SOLAR (CENTRO SUPERIOR)
+  const totemHUDW = 280 * s;
+  const totemHUDX = (innerWidth - totemHUDW) / 2;
+  ctx.fillStyle = 'rgba(12, 28, 32, 0.82)';
+  ctx.strokeStyle = '#ffd700';
+  ctx.lineWidth = 1.5 * s;
+  ctx.beginPath();
+  if(ctx.roundRect) ctx.roundRect(totemHUDX, hudTopY, totemHUDW, 36 * s, 10 * s);
+  else ctx.rect(totemHUDX, hudTopY, totemHUDW, 36 * s);
+  ctx.fill(); ctx.stroke();
+
+  ctx.textAlign = 'center';
+  ctx.font = `bold ${Math.round(12 * s)}px system-ui`;
+  ctx.fillStyle = '#ffe082';
+  let fragStr = '☀️ TÓTEM: ';
+  storyFragments.forEach(f => {
+    fragStr += f.collected ? `${f.icon} ` : '🔒 ';
+  });
+  ctx.fillText(fragStr, innerWidth / 2, hudTopY + 23 * s);
+
+  // BARRA DE VIDA DEL JEFE DE HISTORIA
+  if(currentBoss && currentBoss.state === 'fight'){
+    const bBarW = Math.min(380 * s, innerWidth - 40);
+    const bBarX = (innerWidth - bBarW) / 2;
+    const bBarY = hudTopY + 44 * s;
+
+    ctx.fillStyle = 'rgba(20, 10, 10, 0.88)';
+    ctx.strokeStyle = '#ff1744';
+    ctx.lineWidth = 2 * s;
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(bBarX, bBarY, bBarW, 30 * s, 8 * s);
+    else ctx.rect(bBarX, bBarY, bBarW, 30 * s);
+    ctx.fill(); ctx.stroke();
+
+    const hpPercent = Math.max(0, currentBoss.hp / currentBoss.maxHp);
+    ctx.fillStyle = currentBoss.color;
+    ctx.fillRect(bBarX + 4 * s, bBarY + 4 * s, (bBarW - 8 * s) * hpPercent, 22 * s);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${Math.round(12 * s)}px system-ui`;
+    ctx.fillText(`👑 ${currentBoss.name.toUpperCase()} (HP: ${currentBoss.hp}/${currentBoss.maxHp})`, innerWidth / 2, bBarY + 19 * s);
+  }
+
+  // CARTEL MONUMENTAL DE ENTRADA A NUEVO BIOMA
+  if(zoneBannerTimer > 0){
+    const bAlpha = Math.min(1, zoneBannerTimer / 0.5);
+    ctx.globalAlpha = bAlpha;
+    ctx.fillStyle = 'rgba(10, 24, 28, 0.9)';
+    ctx.strokeStyle = curBiomeInfo.color;
+    ctx.lineWidth = 3 * s;
+    const zBoxW = Math.min(520 * s, innerWidth - 30);
+    const zBoxX = (innerWidth - zBoxW) / 2;
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(zBoxX, 90 * s, zBoxW, 55 * s, 14 * s);
+    else ctx.rect(zBoxX, 90 * s, zBoxW, 55 * s);
+    ctx.fill(); ctx.stroke();
+
+    ctx.fillStyle = curBiomeInfo.color;
+    ctx.font = `bold ${Math.round(19 * s)}px system-ui`;
+    ctx.fillText(zoneBannerText, innerWidth / 2, 125 * s);
+    ctx.globalAlpha = 1.0;
   }
   ctx.restore();
 
-  // 10. OVERLAY DE GAME OVER (ARCADE STYLE)
-  if(isGameOver){
+  // OVERLAY DE GRAN VICTORIA DE LA HISTORIA
+  if(isStoryVictory){
     ctx.save();
-    // Oscurecimiento de pantalla
-    ctx.fillStyle = 'rgba(10, 20, 28, 0.85)';
+    ctx.fillStyle = 'rgba(6, 18, 22, 0.92)';
     ctx.fillRect(0, 0, innerWidth, gameHeight());
 
-    const popW = Math.min(520, innerWidth - 36);
-    const popH = 340;
-    const popX = (innerWidth - popW) / 2;
-    const popY = (gameHeight() - popH) / 2;
+    const popW = Math.min(560, innerWidth - 36), popH = 420;
+    const popX = (innerWidth - popW) / 2, popY = (gameHeight() - popH) / 2;
 
-    // Panel central
+    ctx.fillStyle = '#102e2b';
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(popX, popY, popW, popH, 20);
+    else ctx.rect(popX, popY, popW, popH);
+    ctx.fill(); ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffd700'; ctx.font = 'bold 30px system-ui';
+    ctx.fillText('☀️ ¡EL CORAZÓN DEL SOL RESTAURADO!', innerWidth / 2, popY + 54);
+
+    ctx.fillStyle = '#a5d6a7'; ctx.font = 'bold 16px system-ui';
+    ctx.fillText('Talon derrotó a los 4 Generales Coco y salvó la Isla Tropical', innerWidth / 2, popY + 92);
+
+    // Los 4 Fragmentos Reinstalados
+    ctx.font = '36px system-ui';
+    ctx.fillText('🟢 🟡 🟣 🔴', innerWidth / 2, popY + 150);
+
+    ctx.fillStyle = '#ffffff'; ctx.font = '17px system-ui';
+    ctx.fillText(`Distancia Épica: ${gameDistance} m`, innerWidth / 2, popY + 205);
+    ctx.fillStyle = '#ffd54f';
+    ctx.fillText(`Monedas: 🪙 ${coinsCollected}   ·   Cocos K.O.: 💥 ${cocosDefeated}`, innerWidth / 2, popY + 238);
+
+    ctx.fillStyle = '#80e27e'; ctx.font = 'bold 20px system-ui';
+    ctx.fillText('🏆 RANGO: HÉROE LEGENDARIO DE LA SELVA', innerWidth / 2, popY + 285);
+
+    ctx.fillStyle = '#00e5ff'; ctx.font = 'bold 18px system-ui';
+    ctx.fillText('🔄 PRESIONA ESPACIO O TOCA PARA OTRA EXPEDICIÓN', innerWidth / 2, popY + 348);
+    ctx.restore();
+  }
+
+  // OVERLAY DE GAME OVER
+  if(isGameOver){
+    ctx.save();
+    ctx.fillStyle = 'rgba(10, 20, 28, 0.88)';
+    ctx.fillRect(0, 0, innerWidth, gameHeight());
+
+    const popW = Math.min(520, innerWidth - 36), popH = 340;
+    const popX = (innerWidth - popW) / 2, popY = (gameHeight() - popH) / 2;
+
     ctx.fillStyle = '#1c2833';
     ctx.strokeStyle = isNewRecord ? '#ffd700' : '#ff5722';
     ctx.lineWidth = 3.5;
@@ -1471,38 +1785,23 @@ function render(){
     ctx.fill(); ctx.stroke();
 
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#ff3d00';
-    ctx.font = 'bold 28px system-ui';
+    ctx.fillStyle = '#ff3d00'; ctx.font = 'bold 28px system-ui';
     ctx.fillText('💀 FIN DE LA EXPEDICIÓN', innerWidth / 2, popY + 48);
 
-    if(isNewRecord){
-      ctx.fillStyle = '#ffd700';
-      ctx.font = 'bold 18px system-ui';
-      ctx.fillText('✨ ¡NUEVO RÉCORD DE DISTANCIA! ✨', innerWidth / 2, popY + 84);
-    }
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 18px system-ui';
-    ctx.fillText(`Distancia alcanzada: ${gameDistance} m`, innerWidth / 2, popY + 124);
+    ctx.fillStyle = '#ffffff'; ctx.font = '18px system-ui';
+    ctx.fillText(`Distancia alcanzada: ${gameDistance} m (${curBiomeInfo.name})`, innerWidth / 2, popY + 115);
     ctx.fillStyle = '#ffd700';
-    ctx.fillText(`Mejor Récord: ${highRecord} m`, innerWidth / 2, popY + 158);
+    ctx.fillText(`Mejor Récord: ${highRecord} m`, innerWidth / 2, popY + 150);
 
-    ctx.fillStyle = '#81d4fa';
-    ctx.font = '16px system-ui';
-    ctx.fillText(`🪙 Monedas: ${coinsCollected}   ·   💥 Cocos K.O.: ${cocosDefeated}`, innerWidth / 2, popY + 196);
+    ctx.fillStyle = '#81d4fa'; ctx.font = '16px system-ui';
+    ctx.fillText(`🪙 Monedas: ${coinsCollected}   ·   💥 Cocos K.O.: ${cocosDefeated}`, innerWidth / 2, popY + 190);
 
-    // Botón / Indicación de reintento
-    ctx.fillStyle = '#00e676';
-    ctx.font = 'bold 20px system-ui';
-    ctx.fillText('🔄 PRESIONA ESPACIO O TOCA AQUÍ', innerWidth / 2, popY + 260);
-    ctx.fillStyle = '#b0bec5';
-    ctx.font = '14px system-ui';
-    ctx.fillText('¡Para iniciar una nueva carrera!', innerWidth / 2, popY + 288);
-
+    ctx.fillStyle = '#00e676'; ctx.font = 'bold 20px system-ui';
+    ctx.fillText('🔄 PRESIONA ESPACIO O TOCA PARA REINTENTAR', innerWidth / 2, popY + 260);
     ctx.restore();
   }
 
-  ctx.restore(); // Screen shake restore
+  ctx.restore(); // screenShake restore
 }
 
 function loop(now){
@@ -1515,7 +1814,8 @@ function loop(now){
 
 const loadImg = img => (img.complete && img.naturalWidth !== 0) ? Promise.resolve() : new Promise(r => { img.onload = img.onerror = r; });
 Promise.all([
-  loadImg(bg), loadImg(runSheet), loadImg(idleSheet),
-  loadImg(crouchSheet), loadImg(jumpSheet), loadImg(slingSheet),
-  loadImg(cocoConchaWalkSheet), loadImg(cocoPiratasSheet), loadImg(cocoSheet), loadImg(enemySheet)
+  loadImg(bgJungle), loadImg(bgTemple), loadImg(bgCenote), loadImg(bgVolcano),
+  loadImg(runSheet), loadImg(idleSheet), loadImg(crouchSheet),
+  loadImg(jumpSheet), loadImg(slingSheet), loadImg(cocoConchaWalkSheet),
+  loadImg(cocoPiratasSheet), loadImg(cocoSheet), loadImg(enemySheet)
 ]).then(() => requestAnimationFrame(loop));

@@ -317,16 +317,58 @@
 }
 .btn-modal-go:active{transform:translateY(4px);box-shadow:0 1px 0 #7e2b00}
 
+/* Estilos de la Historia y las 4 Zonas */
+.story-card{
+  width:min(720px,96vw);
+  background:linear-gradient(175deg,#1b3b32 0%,#0f2420 100%);
+}
+.story-prologue{
+  background:rgba(10,28,24,.6);border:1px solid #366d67;
+  padding:14px 18px;border-radius:16px;margin-bottom:16px;
+  line-height:1.55;font-size:13.5px;color:#e8f5e9;
+}
+.story-prologue p{margin:0 0 8px 0}
+.story-prologue p:last-child{margin-bottom:0}
+.story-subtitle{
+  color:#ffd54f;font-size:16px;margin:14px 0 10px 0;letter-spacing:.5px;
+}
+.biomes-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;
+}
+.biome-card{
+  display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:14px;
+  border:1.5px solid rgba(255,255,255,.15);box-sizing:border-box;
+}
+.b-green{background:linear-gradient(135deg,rgba(46,125,50,.35),rgba(27,94,32,.55));border-color:#4caf50}
+.b-amber{background:linear-gradient(135deg,rgba(239,108,0,.35),rgba(191,54,12,.55));border-color:#ff9800}
+.b-blue{background:linear-gradient(135deg,rgba(2,136,209,.35),rgba(1,87,155,.55));border-color:#00e5ff}
+.b-red{background:linear-gradient(135deg,rgba(198,40,40,.35),rgba(136,14,79,.55));border-color:#ff1744}
+.b-icon{font-size:26px;line-height:1}
+.b-info{display:flex;flex-direction:column;gap:3px;font-size:12px;line-height:1.35}
+.b-info strong{color:#fff;font-size:12.5px}
+.b-info span{color:#cfd8dc}
+.fragment-tag{
+  display:inline-block;margin-top:4px;font-size:11px;font-weight:900;
+  color:#ffe082;background:rgba(0,0,0,.45);padding:2px 6px;border-radius:6px;width:fit-content;
+}
+
+/* Colores específicos de los 4 portales */
+.badge-w1 .portal-num{color:#a5d6a7;text-shadow:0 3px 0 #1b5e20,0 6px 12px rgba(0,0,0,.7)}
+.badge-w2 .portal-num{color:#ffe082;text-shadow:0 3px 0 #e65100,0 6px 12px rgba(0,0,0,.7)}
+.badge-w3 .portal-num{color:#80d8ff;text-shadow:0 3px 0 #01579b,0 6px 12px rgba(0,0,0,.7)}
+.badge-w4 .portal-num{color:#ff8a80;text-shadow:0 3px 0 #b71c1c,0 6px 12px rgba(0,0,0,.7)}
+
 /* Adaptabilidad para móviles y pantallas compactas */
 @media(max-width:920px){
   .crash-menu-layout{grid-template-columns:1fr;justify-items:center;text-align:center}
   .crash-left-col{align-items:center}
   .crash-nav-list{align-items:center}
-  .crash-worlds-hub{gap:10px}
-  .world-portal{flex:0 1 150px;padding:12px 8px}
+  .crash-worlds-hub{gap:8px}
+  .world-portal{flex:0 1 120px;padding:10px 6px}
 }
 @media(max-width:620px){
   .crash-worlds-hub{display:none}
+  .biomes-grid{grid-template-columns:1fr;gap:10px}
   .modal-content{grid-template-columns:1fr;gap:12px}
   .modal-card{padding:16px}
 }
