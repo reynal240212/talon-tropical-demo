@@ -16,9 +16,9 @@ const cocoSheet = new Image();
 const cocoPiratasSheet = new Image();
 const slingSheet = new Image();
 bg.src = 'assets/nivel_tropical_extendido_v2.png?v=3';
-sheet.src = 'assets/explorador_caminar_master_v1.webp';
-runSheet.src = 'assets/explorador_correr_master_v1.webp';
-idleSheet.src = 'assets/explorador_idle_master_v1.webp';
+sheet.src = 'assets/explorador_correr_master_v1.webp?v=3';
+runSheet.src = 'assets/explorador_correr_master_v1.webp?v=3';
+idleSheet.src = 'assets/explorador_idle_master_v1.webp?v=3';
 crouchSheet.src = 'assets/explorador_agacharse_master_v1.png';
 jumpSheet.src = 'assets/explorador_salto_master_v1.webp';
 doubleJumpSheet.src = 'assets/explorador_doble_salto_master_v1.png?v=2';
@@ -1028,7 +1028,7 @@ function update(dt){
     }
   }
 
-  if(Math.abs(player.vx)>0 && player.onGround){ player.anim+=dt*(running?14:9); player.frame=Math.floor(player.anim)%8; }
+  if(Math.abs(player.vx)>0 && player.onGround){ player.anim+=dt*(running?13:8); player.frame=Math.floor(player.anim)%6; }
   else if(player.onGround){ player.anim+=dt*5; player.frame=Math.floor(player.anim)%6; }
   else { player.anim=0; player.frame=0; }
   if(player.doubleJumpTime>0)player.doubleJumpTime+=dt;
@@ -1258,11 +1258,10 @@ function drawResortera(ctx, isAiming, progress, isCrouching, aimAngle = 0){
 }
 
 const FRAMES = {
-  idle:   { scale: 124/624, list: [{x:38,w:275,cx:142,fy:680},{x:399,w:277,cx:143,fy:680},{x:761,w:281,cx:145,fy:680},{x:1120,w:275,cx:142,fy:680},{x:1482,w:273,cx:142,fy:680},{x:1846,w:275,cx:140,fy:680}] },
+  idle:   { scale: 124/560, list: [{"x": 70, "w": 223, "cx": 111, "fy": 660}, {"x": 442, "w": 203, "cx": 101, "fy": 660}, {"x": 811, "w": 189, "cx": 94, "fy": 660}, {"x": 1172, "w": 190, "cx": 95, "fy": 660}, {"x": 1531, "w": 197, "cx": 98, "fy": 660}, {"x": 1887, "w": 209, "cx": 104, "fy": 660}] },
   crouch: { scale: 124/380, list: [{x:27,w:187,cx:101,fy:577},{x:264,w:175,cx:92,fy:578},{x:487,w:170,cx:92,fy:577},{x:712,w:177,cx:91,fy:575},{x:943,w:175,cx:90,fy:576},{x:1166,w:176,cx:89,fy:576}] },
-  walk:   { scale: 124/586, list: [{x:0,w:281,cx:135,fy:652},{x:278,w:235,cx:131,fy:652},{x:554,w:233,cx:127,fy:652},{x:825,w:267,cx:127,fy:652},{x:1089,w:287,cx:136,fy:652},{x:1372,w:245,cx:124,fy:652},{x:1640,w:239,cx:126,fy:652},{x:1912,w:260,cx:126,fy:652}] },
-  // Los anchos terminan antes del siguiente fotograma para evitar que se filtre su dibujo.
-  run:    { scale: 124/564, list: [{x:6,w:285,cx:139,fy:642},{x:295,w:232,cx:121,fy:642},{x:531,w:288,cx:154,fy:642},{x:823,w:283,cx:135,fy:642},{x:1110,w:264,cx:112,fy:642},{x:1378,w:234,cx:119,fy:642},{x:1616,w:286,cx:150,fy:642},{x:1906,w:258,cx:128,fy:642}] },
+  walk:   { scale: 124/545, list: [{"x": 51, "w": 261, "cx": 130, "fy": 660}, {"x": 401, "w": 284, "cx": 142, "fy": 660}, {"x": 765, "w": 280, "cx": 140, "fy": 660}, {"x": 1154, "w": 227, "cx": 113, "fy": 660}, {"x": 1510, "w": 238, "cx": 119, "fy": 660}, {"x": 1854, "w": 275, "cx": 137, "fy": 660}] },
+  run:    { scale: 124/545, list: [{"x": 51, "w": 261, "cx": 130, "fy": 660}, {"x": 401, "w": 284, "cx": 142, "fy": 660}, {"x": 765, "w": 280, "cx": 140, "fy": 660}, {"x": 1154, "w": 227, "cx": 113, "fy": 660}, {"x": 1510, "w": 238, "cx": 119, "fy": 660}, {"x": 1854, "w": 275, "cx": 137, "fy": 660}] },
   jump:   { scale: 124/540, list: [{x:30,w:259,cx:130,fy:662},{x:312,w:225,cx:110,fy:662},{x:535,w:275,cx:145,fy:662},{x:826,w:269,cx:127,fy:662},{x:1097,w:259,cx:130,fy:662},{x:1382,w:233,cx:115,fy:662},{x:1646,w:241,cx:124,fy:662},{x:1910,w:231,cx:120,fy:662}] },
   doubleJump: {
     scale: 124 / 459,
