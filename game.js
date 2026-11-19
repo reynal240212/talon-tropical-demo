@@ -852,15 +852,22 @@ function update(dt){
 
   // Mecánica de Deslizamiento (Slide)
   const wantsSlide = downKey && player.onGround;
+  const oldH = player.h;
   if(wantsSlide){
     player.sliding = true;
     player.slideTime += dt;
     player.h = 56; // Hitbox baja
+    if(player.onGround && oldH !== player.h){
+      player.y += (oldH - player.h); // Ancla las botas firmemente al suelo sin saltos
+    }
     spawnSlideDust(player.x + 20, GROUND_Y);
   } else {
     player.sliding = false;
     player.slideTime = 0;
     player.h = MASTER_CHARACTER.h;
+    if(player.onGround && oldH !== player.h){
+      player.y -= (player.h - oldH); // Ancla las botas firmemente al suelo sin saltos
+    }
   }
 
   // Salto y Doble Salto
@@ -1298,15 +1305,16 @@ function handlePlayerDamage(){
 }
 
 // ============================================================================
-// RENDERIZADO VISUAL DEL MUNDO EXTENDIDO Y BIOMAS
+// RENDERIZADO VISUAL DEL MUNDO EXTENDIDO Y BIOMAS (SIN GLITCHES NI SALTOS)
 // ============================================================================
 function drawWorld(){
   const s = scale();
   const cam = cameraX();
-  const relCam = ((cam % BG_WIDTH) + BG_WIDTH) % BG_WIDTH;
+  const tileW = BG_WIDTH * s;
+  const tileH = VIEW_BASE.h * s;
   const distM = gameDistance;
 
-  // Determinar bioma activo y bioma previo/siguiente para transición suave
+  // Determinar bioma activo y bioma siguiente
   let activeBiomeIdx = 0;
   for(let i = BIOMES.length - 1; i >= 0; i--){
     if(distM >= BIOMES[i].startMeters){
@@ -1318,39 +1326,48 @@ function drawWorld(){
   const curB = BIOMES[activeBiomeIdx];
   const nextB = BIOMES[Math.min(BIOMES.length - 1, activeBiomeIdx + 1)];
 
-  // Cálculo de mezcla de transición (fade de 60 metros antes de llegar al cambio)
+  // Cálculo de mezcla de transición suave (fade de 80 metros)
   let blendAlpha = 0;
   if(activeBiomeIdx < BIOMES.length - 1){
-    const transitionStart = nextB.startMeters - 50;
+    const transitionStart = nextB.startMeters - 80;
     if(distM >= transitionStart){
-      blendAlpha = Math.min(1, Math.max(0, (distM - transitionStart) / 50));
+      blendAlpha = Math.min(1, Math.max(0, (distM - transitionStart) / 80));
     }
   }
 
-  // 1. Dibujar Bioma Base
-  ctx.save();
-  ctx.drawImage(curB.bg, -relCam * s, 0, BG_WIDTH * s, VIEW_BASE.h * s);
-  ctx.drawImage(curB.bg, (BG_WIDTH - relCam) * s, 0, BG_WIDTH * s, VIEW_BASE.h * s);
+  // Desplazamiento horizontal continuo
+  const offset = ((cam * s) % tileW + tileW) % tileW;
+  const startX = -offset;
 
-  // 2. Transición suave al siguiente Bioma si está en la zona de cambio
-  if(blendAlpha > 0 && nextB){
-    ctx.globalAlpha = blendAlpha;
-    ctx.drawImage(nextB.bg, -relCam * s, 0, BG_WIDTH * s, VIEW_BASE.h * s);
-    ctx.drawImage(nextB.bg, (BG_WIDTH - relCam) * s, 0, BG_WIDTH * s, VIEW_BASE.h * s);
+  // Dibuja suficientes baldosas con solapamiento de 2px para que NUNCA haya líneas ni saltos
+  const wDraw = Math.ceil(tileW) + 2;
+  const hDraw = Math.ceil(tileH) + 2;
+  const yDraw = 0;
+
+  for(let x = Math.floor(startX); x < innerWidth + tileW; x += Math.floor(tileW)){
+    ctx.drawImage(curB.bg, x, yDraw, wDraw, hDraw);
+    if(blendAlpha > 0 && nextB){
+      ctx.save();
+      ctx.globalAlpha = blendAlpha;
+      ctx.drawImage(nextB.bg, x, yDraw, wDraw, hDraw);
+      ctx.restore();
+    }
   }
-  ctx.restore();
 }
 
 function drawAtmosphere(now){
   const s = scale(), cam = cameraX(), t = now * 0.001;
   const curBiome = getCurrentBiome(gameDistance);
+  const viewW = innerWidth / s;
+  const maxW = viewW + 400;
+
   ctx.save();
   ctx.scale(s, s);
 
   if(curBiome.id === 0){
     // Selva Esmeralda: Rayos de sol y motes dorados
     for(let r = 0; r < 4; r++){
-      const rx = ((r * 600 - cam * 0.2) % (innerWidth / s + 400)) - 100;
+      const rx = ((((r * 600 - cam * 0.25) % maxW) + maxW) % maxW) - 100;
       const rayGrad = ctx.createLinearGradient(rx, 0, rx + 140, 600);
       const alpha = 0.05 + 0.03 * Math.sin(t * 1.5 + r);
       rayGrad.addColorStop(0, `rgba(255, 245, 180, ${alpha * 1.6})`);
@@ -1362,9 +1379,9 @@ function drawAtmosphere(now){
       ctx.closePath(); ctx.fill();
     }
   } else if(curBiome.id === 1){
-    // Templo del Jaguar (Atardecer): Chispas de fuego y calidez dorada
+    // Templo del Jaguar (Atardecer): Chispas de fuego
     for(let m = 0; m < 25; m++){
-      const mx = (((m * 85 + t * 45) - cam * 0.4) % (innerWidth / s + 200)) - 50;
+      const mx = ((((m * 85 + t * 45 - cam * 0.35) % maxW) + maxW) % maxW) - 50;
       const my = 150 + (m * 29) % 380 - (t * 20) % 50;
       ctx.fillStyle = `rgba(255, 179, 0, ${0.4 + 0.3 * Math.sin(t * 4 + m)})`;
       ctx.beginPath(); ctx.arc(mx, my, 2.2, 0, Math.PI * 2); ctx.fill();
@@ -1372,20 +1389,22 @@ function drawAtmosphere(now){
   } else if(curBiome.id === 2){
     // Cenote Sagrado: Esporas bioluminiscentes turquesas
     for(let c = 0; c < 30; c++){
-      const cx = (((c * 73 + t * 20) - cam * 0.3) % (innerWidth / s + 200)) - 50;
+      const cx = ((((c * 73 + t * 20 - cam * 0.3) % maxW) + maxW) % maxW) - 50;
       const cy = 100 + (c * 27) % 440 + Math.sin(t * 2 + c) * 14;
       ctx.fillStyle = `rgba(0, 229, 255, ${0.35 + 0.3 * Math.sin(t * 3 + c)})`;
       ctx.beginPath(); ctx.arc(cx, cy, 2.0, 0, Math.PI * 2); ctx.fill();
     }
   } else if(curBiome.id === 3){
-    // Fortaleza Volcánica: Cenizas incandescentes y humo
+    // Fortaleza Volcánica: Cenizas incandescentes
     for(let v = 0; v < 35; v++){
-      const vx = (((v * 64 - t * 40) - cam * 0.5) % (innerWidth / s + 200)) - 50;
+      const vx = ((((v * 64 - t * 40 - cam * 0.45) % maxW) + maxW) % maxW) - 50;
       const vy = 120 + (v * 33) % 420 - (t * 35) % 60;
       ctx.fillStyle = (v % 2 === 0) ? `rgba(255, 87, 34, ${0.5 + 0.3 * Math.sin(t * 5 + v)})` : 'rgba(255, 23, 68, 0.6)';
       ctx.beginPath(); ctx.arc(vx, vy, 2.5, 0, Math.PI * 2); ctx.fill();
     }
   }
+  ctx.restore();
+}
   ctx.restore();
 }
 
