@@ -19,7 +19,7 @@ bg.src = 'assets/nivel_tropical_extendido_v2.png?v=4';
 sheet.src = 'assets/explorador_correr_master_v1.webp?v=4';
 runSheet.src = 'assets/explorador_correr_master_v1.webp?v=4';
 idleSheet.src = 'assets/explorador_idle_master_v1.webp?v=4';
-crouchSheet.src = 'assets/explorador_agacharse_master_v1.png?v=4';
+crouchSheet.src = 'assets/explorador_agacharse_master_v1.webp?v=14';
 jumpSheet.src = 'assets/explorador_salto_master_v1.webp?v=4';
 doubleJumpSheet.src = 'assets/explorador_doble_salto_master_v1.png?v=4';
 doubleJumpSheet.onerror = () => { doubleJumpSheet.src = 'assets/explorador_salto_master_v1.webp?v=4'; };
@@ -34,7 +34,7 @@ cocoSheet.src = 'assets/coco_salvaje_master_v1.png';
 cocoPiratasSheet.src = 'assets/coco_piratas_master_v1.png';
 const cocoConchaWalkSheet = new Image();
 cocoConchaWalkSheet.src = 'assets/coco_concha_walk_16frames.png';
-slingSheet.src = 'assets/explorador_resortera_master_v2.png';
+slingSheet.src = 'assets/explorador_resortera_master_v2.webp?v=14';
 
 const keyboardKeys = new Set();
 const touchKeys = new Set();
@@ -1376,7 +1376,17 @@ function drawResortera(ctx, isAiming, progress, isCrouching, aimAngle = 0){
 
 const FRAMES = {
   idle:   { scale: 124/560, list: [{"x": 70, "w": 223, "cx": 111, "fy": 660}, {"x": 442, "w": 203, "cx": 101, "fy": 660}, {"x": 811, "w": 189, "cx": 94, "fy": 660}, {"x": 1172, "w": 190, "cx": 95, "fy": 660}, {"x": 1531, "w": 197, "cx": 98, "fy": 660}, {"x": 1887, "w": 209, "cx": 104, "fy": 660}] },
-  crouch: { scale: 124/380, list: [{x:27,w:187,cx:101,fy:577},{x:264,w:175,cx:92,fy:578},{x:487,w:170,cx:92,fy:577},{x:712,w:177,cx:91,fy:575},{x:943,w:175,cx:90,fy:576},{x:1166,w:176,cx:89,fy:576}] },
+  crouch: {
+    scale: 124 / 550,
+    list: [
+      { x: 0,    w: 1000, cx: 500, fy: 660 },
+      { x: 1000, w: 1000, cx: 500, fy: 660 },
+      { x: 2000, w: 1000, cx: 500, fy: 660 },
+      { x: 3000, w: 1000, cx: 500, fy: 660 },
+      { x: 4000, w: 1000, cx: 500, fy: 660 },
+      { x: 5000, w: 1000, cx: 500, fy: 660 }
+    ]
+  },
   walk:   { scale: 124/545, list: [{"x": 51, "w": 261, "cx": 130, "fy": 660}, {"x": 401, "w": 284, "cx": 142, "fy": 660}, {"x": 765, "w": 280, "cx": 140, "fy": 660}, {"x": 1154, "w": 227, "cx": 113, "fy": 660}, {"x": 1510, "w": 238, "cx": 119, "fy": 660}, {"x": 1854, "w": 275, "cx": 137, "fy": 660}] },
   run:    { scale: 124/545, list: [{"x": 51, "w": 261, "cx": 130, "fy": 660}, {"x": 401, "w": 284, "cx": 142, "fy": 660}, {"x": 765, "w": 280, "cx": 140, "fy": 660}, {"x": 1154, "w": 227, "cx": 113, "fy": 660}, {"x": 1510, "w": 238, "cx": 119, "fy": 660}, {"x": 1854, "w": 275, "cx": 137, "fy": 660}] },
   jump:   { scale: 124/540, list: [{x:30,w:259,cx:130,fy:662},{x:312,w:225,cx:110,fy:662},{x:535,w:275,cx:145,fy:662},{x:826,w:269,cx:127,fy:662},{x:1097,w:259,cx:130,fy:662},{x:1382,w:233,cx:115,fy:662},{x:1646,w:241,cx:124,fy:662},{x:1910,w:231,cx:120,fy:662}] },
@@ -1437,16 +1447,14 @@ const FRAMES = {
     ]
   },
   slingshot: {
-    scale: 124 / 295,
+    scale: 124 / 550,
     list: [
-      { x: 0,    w: 240, cx: 110, fy: 310 },
-      { x: 240,  w: 240, cx: 110, fy: 310 },
-      { x: 480,  w: 240, cx: 110, fy: 310 },
-      { x: 720,  w: 240, cx: 110, fy: 310 },
-      { x: 960,  w: 240, cx: 110, fy: 310 },
-      { x: 1200, w: 240, cx: 110, fy: 310 },
-      { x: 1440, w: 240, cx: 110, fy: 310 },
-      { x: 1680, w: 240, cx: 110, fy: 310 }
+      { x: 0,    w: 1000, cx: 500, fy: 660 },
+      { x: 1000, w: 1000, cx: 500, fy: 660 },
+      { x: 2000, w: 1000, cx: 500, fy: 660 },
+      { x: 3000, w: 1000, cx: 500, fy: 660 },
+      { x: 4000, w: 1000, cx: 500, fy: 660 },
+      { x: 5000, w: 1000, cx: 500, fy: 660 }
     ]
   }
 };
@@ -1592,19 +1600,25 @@ function render(){
   else if(player.doubleJumpTime>0 && jumping){ animKey='doubleJump'; activeSheet=doubleJumpSheet; frame=Math.min(7,Math.floor(player.doubleJumpTime/.72*8)); }
   else if(jumping){ animKey='jump'; activeSheet=jumpSheet; frame=player.vy<-300?1:player.vy<-80?2:player.vy<120?3:player.vy<320?5:6; }
   else if(player.landTime>0){ animKey='jump'; activeSheet=jumpSheet; frame=7; }
-  else if(crouching){ animKey='crouch'; activeSheet=crouchSheet; frame=Math.min(4,Math.floor(player.crouchTime*16)); }
-  else if(player.running){ animKey='run'; activeSheet=runSheet; }
-  else if(moving){ animKey='walk'; activeSheet=sheet; }
   else if(player.attackTime>0){
     if(slingSheet.complete && slingSheet.naturalWidth){
       animKey = 'slingshot';
       activeSheet = slingSheet;
+      const nFrames = FRAMES.slingshot?.list?.length || 6;
       const atkProg = Math.min(0.99, player.attackTime / 0.36);
-      frame = Math.min(7, Math.floor(atkProg * 8));
+      frame = Math.min(nFrames - 1, Math.floor(atkProg * nFrames));
     } else {
       animKey = 'walk'; activeSheet = sheet; frame = 2;
     }
   }
+  else if(crouching){
+    animKey = 'crouch';
+    activeSheet = crouchSheet;
+    const cStep = Math.floor(player.crouchTime * 14);
+    frame = Math.min(4, cStep);
+  }
+  else if(player.running){ animKey='run'; activeSheet=runSheet; }
+  else if(moving){ animKey='walk'; activeSheet=sheet; }
 
   if(activeSheet.complete && activeSheet.width){
     const meta=FRAMES[animKey];
