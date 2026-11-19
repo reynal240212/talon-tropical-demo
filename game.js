@@ -19,13 +19,15 @@ bg.src = 'assets/nivel_tropical_extendido_v2.png?v=3';
 sheet.src = 'assets/explorador_correr_master_v1.webp?v=3';
 runSheet.src = 'assets/explorador_correr_master_v1.webp?v=3';
 idleSheet.src = 'assets/explorador_idle_master_v1.webp?v=3';
-crouchSheet.src = 'assets/explorador_agacharse_master_v1.png';
-jumpSheet.src = 'assets/explorador_salto_master_v1.webp';
-doubleJumpSheet.src = 'assets/explorador_doble_salto_master_v1.png?v=2';
-doubleJumpSheet.onerror = () => { doubleJumpSheet.src = 'assets/explorador_salto_master_v1.webp'; };
-sleepSheet.src = 'assets/explorador_dormir_master_v1.png?v=1';
-hangSheet.src = 'assets/explorador_colgado_personaje_v3.png?v=1';
-climbSheet.src = 'assets/explorador_subir_personaje_v2.png?v=1';
+crouchSheet.src = 'assets/explorador_agacharse_master_v1.png?v=3';
+jumpSheet.src = 'assets/explorador_salto_master_v1.webp?v=3';
+doubleJumpSheet.src = 'assets/explorador_doble_salto_master_v1.png?v=3';
+doubleJumpSheet.onerror = () => { doubleJumpSheet.src = 'assets/explorador_salto_master_v1.webp?v=3'; };
+sleepSheet.src = 'assets/explorador_dormir_master_v1.png?v=3';
+hangSheet.src = 'assets/explorador_colgado_personaje_v3.png?v=3';
+climbSheet.src = 'assets/explorador_subir_personaje_v2.png?v=3';
+const palmeraCrownImg = new Image();
+palmeraCrownImg.src = 'assets/palmera_central_crown.png?v=1';
 platformTexture.src = 'assets/plataforma_tropical_textura_v1.png?v=1';
 enemySheet.src = 'assets/enemigo_tiki_master_v2.png';
 cocoSheet.src = 'assets/coco_salvaje_master_v1.png';
@@ -478,36 +480,209 @@ function drawWorld(image){ const s=scale(), cam=cameraX(); ctx.drawImage(image,-
 function drawAtmosphere(now){
   const s=scale(), cam=cameraX(), t=now*.001;
   ctx.save(); ctx.scale(s,s); ctx.translate(-cam,0);
-  // Translucent drifting cloud wisps, kept above the playable platforms.
-  for(let i=0;i<5;i++){
-    const x=((i*397+t*(8+i*2))%(world.w+320))-160;
-    const y=55+(i%3)*45+Math.sin(t*.35+i)*5;
-    ctx.fillStyle='rgba(255,255,255,.10)';
-    ctx.beginPath(); ctx.ellipse(x,y,85,15,0,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(x+35,y-9,52,18,0,0,Math.PI*2); ctx.fill();
+
+  // =========================================================
+  // 1. PALMERAS QUE SE MUEVEN (Tropical Wind Sway)
+  // =========================================================
+  // Gran Palmera Central del Templo (sobre la terraza en x:1055)
+  if(palmeraCrownImg.complete && palmeraCrownImg.naturalWidth){
+    const sway = Math.sin(t * 1.8) * 0.045 + Math.sin(t * 3.4) * 0.015;
+    ctx.save();
+    ctx.translate(1224, 155);
+    ctx.rotate(sway);
+    ctx.drawImage(palmeraCrownImg, -194, -155, 310, 210);
+    ctx.restore();
   }
-  // Moving highlights stay within the visible waterfall columns and river.
-  const falls=[{x:185,y:205,w:100,h:425},{x:470,y:450,w:62,h:240},{x:705,y:570,w:50,h:135}];
-  for(const fall of falls){
-    ctx.save(); ctx.beginPath(); ctx.rect(fall.x,fall.y,fall.w,fall.h); ctx.clip();
-    for(let i=0;i<12;i++){
-      const x=fall.x+8+(i*31)%Math.max(12,fall.w-14);
-      const y=fall.y+((i*83+t*(48+i%3*12))%fall.h);
-      ctx.strokeStyle=`rgba(229,255,255,${.12+(i%3)*.04})`;
-      ctx.lineWidth=2+i%2; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-4,y+30+i%3*8); ctx.stroke();
+
+  // Palmeras secundarias y follaje ondeando en la brisa
+  for(let pIdx = 0; pIdx < 3; pIdx++){
+    const px = [75, 1115, 1520][pIdx];
+    const py = [110, 290, 210][pIdx];
+    const frondSway = Math.sin(t * 2.1 + pIdx * 1.5) * 0.06;
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(frondSway);
+    for(let f = 0; f < 5; f++){
+      const ang = -0.8 + f * 0.4 + Math.sin(t * 3.0 + f) * 0.04;
+      const len = 42 + (f % 2) * 14;
+      ctx.strokeStyle = f % 2 === 0 ? 'rgba(74, 156, 32, 0.45)' : 'rgba(118, 192, 58, 0.40)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(Math.cos(ang) * len * 0.5, Math.sin(ang) * len * 0.5 + 8, Math.cos(ang) * len, Math.sin(ang) * len + 18);
+      ctx.stroke();
     }
     ctx.restore();
   }
-  for(let i=0;i<9;i++){
-    const x=510+i*64+Math.sin(t*.7+i)*9, y=703+i%3*7;
-    ctx.strokeStyle='rgba(225,255,250,.22)'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.ellipse(x,y,13+Math.sin(t+i)*3,2,0,0,Math.PI); ctx.stroke();
+
+  // Enredaderas colgantes bajo las plataformas que se mecen físicamente
+  for(const p of platforms){
+    if(p.y >= 530) continue;
+    const vineCount = Math.max(2, Math.floor(p.w / 65));
+    for(let v = 0; v < vineCount; v++){
+      const vx = p.x + 25 + v * ((p.w - 50) / Math.max(1, vineCount - 1));
+      const vy = p.y + p.h - 4;
+      const vLen = 22 + ((v * 17) % 28);
+      const vSway = Math.sin(t * 2.2 + vx * 0.05) * 6;
+      ctx.strokeStyle = 'rgba(56, 128, 38, 0.65)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(vx, vy);
+      ctx.quadraticCurveTo(vx + vSway * 0.5, vy + vLen * 0.5, vx + vSway, vy + vLen);
+      ctx.stroke();
+
+      // Hojitas en las puntas de las lianas
+      ctx.fillStyle = 'rgba(102, 187, 60, 0.75)';
+      ctx.beginPath();
+      ctx.ellipse(vx + vSway, vy + vLen, 4, 7, vSway * 0.1, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
-  // Small leaf glints sway without shifting the collision surface.
-  for(const [x,y] of [[75,660],[380,294],[900,410],[1140,280],[1530,685]]){
-    ctx.save(); ctx.translate(x,y); ctx.rotate(Math.sin(t*1.5+x)*.13);
-    ctx.fillStyle='rgba(137,205,66,.48)'; ctx.beginPath(); ctx.ellipse(0,-7,5,13,.35,0,Math.PI*2); ctx.fill(); ctx.restore();
+
+  // =========================================================
+  // 2. EL AGUA QUE SE MUEVE (Cascadas, Rocío y Oleaje Turquesa)
+  // =========================================================
+  const falls = [
+    { x: 92,  y: 130, w: 95,  h: 400, speed: 280, density: 16 },
+    { x: 215, y: 185, w: 90,  h: 345, speed: 250, density: 14 },
+    { x: 580, y: 240, w: 45,  h: 140, speed: 200, density: 8  },
+    { x: 1465,y: 210, w: 55,  h: 250, speed: 230, density: 10 },
+    { x: 1545,y: 220, w: 45,  h: 240, speed: 220, density: 8  }
+  ];
+
+  for(const fall of falls){
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(fall.x - 4, fall.y, fall.w + 8, fall.h);
+    ctx.clip();
+
+    for(let i = 0; i < fall.density; i++){
+      const fx = fall.x + 6 + (i * (fall.w - 14) / fall.density) + Math.sin(t * 4 + i) * 2;
+      const fy = fall.y + ((t * fall.speed + i * 47) % fall.h);
+      const strH = 35 + (i % 3) * 22;
+      const alpha = 0.22 + 0.18 * Math.sin(t * 3 + i);
+
+      const grad = ctx.createLinearGradient(fx, fy, fx, fy + strH);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
+      grad.addColorStop(0.5, `rgba(230, 255, 255, ${alpha})`);
+      grad.addColorStop(1, 'rgba(210, 250, 255, 0.05)');
+
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 2 + (i % 3);
+      ctx.beginPath();
+      ctx.moveTo(fx, fy);
+      ctx.lineTo(fx + Math.sin(fy * 0.04 + t * 5) * 3, fy + strH);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Espuma blanca de impacto y rocío al chocar con la poza
+    const impactY = fall.y + fall.h - 6;
+    for(let m = 0; m < 6; m++){
+      const mistT = (t * 2.5 + m * 0.4) % 1.0;
+      const mx = fall.x + (fall.w * 0.15) + (m * (fall.w * 0.7) / 5) + Math.sin(t * 3 + m) * 6;
+      const my = impactY - mistT * 26;
+      const mRad = 8 + mistT * 18;
+      const mAlpha = (1.0 - mistT) * 0.28;
+
+      ctx.fillStyle = `rgba(240, 255, 255, ${mAlpha})`;
+      ctx.beginPath();
+      ctx.arc(mx, my, mRad, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
+
+  // Poza / Lago Turquesa Cristalino (Caústicas y oleaje horizontal)
+  for(let wave = 0; wave < 12; wave++){
+    const wy = 488 + wave * 3.8;
+    const waveAlpha = 0.14 + 0.08 * Math.sin(t * 2.0 + wave);
+    ctx.strokeStyle = `rgba(215, 255, 248, ${waveAlpha})`;
+    ctx.lineWidth = 2.0;
+    ctx.beginPath();
+    for(let wx = 80; wx <= 1350; wx += 25){
+      const dispY = Math.sin(wx * 0.025 + t * 2.8 + wave * 0.8) * 2.2 + Math.cos(wx * 0.05 - t * 1.5) * 1.2;
+      if(wx === 80) ctx.moveTo(wx, wy + dispY);
+      else ctx.lineTo(wx, wy + dispY);
+    }
+    ctx.stroke();
+  }
+
+  // Destellos de sol en el agua (Water Sparkles)
+  for(let sp = 0; sp < 16; sp++){
+    const sx = 120 + ((sp * 79 + Math.floor(t * 3) * 53) % 1200);
+    const sy = 492 + (sp % 4) * 9 + Math.sin(t * 2 + sp) * 2;
+    const sAlpha = Math.max(0, Math.sin(t * 4.5 + sp * 1.8));
+    if(sAlpha > 0.15){
+      ctx.fillStyle = `rgba(255, 255, 235, ${sAlpha * 0.85})`;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 2.5 * sAlpha, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = `rgba(255, 255, 255, ${sAlpha * 0.7})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(sx - 4 * sAlpha, sy); ctx.lineTo(sx + 4 * sAlpha, sy);
+      ctx.moveTo(sx, sy - 4 * sAlpha); ctx.lineTo(sx, sy + 4 * sAlpha);
+      ctx.stroke();
+    }
+  }
+
+  // =========================================================
+  // 3. RAYOS DE SOL DINÁMICOS (God Rays & Polvo Solar)
+  // =========================================================
+  const sunOriginX = 1820, sunOriginY = -40;
+  for(let r = 0; r < 5; r++){
+    const sweep = Math.sin(t * 0.6 + r * 1.1) * 35;
+    const rayAngle = 2.22 + (r * 0.08) + (sweep * 0.001);
+    const rayDist = 950;
+    const rayWidth = 60 + r * 22;
+    const rayAlpha = 0.06 + 0.05 * Math.sin(t * 1.2 + r * 1.5);
+
+    const destX = sunOriginX - Math.cos(rayAngle - Math.PI/2) * rayDist;
+    const destY = sunOriginY + Math.sin(rayAngle - Math.PI/2) * rayDist;
+
+    ctx.save();
+    const gradRay = ctx.createLinearGradient(sunOriginX, sunOriginY, destX, destY);
+    gradRay.addColorStop(0, `rgba(255, 245, 190, ${rayAlpha * 1.5})`);
+    gradRay.addColorStop(0.4, `rgba(255, 230, 160, ${rayAlpha})`);
+    gradRay.addColorStop(1, 'rgba(255, 220, 140, 0)');
+
+    ctx.fillStyle = gradRay;
+    ctx.beginPath();
+    ctx.moveTo(sunOriginX - 15, sunOriginY);
+    ctx.lineTo(sunOriginX + 15, sunOriginY);
+    ctx.lineTo(destX + rayWidth, destY);
+    ctx.lineTo(destX - rayWidth, destY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Motes de polvo de sol dorado flotando en el aire
+  for(let m = 0; m < 35; m++){
+    const mx = ((m * 67 + t * (14 + (m % 5) * 4)) % (world.w + 100)) - 50;
+    const my = 80 + (m * 23) % 460 + Math.sin(t * 1.4 + m) * 14;
+    const mSize = 1.2 + (m % 3) * 0.8;
+    const mGlow = 0.25 + 0.25 * Math.sin(t * 2.8 + m * 2);
+
+    ctx.fillStyle = `rgba(255, 238, 160, ${mGlow})`;
+    ctx.beginPath();
+    ctx.arc(mx, my, mSize, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Nubes altas translúcidas cruzando el cielo
+  for(let c = 0; c < 4; c++){
+    const cx = ((c * 540 + t * (12 + c * 3)) % (world.w + 350)) - 180;
+    const cy = 40 + (c % 2) * 35 + Math.sin(t * 0.4 + c) * 4;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, 110, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx + 45, cy - 8, 70, 24, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   ctx.restore();
 }
 function drawCollisionDebug(){
@@ -1583,5 +1758,5 @@ Promise.all([
   loadImg(idleSheet), loadImg(crouchSheet),
   loadImg(jumpSheet), loadImg(doubleJumpSheet), loadImg(sleepSheet), loadImg(hangSheet),
   loadImg(climbSheet), loadImg(enemySheet), loadImg(cocoSheet), loadImg(cocoPiratasSheet),
-  loadImg(cocoConchaWalkSheet), loadImg(slingSheet)
+  loadImg(cocoConchaWalkSheet), loadImg(slingSheet), loadImg(palmeraCrownImg)
 ]).then(() => requestAnimationFrame(loop));
