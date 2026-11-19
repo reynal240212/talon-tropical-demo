@@ -1405,8 +1405,6 @@ function drawAtmosphere(now){
   }
   ctx.restore();
 }
-  ctx.restore();
-}
 
 function render(){
   ctx.clearRect(0, 0, innerWidth, gameHeight());
