@@ -15,17 +15,17 @@ const enemySheet = new Image();
 const cocoSheet = new Image();
 const cocoPiratasSheet = new Image();
 const slingSheet = new Image();
-bg.src = 'assets/nivel_tropical_extendido_v2.png?v=3';
-sheet.src = 'assets/explorador_correr_master_v1.webp?v=3';
-runSheet.src = 'assets/explorador_correr_master_v1.webp?v=3';
-idleSheet.src = 'assets/explorador_idle_master_v1.webp?v=3';
-crouchSheet.src = 'assets/explorador_agacharse_master_v1.png?v=3';
-jumpSheet.src = 'assets/explorador_salto_master_v1.webp?v=3';
-doubleJumpSheet.src = 'assets/explorador_doble_salto_master_v1.png?v=3';
-doubleJumpSheet.onerror = () => { doubleJumpSheet.src = 'assets/explorador_salto_master_v1.webp?v=3'; };
-sleepSheet.src = 'assets/explorador_dormir_master_v1.png?v=3';
-hangSheet.src = 'assets/explorador_colgado_personaje_v3.png?v=3';
-climbSheet.src = 'assets/explorador_subir_personaje_v2.png?v=3';
+bg.src = 'assets/nivel_tropical_extendido_v2.png?v=4';
+sheet.src = 'assets/explorador_correr_master_v1.webp?v=4';
+runSheet.src = 'assets/explorador_correr_master_v1.webp?v=4';
+idleSheet.src = 'assets/explorador_idle_master_v1.webp?v=4';
+crouchSheet.src = 'assets/explorador_agacharse_master_v1.png?v=4';
+jumpSheet.src = 'assets/explorador_salto_master_v1.webp?v=4';
+doubleJumpSheet.src = 'assets/explorador_doble_salto_master_v1.png?v=4';
+doubleJumpSheet.onerror = () => { doubleJumpSheet.src = 'assets/explorador_salto_master_v1.webp?v=4'; };
+sleepSheet.src = 'assets/explorador_dormir_master_v1.png?v=4';
+hangSheet.src = 'assets/explorador_colgado_personaje_v3.png?v=4';
+climbSheet.src = 'assets/explorador_subir_personaje_v2.png?v=4';
 const palmeraCrownImg = new Image();
 palmeraCrownImg.src = 'assets/palmera_central_crown.png?v=1';
 platformTexture.src = 'assets/plataforma_tropical_textura_v1.png?v=1';
@@ -221,11 +221,11 @@ const enemies = [
 
 // Cocos Salvajes agresivos que caen de las copas de las palmeras
 const cocos = [
-  { id: 1, palmX: 310, palmY: 155, x: 310, y: 155, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: 1, rot: 0, anim: 0, w: 34, h: 34 },
-  { id: 2, palmX: 715, palmY: 140, x: 715, y: 140, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: -1, rot: 0, anim: 0, w: 34, h: 34 },
-  { id: 3, palmX: 1120, palmY: 215, x: 1120, y: 215, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: 1, rot: 0, anim: 0, w: 34, h: 34 },
-  { id: 4, palmX: 1430, palmY: 175, x: 1430, y: 175, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: -1, rot: 0, anim: 0, w: 34, h: 34 },
-  { id: 5, palmX: 1960, palmY: 165, x: 1960, y: 165, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: -1, rot: 0, anim: 0, w: 34, h: 34 }
+  { id: 1, palmX: 55,   palmY: 110, x: 55,   y: 110, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: 1, rot: 0, anim: 0, w: 34, h: 34 },
+  { id: 2, palmX: 1210, palmY: 145, x: 1210, y: 145, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: -1, rot: 0, anim: 0, w: 34, h: 34 },
+  { id: 3, palmX: 1255, palmY: 170, x: 1255, y: 170, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: 1, rot: 0, anim: 0, w: 34, h: 34 },
+  { id: 4, palmX: 1515, palmY: 175, x: 1515, y: 175, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: -1, rot: 0, anim: 0, w: 34, h: 34 },
+  { id: 5, palmX: 2040, palmY: 150, x: 2040, y: 150, vx: 0, vy: 0, state: 'hanging', alertTimer: 0, respawnTimer: 0, face: -1, rot: 0, anim: 0, w: 34, h: 34 }
 ];
 
 function spawnCoconutShatter(x, y){
@@ -482,65 +482,7 @@ function drawAtmosphere(now){
   ctx.save(); ctx.scale(s,s); ctx.translate(-cam,0);
 
   // =========================================================
-  // 1. PALMERAS QUE SE MUEVEN (Tropical Wind Sway)
-  // =========================================================
-  // Gran Palmera Central del Templo (sobre la terraza en x:1055)
-  if(palmeraCrownImg.complete && palmeraCrownImg.naturalWidth){
-    const sway = Math.sin(t * 1.8) * 0.045 + Math.sin(t * 3.4) * 0.015;
-    ctx.save();
-    ctx.translate(1224, 155);
-    ctx.rotate(sway);
-    ctx.drawImage(palmeraCrownImg, -194, -155, 310, 210);
-    ctx.restore();
-  }
-
-  // Palmeras secundarias y follaje ondeando en la brisa
-  for(let pIdx = 0; pIdx < 3; pIdx++){
-    const px = [75, 1115, 1520][pIdx];
-    const py = [110, 290, 210][pIdx];
-    const frondSway = Math.sin(t * 2.1 + pIdx * 1.5) * 0.06;
-    ctx.save();
-    ctx.translate(px, py);
-    ctx.rotate(frondSway);
-    for(let f = 0; f < 5; f++){
-      const ang = -0.8 + f * 0.4 + Math.sin(t * 3.0 + f) * 0.04;
-      const len = 42 + (f % 2) * 14;
-      ctx.strokeStyle = f % 2 === 0 ? 'rgba(74, 156, 32, 0.45)' : 'rgba(118, 192, 58, 0.40)';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.quadraticCurveTo(Math.cos(ang) * len * 0.5, Math.sin(ang) * len * 0.5 + 8, Math.cos(ang) * len, Math.sin(ang) * len + 18);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  // Enredaderas colgantes bajo las plataformas que se mecen físicamente
-  for(const p of platforms){
-    if(p.y >= 530) continue;
-    const vineCount = Math.max(2, Math.floor(p.w / 65));
-    for(let v = 0; v < vineCount; v++){
-      const vx = p.x + 25 + v * ((p.w - 50) / Math.max(1, vineCount - 1));
-      const vy = p.y + p.h - 4;
-      const vLen = 22 + ((v * 17) % 28);
-      const vSway = Math.sin(t * 2.2 + vx * 0.05) * 6;
-      ctx.strokeStyle = 'rgba(56, 128, 38, 0.65)';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(vx, vy);
-      ctx.quadraticCurveTo(vx + vSway * 0.5, vy + vLen * 0.5, vx + vSway, vy + vLen);
-      ctx.stroke();
-
-      // Hojitas en las puntas de las lianas
-      ctx.fillStyle = 'rgba(102, 187, 60, 0.75)';
-      ctx.beginPath();
-      ctx.ellipse(vx + vSway, vy + vLen, 4, 7, vSway * 0.1, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  // =========================================================
-  // 2. EL AGUA QUE SE MUEVE (Cascadas, Rocío y Oleaje Turquesa)
+  // 1. EL AGUA QUE SE MUEVE (Cascadas, Rocío y Oleaje Turquesa)
   // =========================================================
   const falls = [
     { x: 92,  y: 130, w: 95,  h: 400, speed: 280, density: 16 },
@@ -1560,13 +1502,24 @@ function render(){
       const ey = (enemy.y + enemy.h) * s;
       
       // Si es Coco Concha patrullando o corriendo, usa su spritesheet ultra fluido de 16 fotogramas
-      if(enemy.type === 0 && (enemy.state === 'patrol' || enemy.state === 'chase') && cocoConchaWalkSheet.complete && cocoConchaWalkSheet.naturalWidth){
-        const f = Math.floor(enemy.anim * (enemy.state === 'chase' ? 24 : 16)) % 16;
+      if(enemy.type === 0 && cocoConchaWalkSheet.complete && cocoConchaWalkSheet.naturalWidth){
         const psc = enemy.h / 193;
         ctx.save();
-        ctx.translate(ex, ey);
-        ctx.scale(enemy.face * s * psc, s * psc);
-        ctx.drawImage(cocoConchaWalkSheet, f * 180, 0, 180, 240, -83, -218, 180, 240);
+        if(enemy.state === 'hit'){
+          if(enemy.deadTimer > 3.0){
+            ctx.globalAlpha = Math.max(0, 1 - (enemy.deadTimer - 3.0) / 1.5);
+          }
+          const wobble = Math.sin(enemy.deadTimer * 7) * 0.08;
+          ctx.translate(ex, ey - 14 * s);
+          ctx.scale(enemy.face * s * psc, s * psc);
+          ctx.rotate(1.42 + wobble);
+          ctx.drawImage(cocoConchaWalkSheet, 0, 0, 180, 240, -83, -218, 180, 240);
+        } else {
+          const f = Math.floor(enemy.anim * (enemy.state === 'chase' ? 24 : 16)) % 16;
+          ctx.translate(ex, ey);
+          ctx.scale(enemy.face * s * psc, s * psc);
+          ctx.drawImage(cocoConchaWalkSheet, f * 180, 0, 180, 240, -83, -218, 180, 240);
+        }
         ctx.restore();
       } else {
         ctx.save();
@@ -1667,11 +1620,6 @@ function render(){
     if(f){
       ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
     }
-
-    // Dibuja la mini resortera enfundada en el cinto solo si no está en medio del ataque con resortera activa
-    if(animKey !== 'sleep' && animKey !== 'doubleJump' && animKey !== 'hang' && animKey !== 'climb' && animKey !== 'slingshot'){
-      drawResortera(ctx, false, 0, crouching, 0);
-    }
     ctx.restore();
   }
 
@@ -1727,12 +1675,26 @@ function render(){
   ctx.fillStyle='#ffffffcc'; ctx.font='bold 15px system-ui'; ctx.fillText('Movimiento: '+stateTxt,18,gameHeight()-18);
   const defeatedPiratas = enemies.filter(e => e.state === 'hit').length;
   const defeatedCocos = cocos.filter(e => e.state === 'hit' || e.state === 'respawning').length;
-  ctx.fillStyle='#ffe066'; ctx.font='bold 15px system-ui';
-  ctx.fillText('🏴‍☠️ Cocos Piratas K.O.: ' + defeatedPiratas + ' / ' + enemies.length, innerWidth - 235, 32);
-  ctx.fillStyle='#80cbc4'; ctx.font='bold 14px system-ui';
-  ctx.fillText('🥥 Cocos salvajes: ' + defeatedCocos, innerWidth - 235, 52);
-  ctx.fillStyle='#ffb74d'; ctx.font='bold 14px system-ui';
-  ctx.fillText('🎯 Resortera 360° (Piedras)', innerWidth - 235, 72);
+  // Panel elegante de estadísticas HUD (alineado limpiamente bajo el botón de pantalla completa)
+  const hudW = 180, hudH = 68;
+  const hudX = Math.max(12, innerWidth - hudW - 14);
+  const hudY = 62;
+  ctx.save();
+  ctx.fillStyle = 'rgba(16, 46, 61, 0.76)';
+  ctx.strokeStyle = 'rgba(233, 226, 187, 0.38)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  if(ctx.roundRect) ctx.roundRect(hudX - 10, hudY - 17, hudW, hudH, 12);
+  else ctx.rect(hudX - 10, hudY - 17, hudW, hudH);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = '#ffe066'; ctx.font = 'bold 12.5px system-ui';
+  ctx.fillText('🏴‍☠️ Piratas K.O.: ' + defeatedPiratas + ' / ' + enemies.length, hudX, hudY);
+  ctx.fillStyle = '#80cbc4'; ctx.font = 'bold 12px system-ui';
+  ctx.fillText('🥥 Cocos salvajes: ' + defeatedCocos, hudX, hudY + 19);
+  ctx.fillStyle = '#ffb74d'; ctx.font = 'bold 11.5px system-ui';
+  ctx.fillText('🎯 Resortera 360°', hudX, hudY + 38);
+  ctx.restore();
   if(player.idleTime>0){ const remaining=Math.max(0,15-player.idleTime); ctx.fillStyle='#fff4c9e8'; ctx.font='bold 16px system-ui'; ctx.fillText(remaining>0?'Sueño en: '+remaining.toFixed(1)+' s':'Preparando sueño…',18,gameHeight()-42); }
   if(player.sleepTime>0){
     const bob = Math.sin(player.sleepTime * 2.5) * 2;
