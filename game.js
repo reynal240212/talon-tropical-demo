@@ -162,6 +162,7 @@ const player = {
   aimAngle: 0,
   sliding: false,
   slideTime: 0,
+  slideLatch: false,
   hurtTime: 0,
   hearts: 3,
   maxHearts: 3,
@@ -549,6 +550,23 @@ function spawnSlideDust(x, y){
   }
 }
 
+function spawnSlideTurf(x, y){
+  const colors = ['#43a047', '#66bb6a', '#aed581', '#795548', '#d7ccc8', '#ffffff'];
+  for(let i = 0; i < 4; i++){
+    const col = colors[Math.floor(Math.random() * colors.length)];
+    particles.push({
+      x: x + (Math.random() - 0.5) * 16,
+      y: y - 2 + Math.random() * 4,
+      vx: -220 - Math.random() * 140,
+      vy: -40 - Math.random() * 80,
+      size: 3 + Math.random() * 4.5,
+      color: col,
+      life: 0.28 + Math.random() * 0.18,
+      maxLife: 0.46
+    });
+  }
+}
+
 function spawnWoodShatter(x, y){
   for(let i = 0; i < 10; i++){
     const angle = (Math.PI * 2 * i / 10) + (Math.random() - 0.5) * 0.6;
@@ -761,6 +779,9 @@ function restartRunner(startMeters = 0){
   player.shieldTime = 0;
   player.magnetTime = 0;
   player.sliding = false;
+  player.slideTime = 0;
+  player.slideLatch = false;
+  player.h = MASTER_CHARACTER.h;
   screenShake = 0;
 
   gameDistance = startMeters;
@@ -841,27 +862,42 @@ function update(dt){
   let moveVx = baseSpeed;
   if(rightKey) moveVx += 140;
   if(leftKey) moveVx -= 140;
-  player.vx = moveVx;
 
-  // Deslizamiento bajo obstáculos (Slide) con anclaje firme de pies al suelo
-  const wantsSlide = downKey && player.onGround;
-  const oldH = player.h;
-  if(wantsSlide){
+  // Deslizamiento como Barrida de Fútbol (Soccer Slide Tackle)
+  if(downKey && player.onGround && !player.slideLatch && !player.sliding){
     player.sliding = true;
-    player.slideTime += dt;
-    player.h = 56;
-    if(player.onGround && oldH !== player.h){
-      player.y += (oldH - player.h);
-    }
-    spawnSlideDust(player.x + 20, GROUND_Y);
-  } else {
-    player.sliding = false;
     player.slideTime = 0;
-    player.h = MASTER_CHARACTER.h;
-    if(player.onGround && oldH !== player.h){
-      player.y -= (player.h - oldH);
-    }
+    playStep('stone');
+    spawnSlideTurf(player.x + 35, GROUND_Y);
   }
+  player.slideLatch = downKey;
+
+  const oldH = player.h;
+  if(player.sliding){
+    player.slideTime += dt;
+    player.h = 48; // Perfil aerodinámico bajo rasante al suelo
+
+    // Impulso de aceleración de la barrida de fútbol
+    const slideBoost = Math.max(0, 1 - (player.slideTime / 0.52)) * 160;
+    moveVx += slideBoost;
+
+    // Chispas de fricción y césped pulverizado hacia atrás
+    spawnSlideTurf(player.x - 5, GROUND_Y);
+
+    // Duración de la barrida: ~0.48s (o hasta 0.65s si mantiene presionado)
+    if((!downKey && player.slideTime >= 0.44) || player.slideTime >= 0.65){
+      player.sliding = false;
+      player.slideTime = 0;
+      player.h = MASTER_CHARACTER.h;
+    }
+  } else {
+    player.h = MASTER_CHARACTER.h;
+  }
+
+  if(player.onGround && oldH !== player.h){
+    player.y = GROUND_Y - player.h;
+  }
+  player.vx = moveVx;
 
   // Salto y Doble Salto ágiles y responsivos
   if(upKey && !player.jumpLatch){
@@ -1125,6 +1161,23 @@ function update(dt){
       spawnCoconutShatter(en.x + en.w/2, en.y + en.h/2);
       playCoconutCrack();
       spawnFloatingText(`¡PISOTÓN! +100`, en.x + en.w/2, en.y - 20, '#00e676', 18);
+      continue;
+    }
+
+    // Barrida de Fútbol: Si Talon está deslizándose, taclea y barre al enemigo por el suelo
+    const slideTackleCondition = player.sliding && (player.y + player.h >= en.y + 10) &&
+                                 (player.x + player.w + 18 > en.x) && (player.x - 10 < en.x + en.w);
+
+    if(slideTackleCondition){
+      en.state = 'hit';
+      en.deadTimer = 0.001;
+      cocosDefeated++;
+      comboStreak++;
+      comboTimer = 2.4;
+      spawnCoconutShatter(en.x + en.w/2, en.y + en.h/2);
+      spawnSlideTurf(en.x + en.w/2, GROUND_Y);
+      playCoconutCrack();
+      spawnFloatingText(`¡BARRIDA TACKLE! +150`, en.x + en.w/2, en.y - 25, '#ffd700', 19);
       continue;
     }
 
@@ -1612,8 +1665,28 @@ function render(){
       ctx.restore();
     }
 
+    // Estela de fricción en el césped / suelo de la barrida de fútbol
+    if(player.sliding && player.onGround){
+      ctx.save();
+      const streakGrad = ctx.createLinearGradient(px - 50 * s, (GROUND_Y - 2) * s, px + 55 * s, (GROUND_Y - 2) * s);
+      streakGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+      streakGrad.addColorStop(0.3, 'rgba(102, 187, 106, 0.55)');
+      streakGrad.addColorStop(0.7, 'rgba(255, 255, 255, 0.75)');
+      streakGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = streakGrad;
+      ctx.fillRect(px - 50 * s, (GROUND_Y - 4) * s, 105 * s, 6 * s);
+      ctx.restore();
+    }
+
     ctx.translate(px + player.w * s / 2, py + player.h * s);
-    ctx.scale(player.face * s * sc, s * sc);
+    if(player.sliding){
+      // Inclinación aerodinámica de barrida de fútbol: recostado hacia atrás con pierna delantera extendida
+      ctx.translate(14 * s, -6 * s);
+      ctx.rotate(-0.25 * player.face);
+      ctx.scale(player.face * s * sc * 1.15, s * sc * 0.90);
+    } else {
+      ctx.scale(player.face * s * sc, s * sc);
+    }
     if(f) ctx.drawImage(activeSheet, f.x, 0, f.w, fh, -f.cx, -f.fy, f.w, fh);
     ctx.restore();
   }
